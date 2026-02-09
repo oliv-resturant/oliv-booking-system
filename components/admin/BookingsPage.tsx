@@ -1,0 +1,656 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { Calendar, Clock, Users, Phone, Mail, MapPin, MessageSquare, Download, Search, X, User, CalendarDays, Edit, UtensilsCrossed, RefreshCw, Check, Send } from 'lucide-react';
+import { StatusDropdown } from './StatusDropdown';
+import { Button } from './Button';
+
+const statusColors: Record<string, { bg: string; text: string; border: string; dotColor: string }> = {
+  'confirmed': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dotColor: '#10b981' },
+  'touchbase': { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', dotColor: '#9DAE91' },
+  'new': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dotColor: '#8b5cf6' },
+  'declined': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dotColor: '#ef4444' },
+  'completed': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dotColor: '#3b82f6' },
+  'pending': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dotColor: '#eab308' },
+};
+
+const allStatuses = ['All Status', 'New', 'Pending', 'Confirmed', 'Touchbase', 'Declined', 'Completed'];
+
+// Grid Layout
+function GridLayout({ onOpenModal, bookings }: { onOpenModal: (booking: any) => void; bookings: any[] }) {
+  if (bookings.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+          No bookings found
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      {bookings.map((booking) => (
+        <div
+          key={booking.id}
+          className="bg-card border border-border rounded-xl p-5 hover:shadow-md transition-all"
+        >
+          {/* Header */}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0"
+                style={{ backgroundColor: booking.customer.avatarColor || '#9DAE91', fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
+              >
+                {booking.customer.avatar}
+              </div>
+              <div>
+                <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  {booking.customer.name}
+                </h4>
+                <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                  {booking.event.occasion}
+                </p>
+              </div>
+            </div>
+            <span
+              className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 ${statusColors[booking.status.toLowerCase()]?.bg || statusColors.pending.bg} ${statusColors[booking.status.toLowerCase()]?.text || statusColors.pending.text} ${statusColors[booking.status.toLowerCase()]?.border || statusColors.pending.border}`}
+              style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+            >
+              <div
+                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={{ backgroundColor: statusColors[booking.status.toLowerCase()]?.dotColor || statusColors.pending.dotColor }}
+              />
+              {booking.status}
+            </span>
+          </div>
+
+          {/* Refined Information Rows */}
+          <div className="space-y-2 mb-4">
+            {/* Row 1: Email + Date */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <Mail className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                <span className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
+                  {booking.customer.email}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                  {booking.event.date}
+                </span>
+              </div>
+            </div>
+
+            {/* Row 2: Phone + Guests */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <Phone className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                  {booking.customer.phone}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                  {booking.guests} guests
+                </span>
+              </div>
+            </div>
+
+            {/* Row 3: Contacted + Amount */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-muted-foreground flex-1" style={{ fontSize: 'var(--text-small)' }}>
+                {booking.contacted?.by ? `By ${booking.contacted.by} • ${booking.contacted.when}` : booking.booking}
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  {booking.amount}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA Button */}
+          <button
+            onClick={() => onOpenModal(booking)}
+            className="w-full px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-secondary hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+          >
+            View Details
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Booking Detail Modal
+function BookingDetailModal({ booking, onClose, onUpdateStatus }: { booking: any | null; onClose: () => void; onUpdateStatus: (id: string, status: string) => void }) {
+  const [comments, setComments] = useState<Array<{ by: string; time: string; date: string; action: string }>>(
+    booking?.contactHistory || []
+  );
+  const [newComment, setNewComment] = useState('');
+  const [localStatus, setLocalStatus] = useState(booking?.status || 'pending');
+
+  // Update localStatus when booking changes
+  useEffect(() => {
+    if (booking?.status) {
+      setLocalStatus(booking.status);
+    }
+  }, [booking?.status]);
+
+  // Reset comments when booking changes
+  useEffect(() => {
+    if (booking?.contactHistory) {
+      setComments(booking.contactHistory);
+    }
+  }, [booking?.contactHistory]);
+
+  const statusOptions = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'confirmed', label: 'Confirmed' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'cancelled', label: 'Cancelled' },
+    { value: 'declined', label: 'Declined' },
+    { value: 'no_show', label: 'No Show' },
+  ];
+
+  if (!booking) return null;
+
+  const handleAddComment = () => {
+    if (!newComment.trim()) return;
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const newCommentObj = {
+      by: 'Admin',
+      time: timeStr,
+      date: dateStr,
+      action: newComment
+    };
+
+    setComments([...comments, newCommentObj]);
+    setNewComment('');
+  };
+
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 bg-black/30 z-40 transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="fixed right-0 top-0 h-full w-full max-w-2xl bg-background z-50 shadow-2xl overflow-y-auto transform transition-transform">
+        <div className="sticky top-0 bg-background border-b border-border z-10 px-8 py-5 flex items-center justify-between">
+          <h2 className="text-foreground" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
+            Booking Details
+          </h2>
+          <div className="flex items-center gap-3">
+            <button className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+              <Send className="w-4 h-4" />
+              Send Reminder
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+
+        <div className="px-6 py-6 space-y-6">
+          {/* Customer Information */}
+          <div className="bg-card border border-border rounded-xl p-6">
+            <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+              <User className="w-5 h-5 text-primary" />
+              Customer Information
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  value={booking.customer.firstName}
+                  readOnly
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+              </div>
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  value={booking.customer.lastName}
+                  readOnly
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+              </div>
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={booking.customer.email}
+                  readOnly
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+              </div>
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={booking.customer.phone}
+                  readOnly
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Address
+                </label>
+                <input
+                  type="text"
+                  value={booking.customer.address}
+                  readOnly
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Event Details */}
+          <div className="bg-card border border-border rounded-xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-foreground flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                <CalendarDays className="w-5 h-5 text-primary" />
+                Event Details
+              </h3>
+              <button className="text-foreground hover:bg-accent px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2 cursor-pointer" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                <Edit className="w-3.5 h-3.5" />
+                Edit
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Event Date
+                </label>
+                <input
+                  type="text"
+                  value={booking.event.date}
+                  readOnly
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+              </div>
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Time
+                </label>
+                <input
+                  type="text"
+                  value={booking.event.time}
+                  readOnly
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+              </div>
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Guests
+                </label>
+                <input
+                  type="text"
+                  value={booking.guests}
+                  readOnly
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+              </div>
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Occasion
+                </label>
+                <input
+                  type="text"
+                  value={booking.event.occasion}
+                  readOnly
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+              </div>
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Amount (CHF)
+                </label>
+                <input
+                  type="text"
+                  value={booking.amount}
+                  readOnly
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+              </div>
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Status
+                </label>
+                <StatusDropdown
+                  options={statusOptions}
+                  value={localStatus}
+                  onChange={(value) => {
+                    setLocalStatus(value);
+                    // Auto-save on change
+                    onUpdateStatus(booking.id, value);
+                  }}
+                  placeholder="Select status"
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Information */}
+          <div className="bg-card border border-border rounded-xl p-6">
+            <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+              <MessageSquare className="w-5 h-5 text-primary" />
+              Additional Information
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Allergies
+                </label>
+                <textarea
+                  value={booking.allergies}
+                  readOnly
+                  rows={2}
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground resize-none"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+              </div>
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Notes
+                </label>
+                <textarea
+                  value={booking.notes}
+                  readOnly
+                  rows={2}
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground resize-none"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Menu Items */}
+          {booking.menuItems && booking.menuItems.length > 0 && (
+            <div className="bg-card border border-border rounded-xl p-6">
+              <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                <UtensilsCrossed className="w-5 h-5 text-primary" />
+                Menu Items
+              </h3>
+              <div className="bg-background border border-border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>Item</th>
+                      <th className="px-4 py-3 text-left text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>Category</th>
+                      <th className="px-4 py-3 text-left text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>Quantity</th>
+                      <th className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {booking.menuItems.map((item: any, index: number) => (
+                      <tr key={index} className="border-t border-border">
+                        <td className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)' }}>{item.item}</td>
+                        <td className="px-4 py-3 text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>{item.category}</td>
+                        <td className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)' }}>{item.quantity}</td>
+                        <td className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>{item.price}</td>
+                      </tr>
+                    ))}
+                    <tr className="border-t-2 border-border bg-muted">
+                      <td colSpan={3} className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>Total Amount</td>
+                      <td className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>{booking.amount}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Contact History */}
+          <div className="bg-card border border-border rounded-xl p-6">
+            <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+              <MessageSquare className="w-5 h-5 text-primary" />
+              Comments
+            </h3>
+            <div className="space-y-3">
+              {comments.map((contact, index) => (
+                <div key={index} className="bg-background border border-border rounded-lg p-4 flex items-start gap-3">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0"
+                    style={{ backgroundColor: '#9DAE91', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}
+                  >
+                    {contact.by.charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                        {contact.by}
+                      </span>
+                      <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                        • {contact.time} • {contact.date}
+                      </span>
+                    </div>
+                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                      {contact.action}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {/* Add Comment Form */}
+              <div className="space-y-3 pt-2">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  rows={3}
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  style={{ fontSize: 'var(--text-base)' }}
+                />
+                <button
+                  onClick={handleAddComment}
+                  className="w-full px-4 py-3 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+                >
+                  <Mail className="w-4 h-4" />
+                  Add Comment
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="h-20"></div>
+        </div>
+
+        {/* Fixed Save Button Footer */}
+        <div className="fixed bottom-0 right-0 w-full max-w-2xl bg-background border-t border-border px-6 py-4 z-10">
+          <button className="w-full px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)', backgroundColor: 'var(--color-primary)' }}>
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export function BookingsPage() {
+  const [bookingsData, setBookingsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('All Status');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch bookings on component mount
+  const fetchBookings = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/bookings');
+      if (!response.ok) throw new Error('Failed to fetch bookings');
+      const data = await response.json();
+      setBookingsData(data);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      setBookingsData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  // Status options for the dropdown
+  const statusOptions = allStatuses.map(status => ({ value: status, label: status }));
+
+  // Filter bookings based on search query and selected status
+  const filteredBookings = bookingsData.filter((booking) => {
+    const matchesSearch =
+      searchQuery === '' ||
+      booking.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.customer.phone.includes(searchQuery) ||
+      booking.event.occasion.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus =
+      selectedStatus === 'All Status' ||
+      booking.status.toLowerCase() === selectedStatus.toLowerCase();
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // Handle status update from modal
+  const handleUpdateStatus = (id: string, newStatus: string) => {
+    setBookingsData(bookingsData.map(booking =>
+      booking.id === id ? { ...booking, status: newStatus } : booking
+    ));
+    // Also update selected booking if it's the same
+    if (selectedBooking && selectedBooking.id === id) {
+      setSelectedBooking({ ...selectedBooking, status: newStatus });
+    }
+  };
+
+  return (
+    <div className="min-h-full bg-background px-8 pt-6 pb-1 flex flex-col">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-foreground" style={{ fontSize: 'var(--text-h1)', fontWeight: 'var(--font-weight-semibold)' }}>
+          Bookings
+        </h1>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            icon={RefreshCw}
+            iconPosition="left"
+            onClick={fetchBookings}
+            disabled={loading}
+          >
+            Refresh
+          </Button>
+          <Button
+            variant="secondary"
+            icon={Download}
+            iconPosition="left"
+            to="/admin/bookings/export"
+          >
+            Export
+          </Button>
+        </div>
+      </div>
+
+      <div className="w-full space-y-4 flex-1">
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
+              Loading bookings...
+            </p>
+          </div>
+        )}
+
+        {/* Search & Filter Bar */}
+        {!loading && (
+          <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-4">
+            {/* Search Bar - Left Side */}
+            <div className="relative flex-1 max-w-lg">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by name, email, or phone..."
+                className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                style={{ fontSize: 'var(--text-base)' }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                ref={searchInputRef}
+              />
+            </div>
+
+            {/* Status Dropdown & Export Button - Right Side */}
+            <div className="flex items-center gap-3">
+              {/* Status Dropdown */}
+              <StatusDropdown
+                options={statusOptions}
+                value={selectedStatus}
+                onChange={setSelectedStatus}
+              />
+
+              {/* Export Button */}
+              <Button variant="primary" icon={Download}>
+                Export
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Grid Layout */}
+        {!loading && (
+          <GridLayout onOpenModal={(booking) => setSelectedBooking(booking)} bookings={filteredBookings} />
+        )}
+
+        {/* Booking Detail Modal */}
+        {selectedBooking && <BookingDetailModal booking={selectedBooking} onClose={() => setSelectedBooking(null)} onUpdateStatus={handleUpdateStatus} />}
+
+        {/* Copyright Footer */}
+        <div className="text-center pt-4 pb-1 mt-auto">
+          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+            © 2026 Restaurant Oliv Restaurant & Bar
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

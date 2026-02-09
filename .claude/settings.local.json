@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell:*)",
+      "Bash(npm install:*)",
+      "Bash(npm view:*)",
+      "Bash(npx drizzle-kit generate:*)",
+      "Bash(npx drizzle-kit push:*)",
+      "Bash(npm run dev:*)",
+      "Bash(for:*)",
+      "Bash(do if [ -f \"$file\" ])",
+      "Bash(! head -1 \"$file\")",
+      "Bash(then sed -i \"1i''use client'';\" \"$file\")",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(python3:*)",
+      "Bash(npm run db:seed:*)",
+      "Bash(curl:*)",
+      "Bash(ls:*)",
+      "Bash(if:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npm run db:verify:*)",
+      "Bash(timeout:*)"
+    ]
+  }
+}
