@@ -3,7 +3,15 @@
     "allow": [
       "Bash(npm run build:*)",
       "Bash(awk:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(Get-Content \"D:\\\\OLIV-static\\\\UserUI\\\\src\\\\app\\\\components\\\\CustomMenuWizardVariant1.tsx\")",
+      "Bash(Select-Object:*)",
+      "Bash(Select-String:*)",
+      "Bash(cmd /c \"npm run build\")",
+      "Bash(findstr:*)",
+      "Bash(npx vite build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

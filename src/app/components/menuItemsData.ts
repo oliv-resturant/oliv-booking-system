@@ -642,7 +642,7 @@ export const menuItems: MenuItem[] = [
   {
     id: 'bev1',
     name: 'Premium Wine Package',
-    description: 'Selection of red, white, and rosé wines from Swiss and international vineyards (charged by bottle)',
+    description: 'Selection of red, white, and rosé wines from Swiss and international vineyards. Billed by consumption based on actual usage.',
     category: 'Beverages',
     price: 45,
     image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
@@ -653,7 +653,7 @@ export const menuItems: MenuItem[] = [
   {
     id: 'bev2',
     name: 'Standard Wine Package',
-    description: 'House selection of red and white wines (charged by bottle)',
+    description: 'House selection of red and white wines. Billed by consumption based on actual usage.',
     category: 'Beverages',
     price: 32,
     image: 'https://images.unsplash.com/photo-1547595628-c61a29f496f0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
@@ -664,7 +664,7 @@ export const menuItems: MenuItem[] = [
   {
     id: 'bev3',
     name: 'Beer Selection',
-    description: 'Local and international beer selection - charged by case/quantity',
+    description: 'Local and international beer selection. Billed by consumption based on actual usage.',
     category: 'Beverages',
     price: 45,
     image: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
@@ -675,7 +675,7 @@ export const menuItems: MenuItem[] = [
   {
     id: 'bev4',
     name: 'Soft Drinks Package',
-    description: 'Assorted soft drinks, juices, and sparkling water - charged by quantity',
+    description: 'Assorted soft drinks, juices, and sparkling water. Billed by consumption based on actual usage.',
     category: 'Beverages',
     price: 35,
     image: 'https://images.unsplash.com/photo-1625772452859-1c03d5bf1137?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
@@ -697,7 +697,7 @@ export const menuItems: MenuItem[] = [
   {
     id: 'bev6',
     name: 'Cocktail Bar Package',
-    description: 'Professional bartender with premium spirits and mixers for 4 hours',
+    description: 'Professional bartender with premium spirits and mixers for 4 hours. Billed by consumption based on actual usage.',
     category: 'Beverages',
     price: 1200,
     image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
@@ -719,7 +719,7 @@ export const menuItems: MenuItem[] = [
   {
     id: 'bev8',
     name: 'Fresh Juice Bar',
-    description: 'Freshly squeezed orange, apple, and mixed fruit juices - charged by quantity',
+    description: 'Freshly squeezed orange, apple, and mixed fruit juices. Billed by consumption based on actual usage.',
     category: 'Beverages',
     price: 40,
     image: 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
