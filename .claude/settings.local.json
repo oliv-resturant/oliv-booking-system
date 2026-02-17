@@ -27,7 +27,13 @@
       "Bash(npm run seed:*)",
       "Bash(dir:*)",
       "Bash(npm run db:push:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(xargs:*)",
+      "Bash(npx dotenv-cli -e .env -- npx drizzle-kit push:*)",
+      "Bash(npx dotenv-cli:*)",
+      "Bash(dotenv:*)",
+      "Bash(set:*)",
+      "Bash(. ./.env.local)"
     ]
   }
 }

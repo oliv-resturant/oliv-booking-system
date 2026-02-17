@@ -101,6 +101,7 @@ export async function createMenuItem(input: {
   description?: string;
   descriptionDe?: string;
   pricePerPerson: number;
+  pricingType?: "per_person" | "flat_fee" | "billed_by_consumption";
   imageUrl?: string;
   isVegetarian?: boolean;
   isVegan?: boolean;
@@ -114,6 +115,7 @@ export async function createMenuItem(input: {
         id: randomUUID(),
         ...input,
         pricePerPerson: input.pricePerPerson.toString(),
+        pricingType: input.pricingType || "per_person",
         isActive: true,
       })
       .returning();

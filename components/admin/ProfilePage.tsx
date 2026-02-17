@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { User, Mail, Phone, Shield, Camera, Lock, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Modal } from './Modal';
 import { Button } from './Button';
+import { changePassword } from '@/lib/actions/auth';
 import type { Session } from '@/lib/auth';
 
 interface SessionWithRole extends Session {
@@ -67,6 +68,11 @@ export function ProfilePage({ session }: ProfilePageProps) {
     confirmPassword: '',
   });
 
+  // Password change state
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
   // Show/hide password states
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -104,20 +110,54 @@ export function ProfilePage({ session }: ProfilePageProps) {
   };
 
   const handleChangePassword = async () => {
-    // Validate passwords match
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('New passwords do not match');
+    // Clear previous messages
+    setPasswordError('');
+    setPasswordSuccess(false);
+
+    // Validate passwords not empty
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError('All password fields are required');
       return;
     }
 
-    // TODO: Call API to change password
-    // For now, just log and clear form
-    console.log('Password change requested (API not implemented)');
-    setPasswordForm({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
+    // Validate passwords match
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    // Validate new password length
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters long');
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      const result = await changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+
+      if (result.success) {
+        setPasswordSuccess(true);
+        setPasswordForm({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+        // Clear success message after 3 seconds
+        setTimeout(() => setPasswordSuccess(false), 3000);
+      } else {
+        setPasswordError(result.error || 'Failed to change password');
+      }
+    } catch (error) {
+      setPasswordError('An error occurred while changing password');
+      console.error('Password change error:', error);
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const handleAvatarClick = () => {
@@ -258,6 +298,21 @@ export function ProfilePage({ session }: ProfilePageProps) {
               </div>
 
               <div className="space-y-4">
+                {/* Error Message */}
+                {passwordError && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+                    {passwordError}
+                  </div>
+                )}
+
+                {/* Success Message */}
+                {passwordSuccess && (
+                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-primary text-sm flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    Password changed successfully!
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)' }}>
                     Current Password
@@ -266,7 +321,10 @@ export function ProfilePage({ session }: ProfilePageProps) {
                     <input
                       type={showCurrentPassword ? 'text' : 'password'}
                       value={passwordForm.currentPassword}
-                      onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                      onChange={(e) => {
+                        setPasswordForm({ ...passwordForm, currentPassword: e.target.value });
+                        setPasswordError('');
+                      }}
                       className="w-full px-4 py-2.5 pr-12 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                       style={{ fontSize: 'var(--text-base)' }}
                       placeholder="Enter current password"
@@ -289,10 +347,13 @@ export function ProfilePage({ session }: ProfilePageProps) {
                     <input
                       type={showNewPassword ? 'text' : 'password'}
                       value={passwordForm.newPassword}
-                      onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                      onChange={(e) => {
+                        setPasswordForm({ ...passwordForm, newPassword: e.target.value });
+                        setPasswordError('');
+                      }}
                       className="w-full px-4 py-2.5 pr-12 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                       style={{ fontSize: 'var(--text-base)' }}
-                      placeholder="Enter new password"
+                      placeholder="Enter new password (min. 8 characters)"
                     />
                     <button
                       type="button"
@@ -312,7 +373,10 @@ export function ProfilePage({ session }: ProfilePageProps) {
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={passwordForm.confirmPassword}
-                      onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                      onChange={(e) => {
+                        setPasswordForm({ ...passwordForm, confirmPassword: e.target.value });
+                        setPasswordError('');
+                      }}
                       className="w-full px-4 py-2.5 pr-12 bg-input-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                       style={{ fontSize: 'var(--text-base)' }}
                       placeholder="Confirm new password"
@@ -330,11 +394,21 @@ export function ProfilePage({ session }: ProfilePageProps) {
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={handleChangePassword}
-                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+                    disabled={isChangingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
                   >
-                    <Check className="w-4 h-4" />
-                    Change Password
+                    {isChangingPassword ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-transparent rounded-full animate-spin" />
+                        Changing...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Change Password
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

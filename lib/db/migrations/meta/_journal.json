@@ -22,6 +22,13 @@
       "when": 1770871204668,
       "tag": "0002_noisy_onslaught",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1771314166976,
+      "tag": "0003_purple_gamma_corps",
+      "breakpoints": true
     }
   ]
 }

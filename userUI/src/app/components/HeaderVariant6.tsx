@@ -1,7 +1,6 @@
 import { Menu, X, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from './Button';
-import logoImage from 'figma:asset/59e4409f00962b160c922c848df8eb1ebce3a245.png';
 
 export function HeaderVariant6() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -30,7 +29,7 @@ export function HeaderVariant6() {
           <div className="flex-shrink-0">
             <a href="#" className="flex items-center">
               <img 
-                src={logoImage} 
+                src="https://img.enacton.com/ShareX/2026/02/chrome_PHT9Ca0HbK.png" 
                 alt="Olive Restaurant & Bar" 
                 className="h-12 w-auto"
                 style={{ mixBlendMode: 'multiply' }}

@@ -1,0 +1,2 @@
+ALTER TABLE "menu_items" ADD COLUMN "pricing_type" text CHECK ("pricing_type" IN ('per_person', 'flat_fee', 'billed_by_consumption')) DEFAULT 'per_person' NOT NULL;--> statement-breakpoint
+CREATE INDEX "menu_items_pricing_type_idx" ON "menu_items" USING btree ("pricing_type");

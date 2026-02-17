@@ -15,6 +15,9 @@ export default function AdminLayout({
   const pathname = usePathname();
   const mainRef = useRef<HTMLElement>(null);
 
+  // Don't show sidebar/header on login page
+  const isLoginPage = pathname === '/admin/login' || pathname?.startsWith('/admin/login');
+
   // Determine current page from pathname
   const getCurrentPage = () => {
     if (pathname === '/admin' || pathname === '/admin/') return 'dashboard';
@@ -25,6 +28,7 @@ export default function AdminLayout({
     if (segment === 'user-management') return 'user-management';
     if (segment === 'settings') return 'settings';
     if (segment === 'profile') return 'profile';
+    if (segment === 'login') return 'login';
     return 'dashboard';
   };
 
@@ -40,6 +44,11 @@ export default function AdminLayout({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // If it's the login page, render children without sidebar/header
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar - Hidden on mobile */}
@@ -50,8 +59,8 @@ export default function AdminLayout({
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <>
-          <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden" 
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
           <div className="fixed inset-y-0 left-0 z-50 lg:hidden">
@@ -59,19 +68,19 @@ export default function AdminLayout({
           </div>
         </>
       )}
-      
+
       {/* Main Content Area - Centered */}
       <div className="flex-1 flex flex-col items-center overflow-x-hidden min-h-screen">
         <div className="w-full max-w-[1440px] flex flex-col flex-1">
           {/* Sticky Header */}
           <div className="sticky top-0 z-10 bg-background">
-            <DashboardHeader 
-              onMenuClick={() => setSidebarOpen(!sidebarOpen)} 
+            <DashboardHeader
+              onMenuClick={() => setSidebarOpen(!sidebarOpen)}
               isScrolled={isScrolled}
               currentPage={currentPage}
             />
           </div>
-          
+
           {/* Main Content */}
           <main ref={mainRef} className="flex-1 flex flex-col">
             {children}

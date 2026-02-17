@@ -8,7 +8,7 @@ interface ItemSettingsModalProps {
   onClose: () => void;
   onSave: () => void;
   itemSettings: {
-    dietaryType: 'veg' | 'non-veg' | 'vegan';
+    dietaryType: 'none' | 'veg' | 'non-veg' | 'vegan';
     dietaryTags: string[];
     ingredients: string;
     allergens: string[];
@@ -116,9 +116,35 @@ export function ItemSettingsModal({
               {/* Dietary Type */}
               <div>
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                  Dietary Type <span className="text-destructive">*</span>
+                  Dietary Type
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 gap-3">
+                  <button
+                    onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'none' })}
+                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${
+                      itemSettings.dietaryType === 'none'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border bg-background hover:border-border hover:bg-accent'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                      itemSettings.dietaryType === 'none'
+                        ? 'border-primary'
+                        : 'border-border'
+                    }`}>
+                      {itemSettings.dietaryType === 'none' && (
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        No Type
+                      </div>
+                      <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                        Non-food items
+                      </div>
+                    </div>
+                  </button>
                   <button
                     onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'veg' })}
                     className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${

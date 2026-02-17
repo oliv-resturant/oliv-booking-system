@@ -91,8 +91,9 @@ export function CustomMenuWizard() {
                 description: item.description || '',
                 category: category?.name || 'Other',
                 price: Number(item.pricePerPerson) || 0,
+                pricingType: item.pricingType || 'per_person',
                 image: item.imageUrl || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop',
-                dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'vegetarian' : 'non-vegetarian',
+                dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'vegetarian' : (!item.isVegetarian && !item.isVegan && !item.isGlutenFree) ? 'none' : 'non-vegetarian',
               };
             });
 
@@ -347,8 +348,18 @@ export function CustomMenuWizard() {
   const getTotalPrice = () => {
     return selectedItems.reduce((total, itemId) => {
       const item = menuItems.find(i => i.id === itemId);
+      if (!item) return total;
+
       const quantity = itemQuantities[itemId] || 1;
-      return total + (item ? item.price * quantity : 0);
+      const guestCount = parseInt(eventDetails.guestCount) || 1;
+
+      // For flat-fee items (billed by consumption), don't multiply by guest count
+      if (item.pricingType === 'flat_fee') {
+        return total + item.price * quantity;
+      }
+
+      // For per-person items, multiply by guest count
+      return total + item.price * quantity * guestCount;
     }, 0);
   };
 
@@ -422,12 +433,13 @@ export function CustomMenuWizard() {
 
   const getItemTotalPrice = (item: MenuItem) => {
     const quantity = itemQuantities[item.id] || 1;
+    const guestCount = parseInt(eventDetails.guestCount) || 1;
     const addOns = itemAddOns[item.id] || [];
     const addOnsPrice = addOns.reduce((total, addOnId) => {
       const addOn = item.addOns?.find(ao => ao.id === addOnId);
       return total + (addOn?.price || 0);
     }, 0);
-    
+
     // Get price from variant if selected, otherwise use base price
     let basePrice = item.price;
     const variantId = itemVariants[item.id];
@@ -437,8 +449,14 @@ export function CustomMenuWizard() {
         basePrice = variant.price;
       }
     }
-    
-    return (basePrice + addOnsPrice) * quantity;
+
+    // For flat-fee items (billed by consumption), don't multiply by guest count
+    if (item.pricingType === 'flat_fee') {
+      return (basePrice + addOnsPrice) * quantity;
+    }
+
+    // For per-person items, multiply by guest count
+    return (basePrice + addOnsPrice) * quantity * guestCount;
   };
 
   const getTotalPriceWithAddOns = () => {
@@ -1054,9 +1072,21 @@ export function CustomMenuWizard() {
                                       {item.description}
                                     </p>
                                     <div className="flex items-center justify-between">
-                                      <p className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        {item.variants && item.variants.length > 0 ? 'From ' : ''}CHF {item.price.toFixed(2)}
-                                      </p>
+                                      <div>
+                                        <p className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                          {item.variants && item.variants.length > 0 ? 'From ' : ''}CHF {item.price.toFixed(2)}
+                                        </p>
+                                        {item.pricingType === 'billed_by_consumption' && (
+                                          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                            Billed by consumption based on actual usage
+                                          </p>
+                                        )}
+                                        {item.pricingType === 'flat_fee' && (
+                                          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                            Flat fee - one-time charge
+                                          </p>
+                                        )}
+                                      </div>
                                       
                                       {!isSelected ? (
                                         <button
@@ -1697,6 +1727,16 @@ export function CustomMenuWizard() {
                   </h3>
                   <p className="text-primary mt-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                     CHF {detailsModalItem.price.toFixed(2)}
+                    {detailsModalItem.pricingType === 'billed_by_consumption' && (
+                      <span className="text-muted-foreground ml-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
+                        (Billed by consumption)
+                      </span>
+                    )}
+                    {detailsModalItem.pricingType === 'flat_fee' && (
+                      <span className="text-muted-foreground ml-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-normal)' }}>
+                        (Flat fee)
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -1899,7 +1939,15 @@ export function CustomMenuWizard() {
                         const addOn = detailsModalItem.addOns?.find(ao => ao.id === addOnId);
                         return total + (addOn?.price || 0);
                       }, 0);
-                      return ((basePrice + addOnsTotal) * tempQuantity).toFixed(2);
+                      const guestCount = parseInt(eventDetails.guestCount) || 1;
+
+                      // For flat-fee and billed-by-consumption items, don't multiply by guest count
+                      if (detailsModalItem.pricingType === 'flat_fee' || detailsModalItem.pricingType === 'billed_by_consumption') {
+                        return ((basePrice + addOnsTotal) * tempQuantity).toFixed(2);
+                      }
+
+                      // For per-person items, multiply by guest count
+                      return ((basePrice + addOnsTotal) * tempQuantity * guestCount).toFixed(2);
                     })()}
                   </span>
                 </button>

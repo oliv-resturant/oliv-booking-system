@@ -4,6 +4,20 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Keyframe animations */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
 :root {
   --font-size: 16px;
   /* The default background color for the application. */

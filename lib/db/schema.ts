@@ -82,7 +82,7 @@ export type BookingStatus = (typeof bookingStatusEnum)[number];
 export const dependencyTypeEnum = ["requires", "excludes", "suggests"] as const;
 export type DependencyType = (typeof dependencyTypeEnum)[number];
 
-export const pricingTypeEnum = ["per_person", "per_item", "flat_fee"] as const;
+export const pricingTypeEnum = ["per_person", "flat_fee", "billed_by_consumption"] as const;
 export type PricingType = (typeof pricingTypeEnum)[number];
 
 export const bookingItemTypeEnum = ["menu_item", "addon"] as const;
@@ -220,6 +220,7 @@ export const menuItems = pgTable(
       precision: 10,
       scale: 2,
     }).notNull(),
+    pricingType: text("pricing_type", { enum: pricingTypeEnum }).notNull().default("per_person"),
     imageUrl: text("image_url"),
     isVegetarian: boolean("is_vegetarian").notNull().default(false),
     isVegan: boolean("is_vegan").notNull().default(false),
@@ -232,6 +233,7 @@ export const menuItems = pgTable(
   (table) => ({
     categoryIdIdx: index("menu_items_category_id_idx").on(table.categoryId),
     sortOrderIdx: index("menu_items_sort_order_idx").on(table.sortOrder),
+    pricingTypeIdx: index("menu_items_pricing_type_idx").on(table.pricingType),
   }),
 );
 

@@ -11,11 +11,12 @@ export interface MenuItem {
   description: string;
   category: string;
   price: number;
+  pricingType?: 'per_person' | 'flat_fee' | 'billed_by_consumption';
   image: string;
   allergens?: string[];
   addOns?: { id: string; name: string; price: number }[];
   variants?: MenuItemVariant[];
-  dietaryType: 'vegetarian' | 'non-vegetarian' | 'vegan';
+  dietaryType: 'vegetarian' | 'non-vegetarian' | 'vegan' | 'none';
 }
 
 export const menuItems: MenuItem[] = [

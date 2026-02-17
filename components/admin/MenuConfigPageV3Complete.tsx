@@ -9,6 +9,24 @@ import { ItemSettingsModal } from './ItemSettingsModal';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  restrictToVerticalAxis,
+} from '@dnd-kit/modifiers';
+import {
   createMenuCategory,
   updateMenuCategory,
   deleteMenuCategory,
@@ -217,6 +235,39 @@ const mockAddonGroups: AddonGroup[] = [
   },
 ];
 
+function SortableCategory({
+  id,
+  children,
+}: {
+  id: string;
+  children: (dragProps: { attributes: any; listeners: any; isDragging: boolean }) => React.ReactNode;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({
+        attributes,
+        listeners,
+        isDragging,
+      })}
+    </div>
+  );
+}
+
 export function MenuConfigPage() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -254,6 +305,7 @@ export function MenuConfigPage() {
     name: '',
     description: '',
     price: '',
+    pricingType: 'per_person' as 'per_person' | 'flat_fee' | 'billed_by_consumption',
     image: null as File | null,
     imageUrl: '' as string,
     isActive: true,
@@ -273,7 +325,7 @@ export function MenuConfigPage() {
     isActive: true,
   });
   const [itemSettings, setItemSettings] = useState({
-    dietaryType: 'veg' as 'veg' | 'non-veg' | 'vegan',
+    dietaryType: 'none' as 'none' | 'veg' | 'non-veg' | 'vegan',
     dietaryTags: [] as string[],
     ingredients: '',
     allergens: [] as string[],
@@ -314,7 +366,7 @@ export function MenuConfigPage() {
               price: Number(item.pricePerPerson) || 0,
               isActive: item.isActive,
               variants: [],
-              dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : 'non-veg',
+              dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : (!item.isVegetarian && !item.isVegan && !item.isGlutenFree) ? 'none' : 'non-veg',
               dietaryTags: [],
             })) || [],
             assignedAddonGroups: [],
@@ -352,6 +404,50 @@ export function MenuConfigPage() {
 
     fetchMenuData();
   }, []);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end for categories
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = categories.findIndex((cat) => cat.id === active.id);
+      const newIndex = categories.findIndex((cat) => cat.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        // Reorder categories locally
+        const newCategories = [...categories];
+        const [movedCategory] = newCategories.splice(oldIndex, 1);
+        newCategories.splice(newIndex, 0, movedCategory);
+        setCategories(newCategories);
+
+        // Update sort orders for all affected categories
+        const updates = newCategories.map((cat, index) => ({
+          id: cat.id,
+          sortOrder: index,
+        }));
+
+        // Send batch update to server
+        try {
+          for (const update of updates) {
+            await updateMenuCategory(update.id, { sortOrder: update.sortOrder });
+          }
+          console.log('✅ Category order updated');
+        } catch (error) {
+          console.error('Error updating category order:', error);
+          // Revert on error
+          setCategories(categories);
+        }
+      }
+    }
+  };
 
   const toggleGroup = (groupId: string) => {
     setAddonGroups(addonGroups.map(group => 
@@ -427,7 +523,7 @@ export function MenuConfigPage() {
             price: Number(item.pricePerPerson) || 0,
             isActive: item.isActive,
             variants: [],
-            dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : 'non-veg',
+            dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : (!item.isVegetarian && !item.isVegan && !item.isGlutenFree) ? 'none' : 'non-veg',
             dietaryTags: [],
           })) || [],
           assignedAddonGroups: [],
@@ -621,15 +717,31 @@ export function MenuConfigPage() {
           </div>
 
           {/* Categories List */}
-          <div>
-            {filteredCategories.map((category) => (
-              <div key={category.id}>
-                {/* Category Row */}
-                <div className="px-6 py-4 border-b border-border hover:bg-accent/30 transition-colors flex items-center gap-4 group">
-                  {/* Drag Handle */}
-                  <button className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0">
-                    <GripVertical className="w-5 h-5" />
-                  </button>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            modifiers={[restrictToVerticalAxis]}
+          >
+            <SortableContext
+              items={filteredCategories.map(cat => cat.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {filteredCategories.map((category) => (
+                <SortableCategory key={category.id} id={category.id}>
+                  {({ attributes, listeners, isDragging }) => (
+                    <>
+                      <div style={{ opacity: isDragging ? 0.5 : 1 }}>
+                        {/* Category Row */}
+                        <div className="px-6 py-4 border-b border-border hover:bg-accent/30 transition-colors flex items-center gap-4 group">
+                          {/* Drag Handle */}
+                          <button
+                            {...attributes}
+                            {...listeners}
+                            className="text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
+                          >
+                            <GripVertical className="w-5 h-5" />
+                          </button>
 
                   {/* Expand/Collapse Button */}
                   <button
@@ -971,9 +1083,13 @@ export function MenuConfigPage() {
                     </button>
                   </div>
                 )}
-              </div>
-            ))}
-          </div>
+                      </div>
+                    </>
+                  )}
+                </SortableCategory>
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
       )}
 
@@ -1534,6 +1650,7 @@ export function MenuConfigPage() {
                       name: '',
                       description: '',
                       price: '',
+                      pricingType: 'per_person',
                       image: null,
                       imageUrl: '',
                       isActive: true,
@@ -1554,6 +1671,7 @@ export function MenuConfigPage() {
                     description: newMenuItem.description,
                     descriptionDe: newMenuItem.description,
                     pricePerPerson: Number(newMenuItem.price),
+                    pricingType: newMenuItem.pricingType,
                     imageUrl: newMenuItem.imageUrl || newMenuItem.image?.name || '',
                   });
                   console.log('Create item result:', result);
@@ -1579,6 +1697,7 @@ export function MenuConfigPage() {
                       name: '',
                       description: '',
                       price: '',
+                      pricingType: 'per_person',
                       image: null,
                       imageUrl: '',
                       isActive: true,
@@ -1662,6 +1781,27 @@ export function MenuConfigPage() {
                       style={{ fontSize: 'var(--text-base)' }}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                    Pricing Type *
+                  </label>
+                  <select
+                    value={newMenuItem.pricingType}
+                    onChange={(e) => setNewMenuItem({ ...newMenuItem, pricingType: e.target.value as 'per_person' | 'flat_fee' | 'billed_by_consumption' })}
+                    className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                    style={{ fontSize: 'var(--text-base)' }}
+                  >
+                    <option value="per_person">Per Person (multiplied by guest count)</option>
+                    <option value="flat_fee">Flat Fee (one-time charge)</option>
+                    <option value="billed_by_consumption">Billed by Consumption (based on actual usage)</option>
+                  </select>
+                  <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-small)' }}>
+                    {newMenuItem.pricingType === 'per_person' && 'This price will be multiplied by the number of guests'}
+                    {newMenuItem.pricingType === 'flat_fee' && 'This is a one-time flat fee (e.g., equipment rental, setup fees)'}
+                    {newMenuItem.pricingType === 'billed_by_consumption' && 'This will be billed based on actual consumption (e.g., beverages, buffet items)'}
+                  </p>
                 </div>
 
                 <div>
@@ -2108,7 +2248,7 @@ export function MenuConfigPage() {
                 {/* Dietary Type */}
                 <div>
                   <label className="block text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Dietary Type *
+                    Dietary Type
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
