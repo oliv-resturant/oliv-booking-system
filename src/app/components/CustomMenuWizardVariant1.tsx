@@ -85,6 +85,7 @@ export function CustomMenuWizard() {
     null,
   );
   const [tempQuantity, setTempQuantity] = useState(1);
+  const [tempGuestCount, setTempGuestCount] = useState<string>("");
   const [tempAddOns, setTempAddOns] = useState<string[]>([]);
   const [tempVariant, setTempVariant] = useState<string>("");
   const [tempComment, setTempComment] = useState<string>("");
@@ -101,6 +102,19 @@ export function CustomMenuWizard() {
   const [summaryViewMode, setSummaryViewMode] = useState<
     "per-person" | "total"
   >("total"); // Step 3 summary view mode - default to "total+extra"
+
+  // Track guest distribution per main course category
+  const [mainCourseGuests, setMainCourseGuests] = useState<
+    Record<string, number>
+  >({
+    "Main Courses Meat/Fish": 0,
+    "Main Courses Veggie": 0,
+    "Main Courses Vegan": 0,
+  });
+  const [guestCountErrors, setGuestCountErrors] = useState<
+    Record<string, string>
+  >({}); // Track validation errors for guest count inputs
+
   // Initialize all categories as collapsed by default
   const [collapsedCategories, setCollapsedCategories] = useState<
     Record<string, boolean>
@@ -168,6 +182,29 @@ export function CustomMenuWizard() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [selectedItems.length]);
+
+  // Auto-fill main course guest distribution when guest count changes
+  useEffect(() => {
+    const totalGuests = parseInt(eventDetails.guestCount) || 0;
+
+    if (totalGuests > 0) {
+      // Assign all guests to Meat/Fish by default
+      setMainCourseGuests({
+        "Main Courses Meat/Fish": totalGuests,
+        "Main Courses Veggie": 0,
+        "Main Courses Vegan": 0,
+      });
+      // Clear any errors
+      setGuestCountErrors({});
+    } else {
+      // Reset to 0 if guest count is cleared
+      setMainCourseGuests({
+        "Main Courses Meat/Fish": 0,
+        "Main Courses Veggie": 0,
+        "Main Courses Vegan": 0,
+      });
+    }
+  }, [eventDetails.guestCount]);
 
   const steps = [
     {
@@ -308,6 +345,40 @@ export function CustomMenuWizard() {
       setStep2Error("Please select at least one menu item to continue");
       return false;
     }
+
+    // Check if main courses are selected
+    const hasMainCourses = selectedItems.some((itemId) => {
+      const item = menuItems.find((i) => i.id === itemId);
+      return item && [
+        "Main Courses Meat/Fish",
+        "Main Courses Veggie",
+        "Main Courses Vegan",
+      ].includes(item.category);
+    });
+
+    // If main courses are selected, validate guest distribution
+    if (hasMainCourses) {
+      const totalGuests = parseInt(eventDetails.guestCount) || 0;
+      const assignedGuests = Object.values(mainCourseGuests).reduce(
+        (sum, count) => sum + count,
+        0,
+      );
+
+      if (assignedGuests < totalGuests) {
+        setStep2Error(
+          `Please assign all ${totalGuests} guests to main courses (${assignedGuests} of ${totalGuests} assigned)`,
+        );
+        return false;
+      }
+
+      if (assignedGuests > totalGuests) {
+        setStep2Error(
+          `Assigned guests (${assignedGuests}) cannot exceed total guests (${totalGuests})`,
+        );
+        return false;
+      }
+    }
+
     setStep2Error("");
     return true;
   };
@@ -429,6 +500,44 @@ export function CustomMenuWizard() {
     setItemQuantities(newQuantities);
   };
 
+  // Handle guest count change for main course categories
+  const handleMainCourseGuestChange = (
+    categoryId: string,
+    newValue: string
+  ) => {
+    const totalGuests = parseInt(eventDetails.guestCount) || 0;
+    const newCount = parseInt(newValue) || 0;
+
+    // Calculate sum of other categories (excluding current one)
+    const otherCategoriesGuests = Object.entries(mainCourseGuests)
+      .filter(([cat]) => cat !== categoryId)
+      .reduce((sum, [, count]) => sum + count, 0);
+
+    // Maximum allowed for current category
+    const maxAllowed = totalGuests - otherCategoriesGuests;
+
+    // Validate
+    if (newCount > maxAllowed) {
+      // Show error
+      setGuestCountErrors((prev) => ({
+        ...prev,
+        [categoryId]: `Cannot exceed ${maxAllowed} guests (${totalGuests} total - ${otherCategoriesGuests} already assigned)`,
+      }));
+      // Don't update the state
+      return;
+    }
+
+    // Clear error and update state
+    setGuestCountErrors((prev) => ({
+      ...prev,
+      [categoryId]: "",
+    }));
+    setMainCourseGuests((prev) => ({
+      ...prev,
+      [categoryId]: newCount,
+    }));
+  };
+
   const getTotalPrice = () => {
     return selectedItems.reduce((total, itemId) => {
       const item = menuItems.find((i) => i.id === itemId);
@@ -465,11 +574,22 @@ export function CustomMenuWizard() {
         : item.variants?.[0]?.id || "",
     );
     setTempComment(isAlreadySelected ? itemComments[item.id] || "" : "");
+    // Set temp guest count for main courses
+    if ([
+      "Main Courses Meat/Fish",
+      "Main Courses Veggie",
+      "Main Courses Vegan",
+    ].includes(item.category)) {
+      setTempGuestCount(String(mainCourseGuests[item.category] || 0));
+    } else {
+      setTempGuestCount("");
+    }
   };
 
   const closeDetailsModal = () => {
     setDetailsModalItem(null);
     setTempQuantity(1);
+    setTempGuestCount("");
     setTempAddOns([]);
     setTempVariant("");
     setTempComment("");
@@ -581,6 +701,24 @@ export function CustomMenuWizard() {
     // Update quantity
     setItemQuantities((prev) => ({ ...prev, [itemId]: tempQuantity }));
 
+    // Update guest count for main courses
+    if ([
+      "Main Courses Meat/Fish",
+      "Main Courses Veggie",
+      "Main Courses Vegan",
+    ].includes(detailsModalItem.category)) {
+      const guestCount = parseInt(tempGuestCount) || 0;
+      setMainCourseGuests((prev) => ({
+        ...prev,
+        [detailsModalItem.category]: guestCount,
+      }));
+      // Clear any error for this category
+      setGuestCountErrors((prev) => ({
+        ...prev,
+        [detailsModalItem.category]: "",
+      }));
+    }
+
     // Update add-ons
     setItemAddOns((prev) => ({ ...prev, [itemId]: tempAddOns }));
 
@@ -635,7 +773,17 @@ export function CustomMenuWizard() {
       return itemTotal;
     }
 
-    // For per-person items, multiply by guest count
+    // For main course items, use category-specific guest count
+    if ([
+      "Main Courses Meat/Fish",
+      "Main Courses Veggie",
+      "Main Courses Vegan",
+    ].includes(item.category)) {
+      const categoryGuestCount = mainCourseGuests[item.category] || 0;
+      return itemTotal * categoryGuestCount;
+    }
+
+    // For other per-person items, multiply by total guest count
     const guestCount = parseInt(eventDetails.guestCount) || 1;
     return itemTotal * guestCount;
   };
@@ -674,19 +822,79 @@ export function CustomMenuWizard() {
     return (basePrice + addOnsPrice) * quantity;
   };
 
+  // Get the highest main course price (meat) for per-person display
+  const getMainCourseDisplayPrice = () => {
+    const meatFishItems = selectedItems
+      .map((id) => menuItems.find((item) => item.id === id))
+      .filter(
+        (item) => item && item.category === "Main Courses Meat/Fish",
+      ) as MenuItem[];
+
+    if (meatFishItems.length === 0) return 0;
+
+    // Find the highest priced meat/fish item
+    const highestPrice = Math.max(
+      ...meatFishItems.map((item) => {
+        const addOns = itemAddOns[item.id] || [];
+        const addOnsPrice = addOns.reduce((total, addOnId) => {
+          const addOn = item.addOns?.find((ao) => ao.id === addOnId);
+          return total + (addOn?.price || 0);
+        }, 0);
+
+        let basePrice = item.price;
+        const variantId = itemVariants[item.id];
+        if (variantId && item.variants) {
+          const variant = item.variants.find((v) => v.id === variantId);
+          if (variant) {
+            basePrice = variant.price;
+          }
+        }
+
+        return basePrice + addOnsPrice;
+      })
+    );
+
+    return highestPrice;
+  };
+
   // Get per-person subtotal for all per-person items (excluding beverages which are pay-by-consumption)
   const getPerPersonSubtotal = () => {
-    return selectedItems.reduce((total, itemId) => {
+    let subtotal = 0;
+
+    // For main courses, use the display price (highest meat price)
+    const hasMainCourses = selectedItems.some((itemId) => {
       const item = menuItems.find((i) => i.id === itemId);
-      // Exclude beverages from per-person subtotal as they are charged by consumption
+      return item && [
+        "Main Courses Meat/Fish",
+        "Main Courses Veggie",
+        "Main Courses Vegan",
+      ].includes(item.category);
+    });
+
+    if (hasMainCourses) {
+      // Use the highest meat/fish price for display
+      subtotal += getMainCourseDisplayPrice();
+    }
+
+    // For other per-person items (not main courses, not beverages), add their per-person price
+    selectedItems.forEach((itemId) => {
+      const item = menuItems.find((i) => i.id === itemId);
       if (
         !item ||
         item.pricingType !== "per-person" ||
-        item.category === "Beverages"
-      )
-        return total;
-      return total + getItemPerPersonPrice(item);
-    }, 0);
+        item.category === "Beverages" ||
+        [
+          "Main Courses Meat/Fish",
+          "Main Courses Veggie",
+          "Main Courses Vegan",
+        ].includes(item.category)
+      ) {
+        return;
+      }
+      subtotal += getItemPerPersonPrice(item);
+    });
+
+    return subtotal;
   };
 
   // Get flat-rate subtotal for all flat-rate items (excluding beverages which are pay-by-consumption)
@@ -1688,6 +1896,138 @@ export function CustomMenuWizard() {
                           </div>
                         )}
 
+                        {/* Guest Distribution Summary - Only for Main Course categories */}
+                        {[
+                          "Main Courses Meat/Fish",
+                          "Main Courses Veggie",
+                          "Main Courses Vegan",
+                        ].includes(selectedCategory) && (
+                          <div className="mb-5 bg-secondary border-l-4 border-primary rounded-lg px-4 py-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <Users className="w-4 h-4 text-primary flex-shrink-0" />
+                                <p
+                                  className="text-secondary-foreground"
+                                  style={{
+                                    fontSize: "var(--text-base)",
+                                    fontWeight:
+                                      "var(--font-weight-semibold)",
+                                  }}
+                                >
+                                  Main Courses - Guest Distribution
+                                </p>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 mt-3">
+                              <div className="text-center">
+                                <p
+                                  className="text-secondary-foreground/70 mb-1"
+                                  style={{
+                                    fontSize: "var(--text-small)",
+                                  }}
+                                >
+                                  🥩 Meat/Fish
+                                </p>
+                                <p
+                                  className="text-primary"
+                                  style={{
+                                    fontSize: "var(--text-h4)",
+                                    fontWeight:
+                                      "var(--font-weight-semibold)",
+                                  }}
+                                >
+                                  {mainCourseGuests["Main Courses Meat/Fish"] ||
+                                    0}
+                                </p>
+                              </div>
+                              <div className="text-center">
+                                <p
+                                  className="text-secondary-foreground/70 mb-1"
+                                  style={{
+                                    fontSize: "var(--text-small)",
+                                  }}
+                                >
+                                  🥬 Vegetarian
+                                </p>
+                                <p
+                                  className="text-primary"
+                                  style={{
+                                    fontSize: "var(--text-h4)",
+                                    fontWeight:
+                                      "var(--font-weight-semibold)",
+                                  }}
+                                >
+                                  {mainCourseGuests["Main Courses Veggie"] ||
+                                    0}
+                                </p>
+                              </div>
+                              <div className="text-center">
+                                <p
+                                  className="text-secondary-foreground/70 mb-1"
+                                  style={{
+                                    fontSize: "var(--text-small)",
+                                  }}
+                                >
+                                  🥕 Vegan
+                                </p>
+                                <p
+                                  className="text-primary"
+                                  style={{
+                                    fontSize: "var(--text-h4)",
+                                    fontWeight:
+                                      "var(--font-weight-semibold)",
+                                  }}
+                                >
+                                  {mainCourseGuests["Main Courses Vegan"] ||
+                                    0}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-secondary-foreground/20 flex items-center justify-between">
+                              <span
+                                className="text-secondary-foreground/70"
+                                style={{ fontSize: "var(--text-small)" }}
+                              >
+                                Total Assigned:{" "}
+                                <span
+                                  className="text-secondary-foreground font-semibold"
+                                >
+                                  {Object.values(mainCourseGuests).reduce(
+                                    (a, b) => a + b,
+                                    0,
+                                  )}
+                                </span>
+                              </span>
+                              <span
+                                className="text-secondary-foreground/70"
+                                style={{ fontSize: "var(--text-small)" }}
+                              >
+                                Total Guests:{" "}
+                                <span
+                                  className="text-secondary-foreground font-semibold"
+                                >
+                                  {eventDetails.guestCount || 0}
+                                </span>
+                              </span>
+                            </div>
+                            {Object.values(mainCourseGuests).reduce(
+                              (a, b) => a + b,
+                              0,
+                            ) !==
+                              parseInt(eventDetails.guestCount || "0") && (
+                              <div className="mt-2 flex items-center gap-1.5 text-amber-400">
+                                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                                <span
+                                  style={{ fontSize: "var(--text-small)" }}
+                                >
+                                  Please assign all{" "}
+                                  {eventDetails.guestCount || 0} guests
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         {/* Menu Items Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {menuItems
@@ -2118,7 +2458,24 @@ export function CustomMenuWizard() {
                                               <div className="flex items-center justify-between pt-1.5 border-t border-border">
                                                 <div className="flex items-center gap-1.5">
                                                   {item.pricingType ===
-                                                    "per-person" && (
+                                                    "per-person" && [
+                                                      "Main Courses Meat/Fish",
+                                                      "Main Courses Veggie",
+                                                      "Main Courses Vegan",
+                                                    ].includes(item.category) ? (
+                                                    <span
+                                                      className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs"
+                                                      style={{
+                                                        fontSize:
+                                                          "var(--text-small)",
+                                                        fontWeight:
+                                                          "var(--font-weight-medium)",
+                                                      }}
+                                                    >
+                                                      {mainCourseGuests[item.category] || 0}g
+                                                    </span>
+                                                  ) : item.pricingType ===
+                                                    "per-person" ? (
                                                     <span
                                                       className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs"
                                                       style={{
@@ -2130,7 +2487,7 @@ export function CustomMenuWizard() {
                                                     >
                                                       {quantity}× pp
                                                     </span>
-                                                  )}
+                                                  ) : null}
                                                   {item.pricingType ===
                                                     "flat-rate" &&
                                                     item.category !==
@@ -2164,9 +2521,21 @@ export function CustomMenuWizard() {
                                                     item,
                                                   ).toFixed(2)}
                                                   {item.pricingType ===
-                                                  "per-person" ? (
+                                                  "per-person" && ![
+                                                    "Main Courses Meat/Fish",
+                                                    "Main Courses Veggie",
+                                                    "Main Courses Vegan",
+                                                  ].includes(item.category) ? (
                                                     <span className="text-muted-foreground text-sm">
                                                       /person
+                                                    </span>
+                                                  ) : [
+                                                    "Main Courses Meat/Fish",
+                                                    "Main Courses Veggie",
+                                                    "Main Courses Vegan",
+                                                  ].includes(item.category) ? (
+                                                    <span className="text-muted-foreground text-sm">
+                                                      /guest
                                                     </span>
                                                   ) : (
                                                     ""
@@ -2607,7 +2976,24 @@ export function CustomMenuWizard() {
                                           <div className="flex items-center justify-between pt-1.5 border-t border-border">
                                             <div className="flex items-center gap-1.5">
                                               {item.pricingType ===
-                                                "per-person" && (
+                                                "per-person" && [
+                                                  "Main Courses Meat/Fish",
+                                                  "Main Courses Veggie",
+                                                  "Main Courses Vegan",
+                                                ].includes(item.category) ? (
+                                                <span
+                                                  className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs"
+                                                  style={{
+                                                    fontSize:
+                                                      "var(--text-small)",
+                                                    fontWeight:
+                                                      "var(--font-weight-medium)",
+                                                  }}
+                                                >
+                                                  {mainCourseGuests[item.category] || 0}g
+                                                </span>
+                                              ) : item.pricingType ===
+                                                "per-person" ? (
                                                 <span
                                                   className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs"
                                                   style={{
@@ -2619,7 +3005,7 @@ export function CustomMenuWizard() {
                                                 >
                                                   {quantity}× pp
                                                 </span>
-                                              )}
+                                              ) : null}
                                               {item.pricingType ===
                                                 "flat-rate" &&
                                                 item.category !==
@@ -2652,9 +3038,21 @@ export function CustomMenuWizard() {
                                                 item,
                                               ).toFixed(2)}
                                               {item.pricingType ===
-                                              "per-person" ? (
+                                              "per-person" && ![
+                                                "Main Courses Meat/Fish",
+                                                "Main Courses Veggie",
+                                                "Main Courses Vegan",
+                                              ].includes(item.category) ? (
                                                 <span className="text-muted-foreground text-sm">
                                                   /person
+                                                </span>
+                                              ) : [
+                                                "Main Courses Meat/Fish",
+                                                "Main Courses Veggie",
+                                                "Main Courses Vegan",
+                                              ].includes(item.category) ? (
+                                                <span className="text-muted-foreground text-sm">
+                                                  /guest
                                                 </span>
                                               ) : (
                                                 ""
@@ -4663,43 +5061,102 @@ export function CustomMenuWizard() {
 
               {/* Modal Footer */}
               <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4">
-                <div className="flex items-center justify-between gap-4">
-                  {/* Left: Quantity Selector - Hide for flat-rate items and beverages */}
-                  {detailsModalItem.pricingType !== 'flat-rate' && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() =>
-                          setTempQuantity(Math.max(1, tempQuantity - 1))
-                        }
-                        className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground"
-                        style={{ borderRadius: "var(--radius)" }}
-                        disabled={tempQuantity <= 1}
-                      >
-                        <Minus className="w-5 h-5" />
-                      </button>
-                      <span
-                        className="text-foreground min-w-[3rem] text-center"
-                        style={{
-                          fontSize: "var(--text-h4)",
-                          fontWeight: "var(--font-weight-semibold)",
-                        }}
-                      >
-                        {tempQuantity}
-                      </span>
-                      <button
-                        onClick={() => setTempQuantity(tempQuantity + 1)}
-                        className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors"
-                        style={{ borderRadius: "var(--radius)" }}
-                      >
-                        <Plus className="w-5 h-5" />
-                      </button>
-                    </div>
-                  )}
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  {/* Left: Quantity & Guest Count Selectors */}
+                  <div className="flex items-center gap-4 flex-wrap">
+                    {/* Quantity Selector - Hide for flat-rate items and beverages */}
+                    {detailsModalItem.pricingType !== 'flat-rate' && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground text-sm whitespace-nowrap">Qty:</span>
+                        <button
+                          onClick={() =>
+                            setTempQuantity(Math.max(1, tempQuantity - 1))
+                          }
+                          className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground flex-shrink-0"
+                          style={{ borderRadius: "var(--radius)" }}
+                          disabled={tempQuantity <= 1}
+                        >
+                          <Minus className="w-5 h-5" />
+                        </button>
+                        <span
+                          className="text-foreground min-w-[3rem] text-center"
+                          style={{
+                            fontSize: "var(--text-h4)",
+                            fontWeight: "var(--font-weight-semibold)",
+                          }}
+                        >
+                          {tempQuantity}
+                        </span>
+                        <button
+                          onClick={() => setTempQuantity(tempQuantity + 1)}
+                          className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors flex-shrink-0"
+                          style={{ borderRadius: "var(--radius)" }}
+                        >
+                          <Plus className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Guest Count Selector - Only for Main Courses */}
+                    {[
+                      "Main Courses Meat/Fish",
+                      "Main Courses Veggie",
+                      "Main Courses Vegan",
+                    ].includes(detailsModalItem.category) && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground text-sm whitespace-nowrap">Guests:</span>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            value={tempGuestCount}
+                            min="0"
+                            max={parseInt(eventDetails.guestCount || "0")}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              setTempGuestCount(newValue);
+                              // Validate immediately
+                              const newCount = parseInt(newValue) || 0;
+                              const totalGuests = parseInt(eventDetails.guestCount) || 0;
+                              const otherCategoriesGuests = Object.entries(mainCourseGuests)
+                                .filter(([cat]) => cat !== detailsModalItem.category)
+                                .reduce((sum, [, count]) => sum + count, 0);
+                              const maxAllowed = totalGuests - otherCategoriesGuests;
+
+                              if (newCount > maxAllowed) {
+                                setGuestCountErrors((prev) => ({
+                                  ...prev,
+                                  [detailsModalItem.category]: `Cannot exceed ${maxAllowed} guests`,
+                                }));
+                              } else {
+                                setGuestCountErrors((prev) => ({
+                                  ...prev,
+                                  [detailsModalItem.category]: "",
+                                }));
+                              }
+                            }}
+                            className={`w-16 px-2 py-2 bg-input-background border rounded-lg transition-colors text-center ${
+                              guestCountErrors[detailsModalItem.category]
+                                ? "border-destructive"
+                                : "border-border focus:border-primary"
+                            }`}
+                            placeholder="0"
+                            style={{
+                              borderRadius: "var(--radius)",
+                              fontSize: "var(--text-base)",
+                            }}
+                          />
+                          <span className="text-muted-foreground text-xs whitespace-nowrap">
+                            / {parseInt(eventDetails.guestCount || "0")}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Right: Add to Cart Button with Total */}
                   <button
                     onClick={addToCartFromModal}
-                    className="flex items-center gap-3 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    className="flex items-center gap-3 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors ml-auto"
                     style={{
                       borderRadius: "var(--radius)",
                       fontSize: "var(--text-base)",
