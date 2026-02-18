@@ -616,68 +616,30 @@ export function CustomMenuWizard() {
       return;
     }
 
-    // Calculate total veggie/vegan quantities being added
+    // Number of veggie/vegan servings being added
     const veggieVeganQuantity = addedQuantity;
 
-    // Get all current meat/fish selections
-    const meatFishItems = selectedItems
-      .map((id) => menuItems.find((item) => item.id === id))
-      .filter(
-        (item) => item && item.category === "Main Courses Meat/Fish",
-      ) as MenuItem[];
+    // Determine how many Meat/Fish guests are currently assigned
+    const meatKey = "Main Courses Meat/Fish";
+    const availableMeatGuests = mainCourseGuests[meatKey] || 0;
 
-    if (meatFishItems.length === 0) {
-      return; // No meat/fish items to reduce
+    if (availableMeatGuests <= 0) {
+      return; // nothing to reassign
     }
 
-    // Calculate total meat/fish quantity
-    let totalMeatFishQuantity = meatFishItems.reduce((sum, item) => {
-      return sum + (itemQuantities[item.id] || 1);
-    }, 0);
-
-    // Calculate how much to reduce
-    const reductionNeeded = Math.min(
-      veggieVeganQuantity,
-      totalMeatFishQuantity,
-    );
+    // How many guests to move from meat to veggie/vegan
+    const reductionNeeded = Math.min(veggieVeganQuantity, availableMeatGuests);
 
     if (reductionNeeded > 0) {
-      let remainingReduction = reductionNeeded;
-      const newQuantities = { ...itemQuantities };
-      const itemsToRemove: string[] = [];
-
-      // Reduce meat/fish quantities (starting from the last added)
-      for (
-        let i = meatFishItems.length - 1;
-        i >= 0 && remainingReduction > 0;
-        i--
-      ) {
-        const meatFishItem = meatFishItems[i];
-        const currentQty = newQuantities[meatFishItem.id] || 1;
-
-        if (currentQty <= remainingReduction) {
-          // Remove this item completely
-          remainingReduction -= currentQty;
-          itemsToRemove.push(meatFishItem.id);
-        } else {
-          // Reduce quantity
-          newQuantities[meatFishItem.id] = currentQty - remainingReduction;
-          remainingReduction = 0;
-        }
-      }
-
-      // Apply the changes
-      setItemQuantities(newQuantities);
-
-      if (itemsToRemove.length > 0) {
-        setSelectedItems((prev) =>
-          prev.filter((id) => !itemsToRemove.includes(id)),
-        );
-      }
+      // Reduce only the guest distribution. Do NOT remove selected meat items.
+      setMainCourseGuests((prev) => ({
+        ...prev,
+        [meatKey]: Math.max(0, (prev[meatKey] || 0) - reductionNeeded),
+      }));
 
       // Show notification message
       setMainCourseReductionMessage(
-        `${reductionNeeded} Meat/Fish main course${reductionNeeded > 1 ? "s" : ""} automatically reduced due to Veggie/Vegan selection`,
+        `${reductionNeeded} Meat/Fish main course${reductionNeeded > 1 ? "s" : ""} reassigned due to Veggie/Vegan selection`,
       );
 
       // Clear message after 5 seconds
@@ -5131,6 +5093,11 @@ export function CustomMenuWizard() {
                                 setGuestCountErrors((prev) => ({
                                   ...prev,
                                   [detailsModalItem.category]: "",
+                                }));
+                                // Commit change immediately so navigation/validation sees updated counts
+                                setMainCourseGuests((prev) => ({
+                                  ...prev,
+                                  [detailsModalItem.category]: newCount,
                                 }));
                               }
                             }}
