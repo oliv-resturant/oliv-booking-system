@@ -183,6 +183,13 @@ export function CustomMenuWizard() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [selectedItems.length]);
 
+  // Clear step2Error whenever mainCourseGuests changes (user fixed the distribution)
+  useEffect(() => {
+    if (step2Error) {
+      setStep2Error("");
+    }
+  }, [mainCourseGuests]);
+
   // Auto-fill main course guest distribution when guest count changes
   useEffect(() => {
     const totalGuests = parseInt(eventDetails.guestCount) || 0;
