@@ -603,51 +603,6 @@ export function CustomMenuWizard() {
     );
   };
 
-  // Helper function to handle linked main course logic
-  const handleMainCourseLinkedLogic = (
-    addedItem: MenuItem,
-    addedQuantity: number,
-  ) => {
-    // Only apply logic for Veggie/Vegan main courses
-    if (
-      addedItem.category !== "Main Courses Veggie" &&
-      addedItem.category !== "Main Courses Vegan"
-    ) {
-      return;
-    }
-
-    // Number of veggie/vegan servings being added
-    const veggieVeganQuantity = addedQuantity;
-
-    // Determine how many Meat/Fish guests are currently assigned
-    const meatKey = "Main Courses Meat/Fish";
-    const availableMeatGuests = mainCourseGuests[meatKey] || 0;
-
-    if (availableMeatGuests <= 0) {
-      return; // nothing to reassign
-    }
-
-    // How many guests to move from meat to veggie/vegan
-    const reductionNeeded = Math.min(veggieVeganQuantity, availableMeatGuests);
-
-    if (reductionNeeded > 0) {
-      // Reduce only the guest distribution. Do NOT remove selected meat items.
-      setMainCourseGuests((prev) => ({
-        ...prev,
-        [meatKey]: Math.max(0, (prev[meatKey] || 0) - reductionNeeded),
-      }));
-
-      // Show notification message
-      setMainCourseReductionMessage(
-        `${reductionNeeded} Meat/Fish main course${reductionNeeded > 1 ? "s" : ""} reassigned due to Veggie/Vegan selection`,
-      );
-
-      // Clear message after 5 seconds
-      setTimeout(() => {
-        setMainCourseReductionMessage("");
-      }, 5000);
-    }
-  };
 
   const addToCartFromModal = () => {
     if (!detailsModalItem) return;
@@ -700,12 +655,6 @@ export function CustomMenuWizard() {
         return updated;
       });
     }
-
-    // Apply linked main course logic after state updates
-    // Use setTimeout to ensure state is updated first
-    setTimeout(() => {
-      handleMainCourseLinkedLogic(detailsModalItem, tempQuantity);
-    }, 0);
 
     closeDetailsModal();
   };
@@ -3806,7 +3755,13 @@ export function CustomMenuWizard() {
                                                     ? "billed by consumption"
                                                     : item.pricingType ===
                                                         "per-person"
-                                                      ? `${quantity}×`
+                                                      ? [
+                                                          "Main Courses Meat/Fish",
+                                                          "Main Courses Veggie",
+                                                          "Main Courses Vegan",
+                                                        ].includes(item.category)
+                                                        ? `${mainCourseGuests[item.category] || 0}×`
+                                                        : `${parseInt(eventDetails.guestCount) || 0}×`
                                                       : quantity > 1
                                                         ? `${quantity}×`
                                                         : "flat"}
