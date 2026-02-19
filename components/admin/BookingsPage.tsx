@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, Users, Phone, Mail, Download, Search, RefreshCw, X, User, CalendarDays, Edit, UtensilsCrossed, Send, MessageSquare, ArrowLeft } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { Button } from './Button';
+import * as XLSX from 'xlsx';
 
 const statusColors: Record<string, { bg: string; text: string; border: string; dotColor: string }> = {
   'confirmed': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dotColor: '#10b981' },
@@ -693,34 +694,33 @@ export function BookingsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  // Export to CSV
+  // Export to XLSX
   const handleExport = () => {
     const headers = ['Customer Name', 'Email', 'Phone', 'Event Date', 'Time', 'Guests', 'Occasion', 'Amount', 'Status', 'Contacted By', 'Contacted When'];
-    
-    const csvData = filteredBookings.map(booking => [
-      booking.customer.name,
-      booking.customer.email,
-      booking.customer.phone,
-      booking.event.date,
-      booking.event.time,
-      booking.guests.toString(),
-      booking.event.occasion,
-      booking.amount,
-      booking.status,
-      booking.contacted?.by || '',
-      booking.contacted?.when || '',
-    ]);
 
-    const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
+    const excelData = filteredBookings.map(booking => ({
+      'Customer Name': booking.customer.name,
+      'Email': booking.customer.email,
+      'Phone': booking.customer.phone,
+      'Event Date': booking.event.date,
+      'Time': booking.event.time,
+      'Guests': booking.guests,
+      'Occasion': booking.event.occasion,
+      'Amount': booking.amount,
+      'Status': booking.status,
+      'Contacted By': booking.contacted?.by || '',
+      'Contacted When': booking.contacted?.when || '',
+    }));
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `bookings_export_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    // Create worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Bookings');
+
+    // Generate and download file
+    XLSX.writeFile(workbook, `bookings_export_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   return (

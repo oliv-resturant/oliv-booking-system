@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Calendar, Clock, Users, Phone, Mail, MapPin, MessageSquare, ChevronDown, Download, Search, X, User, CalendarDays, Edit, UtensilsCrossed, Send } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { Button } from './Button';
+import * as XLSX from 'xlsx';
 
 // Mock booking data with extended information
 const bookingsData = [
@@ -678,6 +679,33 @@ export function BookingsPage({ onViewDetails }: { onViewDetails?: (booking: type
     return matchesSearch && matchesStatus;
   });
 
+  // Export to XLSX
+  const handleExport = () => {
+    const excelData = filteredBookings.map(booking => ({
+      'Customer Name': booking.customer.name,
+      'Email': booking.customer.email,
+      'Phone': booking.customer.phone,
+      'Event Date': booking.event.date,
+      'Time': booking.event.time,
+      'Guests': booking.guests,
+      'Occasion': booking.event.occasion,
+      'Amount': booking.amount,
+      'Status': booking.status,
+      'Contacted By': booking.contacted?.by || '',
+      'Contacted When': booking.contacted?.when || '',
+    }));
+
+    // Create worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Bookings');
+
+    // Generate and download file
+    XLSX.writeFile(workbook, `bookings_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <div className="min-h-full bg-background px-4 md:px-8 pt-4 md:pt-6 pb-1 flex flex-col">
       <div className="w-full space-y-4 flex-1">
@@ -709,7 +737,7 @@ export function BookingsPage({ onViewDetails }: { onViewDetails?: (booking: type
             </div>
 
             {/* Export Button */}
-            <Button variant="primary" icon={Download} className="min-h-[44px]">
+            <Button variant="primary" icon={Download} className="min-h-[44px]" onClick={handleExport}>
               Export
             </Button>
           </div>

@@ -33,7 +33,8 @@
       "Bash(npx dotenv-cli:*)",
       "Bash(dotenv:*)",
       "Bash(set:*)",
-      "Bash(. ./.env.local)"
+      "Bash(. ./.env.local)",
+      "WebSearch"
     ]
   }
 }

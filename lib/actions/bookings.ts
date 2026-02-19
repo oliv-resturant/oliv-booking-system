@@ -1,10 +1,18 @@
 'use server';
 
 import { db } from "@/lib/db";
-import { bookings, bookingItems, bookingContactHistory, emailLogs } from "@/lib/db/schema";
+import { bookings, bookingItems, bookingContactHistory, emailLogs, leads } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
+import {
+  sendBookingConfirmation,
+  sendBookingCancellation,
+  sendBookingCompletion,
+  sendBookingDeclined,
+  sendBookingNoShow,
+  sendBookingReminder,
+} from "@/lib/actions/email";
 
 export interface CreateBookingInput {
   leadId?: string;
@@ -18,7 +26,7 @@ export interface CreateBookingInput {
   internalNotes?: string;
 }
 
-export async function createBooking(input: CreateBookingInput) {
+export async function createBooking(input: CreateBookingInput & { leadEmail?: string; leadName?: string }) {
   try {
     // @ts-ignore - Drizzle ORM type compatibility issue
     const [booking] = await db.insert(bookings).values({
@@ -34,6 +42,33 @@ export async function createBooking(input: CreateBookingInput) {
         internalNotes: input.internalNotes,
       })
       .returning();
+
+    // Send confirmation email if lead email is provided
+    if (input.leadEmail && !input.skipEmail) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oliv-restaurant.ch";
+
+      await sendBookingConfirmation({
+        bookingId: booking.id,
+        recipientEmail: input.leadEmail,
+        bookingData: {
+          ...booking,
+          lead: input.leadName && input.leadEmail ? {
+            contactName: input.leadName,
+            contactEmail: input.leadEmail,
+            contactPhone: "",
+            eventDate: input.eventDate,
+            eventTime: input.eventTime,
+            guestCount: input.guestCount,
+            source: "booking",
+            status: "converted",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          } : null,
+        },
+        estimatedTotal: input.estimatedTotal,
+        bookingEditUrl: `${baseUrl}/booking/${booking.id}/edit`,
+      });
+    }
 
     revalidatePath("/admin/bookings");
 
@@ -72,17 +107,100 @@ export async function convertLeadToBooking(leadId: string, bookingData: CreateBo
   }
 }
 
-export async function updateBookingStatus(id: string, status: typeof bookings.$inferInsert.status) {
+export async function updateBookingStatus(
+  id: string,
+  status: typeof bookings.$inferInsert.status,
+  options?: {
+    skipEmail?: boolean;
+    reason?: string;
+  }
+) {
   try {
-    const [booking] = await db
+    // Get current booking with lead information
+    const [currentBooking] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, id))
+      .leftJoin(leads, eq(bookings.leadId, leads.id))
+      .limit(1);
+
+    if (!currentBooking) {
+      return { success: false, error: "Booking not found" };
+    }
+
+    const bookingData = currentBooking.bookings;
+    const leadData = currentBooking.leads;
+
+    // Update booking status
+    const [updatedBooking] = await db
       .update(bookings)
       .set({ status, updatedAt: new Date() })
       .where(eq(bookings.id, id))
       .returning();
 
-    revalidatePath("/admin/bookings");
+    // Send email based on status change (unless skipEmail is true)
+    if (!options?.skipEmail && leadData?.contactEmail) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oliv-restaurant.ch";
 
-    return { success: true, data: booking };
+      switch (status) {
+        case "confirmed":
+          await sendBookingConfirmation({
+            bookingId: id,
+            recipientEmail: leadData.contactEmail,
+            bookingData: { ...bookingData, lead: leadData },
+            estimatedTotal: bookingData.estimatedTotal
+              ? parseFloat(bookingData.estimatedTotal)
+              : undefined,
+            bookingEditUrl: `${baseUrl}/booking/${id}/edit`,
+          });
+          break;
+
+        case "cancelled":
+          await sendBookingCancellation({
+            bookingId: id,
+            recipientEmail: leadData.contactEmail,
+            bookingData: { ...bookingData, lead: leadData },
+            reason: options?.reason,
+          });
+          break;
+
+        case "completed":
+          await sendBookingCompletion({
+            bookingId: id,
+            recipientEmail: leadData.contactEmail,
+            bookingData: { ...bookingData, lead: leadData },
+            feedbackUrl: `${baseUrl}/feedback/${id}`,
+            rebookingUrl: `${baseUrl}/booking`,
+          });
+          break;
+
+        case "no_show":
+          await sendBookingNoShow({
+            bookingId: id,
+            recipientEmail: leadData.contactEmail,
+            bookingData: { ...bookingData, lead: leadData },
+          });
+          break;
+
+        case "declined":
+          await sendBookingDeclined({
+            bookingId: id,
+            recipientEmail: leadData.contactEmail,
+            bookingData: { ...bookingData, lead: leadData },
+            reason: options?.reason,
+          });
+          break;
+
+        case "pending":
+          // No email for pending status (usually initial state)
+          break;
+      }
+    }
+
+    revalidatePath("/admin/bookings");
+    revalidatePath(`/admin/bookings/${id}`);
+
+    return { success: true, data: updatedBooking };
   } catch (error) {
     console.error("Error updating booking status:", error);
     return { success: false, error: "Failed to update booking status" };

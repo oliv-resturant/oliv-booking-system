@@ -6,6 +6,7 @@ import { Modal } from './Modal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { Button } from './Button';
 import { StatusDropdown } from './StatusDropdown';
+import * as XLSX from 'xlsx';
 
 interface User {
   id: string;
@@ -278,20 +279,23 @@ export function UserManagementPage() {
                 variant="secondary"
                 icon={Download}
                 onClick={() => {
-                  const headers = ['Name', 'Email', 'Role', 'Status', 'Created At'];
-                  const csvData = filteredUsers.map(user => [
-                    user.name,
-                    user.email,
-                    getRoleLabel(user.role),
-                    user.status,
-                    new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-                  ]);
-                  const csvContent = [headers.join(','), ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))].join('\n');
-                  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                  const link = document.createElement('a');
-                  link.href = URL.createObjectURL(blob);
-                  link.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
-                  link.click();
+                  const excelData = filteredUsers.map(user => ({
+                    'Name': user.name,
+                    'Email': user.email,
+                    'Role': getRoleLabel(user.role),
+                    'Status': user.status,
+                    'Created At': new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+                  }));
+
+                  // Create worksheet
+                  const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+                  // Create workbook
+                  const workbook = XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(workbook, worksheet, 'Users');
+
+                  // Generate and download file
+                  XLSX.writeFile(workbook, `users_export_${new Date().toISOString().split('T')[0]}.xlsx`);
                 }}
                 className="sm:w-auto"
               >

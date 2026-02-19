@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { YearDropdown } from './YearDropdown';
+import * as XLSX from 'xlsx';
 
 interface MonthData {
   month: string;
@@ -38,8 +39,30 @@ export function MonthlyReportLayout2({ data }: { data: MonthData[] }) {
   };
 
   const handleExport = () => {
-    // Export functionality placeholder
-    console.log('Exporting report for year:', selectedYear);
+    // Export monthly report to XLSX
+    const excelData = data.map(month => ({
+      'Month': month.month,
+      'Total Bookings': month.totalBookings,
+      'Total Revenue': month.totalRevenue,
+      'Average Revenue': month.avgRevenue,
+      'New': month.new,
+      'Touchbase': month.touchbase,
+      'Confirmed': month.confirmed,
+      'Declined': month.declined,
+      'Unresponsive': month.unresponsive,
+      'Completed': month.completed,
+      'No Show': month.noShow,
+    }));
+
+    // Create worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, `Monthly Report ${selectedYear}`);
+
+    // Generate and download file
+    XLSX.writeFile(workbook, `monthly_report_${selectedYear}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   return (

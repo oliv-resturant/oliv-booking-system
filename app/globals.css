@@ -83,6 +83,16 @@
   /* Subtle section background for alternating sections */
   --section-subtle: rgba(247, 249, 248, 1.00);
 
+  /* Surface color for cards and elevated elements (used in modals/screens) */
+  --surface: rgba(255, 255, 255, 1.00);
+
+  /* Typography family variables */
+  --font-family-heading: 'Hanken Grotesk', sans-serif;
+  --font-family-body: 'Hanken Grotesk', sans-serif;
+
+  /* Full border radius */
+  --radius-full: 9999px;
+
   /* Typography variables */
   --text-h1: 32px;
   --text-h2: 26px;
@@ -94,6 +104,7 @@
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --font-weight-semibold: 600;
+  --font-weight-bold: 700;
   --font-family: 'Hanken Grotesk', sans-serif;
 }
 
@@ -235,4 +246,18 @@ html {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Mobile drawer slide-up animation */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
 }

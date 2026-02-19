@@ -15,7 +15,8 @@
     "highcharts": "^12.5.0",
     "highcharts-react-official": "^3.2.3",
     "lucide-react": "0.487.0",
-    "react-popper": "2.3.0"
+    "react-popper": "2.3.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.1.12",

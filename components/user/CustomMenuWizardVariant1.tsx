@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { Calendar, Users, Mail, Phone, User, Check, ChevronLeft, ChevronRight, Send, Eye, Edit2, ClipboardList, Building2, MapPin, Clock, Sparkles, ShoppingCart, X, Plus, Minus, AlertTriangle } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Calendar, Users, Mail, Phone, User, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Send, Eye, Edit2, ClipboardList, Building2, MapPin, Clock, Sparkles, ShoppingCart, X, Plus, Minus, AlertTriangle, Lock } from 'lucide-react';
 import { Button } from './Button';
 import { MenuItem, MenuItemVariant } from './menuItemsData';
 import { DietaryIcon } from './DietaryIcon';
@@ -47,7 +47,18 @@ export function CustomMenuWizard() {
   const [itemVariants, setItemVariants] = useState<Record<string, string>>({});
   const [itemComments, setItemComments] = useState<Record<string, string>>({});
   const [selectedCategory, setSelectedCategory] = useState('Appetizers');
+  const [visitedCategories, setVisitedCategories] = useState<string[]>([]);
+  const [isCartCollapsed, setIsCartCollapsed] = useState(true);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [showCartFab, setShowCartFab] = useState(true);
+  const [mainCourseReductionMessage, setMainCourseReductionMessage] = useState('');
+  const [summaryViewMode, setSummaryViewMode] = useState<'per-person' | 'total'>('total');
+  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Partial<EventDetails>>({});
+
+  // Refs for category pill auto-scroll
+  const categoryRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const lastScrollY = useRef(0);
   const [showPreview, setShowPreview] = useState(false);
   const [detailsModalItem, setDetailsModalItem] = useState<MenuItem | null>(null);
   const [tempQuantity, setTempQuantity] = useState(1);
@@ -104,6 +115,7 @@ export function CustomMenuWizard() {
           setCategories(categoryNames);
           if (categoryNames.length > 0) {
             setSelectedCategory(categoryNames[0]);
+            setVisitedCategories([categoryNames[0]]);
           }
         } else {
           // Fallback to error state - show empty menu
@@ -118,6 +130,35 @@ export function CustomMenuWizard() {
 
     fetchMenuData();
   }, []);
+
+  // Auto-scroll active category pill into view
+  useEffect(() => {
+    const btn = categoryRefs.current[selectedCategory];
+    if (btn) {
+      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [selectedCategory]);
+
+  // Show/hide cart FAB based on scroll direction (mobile only)
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      if (window.innerWidth < 1024 && selectedItems.length > 0) {
+        setShowCartFab(currentY < lastScrollY.current || currentY < 100);
+      }
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [selectedItems.length]);
+
+  // Handle category change and track visited categories
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    if (!visitedCategories.includes(category)) {
+      setVisitedCategories(prev => [...prev, category]);
+    }
+  };
 
   const steps = [
     { 
@@ -467,6 +508,50 @@ export function CustomMenuWizard() {
     }, 0);
   };
 
+  // Per-person price (NOT multiplied by guest count) – used for cart display
+  const getItemPerPersonPrice = (item: MenuItem) => {
+    const quantity = itemQuantities[item.id] || 1;
+    const addOns = itemAddOns[item.id] || [];
+    const addOnsPrice = addOns.reduce((total, addOnId) => {
+      const addOn = item.addOns?.find(ao => ao.id === addOnId);
+      return total + (addOn?.price || 0);
+    }, 0);
+    let basePrice = item.price;
+    const variantId = itemVariants[item.id];
+    if (variantId && item.variants) {
+      const variant = item.variants.find(v => v.id === variantId);
+      if (variant) basePrice = variant.price;
+    }
+    return (basePrice + addOnsPrice) * quantity;
+  };
+
+  // Per-person subtotal (food items that are per_person, excluding beverages)
+  const getPerPersonSubtotal = () => {
+    return selectedItems.reduce((total, itemId) => {
+      const item = menuItems.find(i => i.id === itemId);
+      if (!item || item.pricingType !== 'per_person' || item.category === 'Beverages') return total;
+      return total + getItemPerPersonPrice(item);
+    }, 0);
+  };
+
+  // Flat-rate subtotal (non-beverage flat_fee items like Technology, Decoration etc.)
+  const getFlatRateSubtotal = () => {
+    return selectedItems.reduce((total, itemId) => {
+      const item = menuItems.find(i => i.id === itemId);
+      if (!item || item.pricingType === 'per_person' || item.category === 'Beverages') return total;
+      return total + getItemPerPersonPrice(item);
+    }, 0);
+  };
+
+  // Consumption-based subtotal (beverages billed by consumption)
+  const getConsumptionSubtotal = () => {
+    return selectedItems.reduce((total, itemId) => {
+      const item = menuItems.find(i => i.id === itemId);
+      if (!item || item.category !== 'Beverages') return total;
+      return total + getItemPerPersonPrice(item);
+    }, 0);
+  };
+
   // Show thank you screen if submitted
   if (isSubmitted) {
     return (
@@ -565,12 +650,12 @@ export function CustomMenuWizard() {
 
       {/* Main Content - Two Column Layout */}
       <div className="flex-1 flex flex-col lg:flex-row">
-        {/* Left Sidebar - 30% width with primary background - Hidden on mobile - Fixed on desktop */}
-        <aside className="hidden lg:block lg:w-[30%] bg-primary text-primary-foreground p-8 lg:p-12 lg:fixed lg:left-0 lg:top-20 lg:h-[calc(100vh-5rem)] lg:overflow-y-auto">
+        {/* Left Sidebar - 25% width with primary background - Hidden on mobile - Fixed on desktop */}
+        <aside className="hidden lg:block lg:w-[25%] bg-primary text-primary-foreground p-6 lg:p-8 lg:fixed lg:left-0 lg:top-20 lg:h-[calc(100vh-5rem)] lg:overflow-y-auto">
           <div className="max-w-md mx-auto lg:mx-0">
             {/* Title */}
-            <div className="mb-12">
-              <h2 className="text-primary-foreground mb-3" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
+            <div className="mb-8">
+              <h2 className="text-primary-foreground mb-2" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
                 Menu configurator for your event
               </h2>
               <p className="text-primary-foreground opacity-90" style={{ fontSize: 'var(--text-base)' }}>
@@ -579,7 +664,7 @@ export function CustomMenuWizard() {
             </div>
 
             {/* Vertical Steps */}
-            <div className="space-y-8">
+            <div className="space-y-6">
               {steps.map((step, index) => {
                 const Icon = step.icon;
                 const isActive = currentStep === step.number;
@@ -587,42 +672,42 @@ export function CustomMenuWizard() {
 
                 return (
                   <div key={step.number} className="relative">
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-3">
                       {/* Step Circle with connecting line */}
                       <div className="relative flex flex-col items-center flex-shrink-0">
                         <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
+                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
                             isCompleted
-                              ? 'bg-primary-foreground text-primary'
+                              ? 'bg-secondary text-secondary-foreground'
                               : isActive
-                              ? 'bg-primary-foreground text-primary ring-4 ring-primary-foreground/20'
+                              ? 'bg-secondary text-secondary-foreground ring-4 ring-secondary/20'
                               : 'bg-transparent text-primary-foreground border-2 border-primary-foreground/30'
                           }`}
                         >
                           {isCompleted ? (
-                            <Check className="w-6 h-6" />
+                            <Check className="w-5 h-5" />
                           ) : (
-                            <Icon className="w-5 h-5" />
+                            <Icon className="w-4 h-4" />
                           )}
                         </div>
                         {/* Connecting Line */}
                         {index < steps.length - 1 && (
                           <div 
-                            className="absolute top-12 w-0.5 transition-all duration-500"
+                            className="absolute top-10 w-0.5 transition-all duration-500"
                             style={{ 
                               backgroundColor: isCompleted 
-                                ? 'rgba(255, 255, 255, 1)' 
+                                ? 'var(--color-secondary)'
                                 : 'rgba(255, 255, 255, 0.2)',
-                              height: 'calc(100% + 2rem)'
+                              height: 'calc(100% + 1.5rem)'
                             }}
                           />
                         )}
                       </div>
 
                       {/* Step Content */}
-                      <div className="flex-1 pt-1">
+                      <div className="flex-1 pt-0.5">
                         <p 
-                          className={`mb-2 text-primary-foreground ${isActive || isCompleted ? 'opacity-100' : 'opacity-60'}`}
+                          className={`mb-1 text-primary-foreground ${isActive || isCompleted ? 'opacity-100' : 'opacity-60'}`}
                           style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}
                         >
                           {step.title}
@@ -641,30 +726,27 @@ export function CustomMenuWizard() {
             </div>
 
             {/* Progress Summary */}
-            <div className="mt-12 p-6 bg-primary-foreground/10 rounded-lg" style={{ borderRadius: 'var(--radius-card)' }}>
-              <p className="text-primary-foreground opacity-80 mb-3" style={{ fontSize: 'var(--text-small)' }}>
-                Overall Progress
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-3 bg-primary-foreground/20 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary-foreground transition-all duration-500"
-                    style={{ width: `${((currentStep - 1) / 2) * 100}%` }}
-                  />
-                </div>
-                <span className="text-primary-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                  {currentStep}/3
+            <div className="mt-6 p-3 bg-primary-foreground/10 rounded-lg" style={{ borderRadius: 'var(--radius-card)' }}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-primary-foreground opacity-80" style={{ fontSize: 'var(--text-small)' }}>
+                  Overall Progress
+                </p>
+                <span className="text-primary-foreground opacity-90" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  {currentStep}/3 · {Math.round(((currentStep - 1) / 2) * 100)}%
                 </span>
               </div>
-              <p className="text-primary-foreground opacity-90 mt-3" style={{ fontSize: 'var(--text-small)' }}>
-                {Math.round(((currentStep - 1) / 2) * 100)}% Complete
-              </p>
+              <div className="h-2 bg-primary-foreground/20 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary-foreground transition-all duration-500"
+                  style={{ width: `${((currentStep - 1) / 2) * 100}%` }}
+                />
+              </div>
             </div>
           </div>
         </aside>
 
-        {/* Right Content Area - 70% width - With left margin on desktop to account for fixed sidebar */}
-        <main className="w-full lg:w-[70%] lg:ml-[30%] bg-background p-4 lg:p-12">
+        {/* Right Content Area - 75% width - With left margin on desktop to account for fixed sidebar */}
+        <main className="w-full lg:w-[75%] lg:ml-[25%] bg-background p-4 lg:p-8">
           <div className="max-w-7xl mx-auto">
             <div className="bg-card rounded-lg p-5 lg:p-8 border border-border" style={{ borderRadius: 'var(--radius-card)' }}>
               {/* Step 1: Event Details - VARIANT 1: TABBED LAYOUT */}
@@ -975,19 +1057,24 @@ export function CustomMenuWizard() {
                     <div className="flex overflow-x-auto gap-2 pb-4 -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-hide">
                       {categories.map((category) => {
                         const isActive = selectedCategory === category;
+                        const isVisited = visitedCategories.includes(category);
                         const categoryItemCount = getSelectedItemsByCategory(category).length;
                         
                         return (
                           <button
                             key={category}
-                            onClick={() => setSelectedCategory(category)}
+                            ref={(el) => { categoryRefs.current[category] = el; }}
+                            onClick={() => handleCategoryChange(category)}
                             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all flex-shrink-0 whitespace-nowrap ${
                               isActive
                                 ? 'bg-primary text-primary-foreground hover:bg-secondary hover:text-secondary-foreground'
+                                : isVisited
+                                ? 'bg-muted/50 text-foreground hover:bg-muted hover:text-foreground border border-border'
                                 : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                             }`}
                             style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                           >
+                            {isVisited && !isActive && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
                             <span>{category}</span>
                             {categoryItemCount > 0 && (
                               <span className={`px-2 py-0.5 rounded-full text-xs ${
@@ -1034,89 +1121,97 @@ export function CustomMenuWizard() {
                         </div>
                       </div>
 
-                      {/* Menu Items Grid */}
-                      <div className="space-y-3">
+                      {/* Menu Items Grid - Vertical card layout */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {menuItems
                           .filter(item => item.category === selectedCategory)
                           .map((item) => {
                             const isSelected = selectedItems.includes(item.id);
-                            const quantity = itemQuantities[item.id] || 1;
 
                             return (
                               <div
                                 key={item.id}
-                                className={`bg-card border rounded-lg overflow-hidden transition-all ${
+                                className={`bg-card border rounded-lg overflow-hidden transition-all flex flex-col ${
                                   isSelected ? 'border-primary shadow-sm' : 'border-border hover:border-primary/50'
                                 }`}
                                 style={{ borderRadius: 'var(--radius-card)' }}
                               >
-                                <div className="flex gap-4">
-                                  {/* Item Image */}
-                                  <div className="w-28 h-28 flex-shrink-0">
-                                    <img 
-                                      src={item.image} 
-                                      alt={item.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-
-                                  {/* Item Content */}
-                                  <div className="flex-1 p-3 pl-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <DietaryIcon type={item.dietaryType} size="sm" />
-                                      <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        {item.name}
-                                      </h5>
+                                {/* Item Image */}
+                                <div className="w-full aspect-[3/2] flex-shrink-0 relative overflow-hidden bg-muted">
+                                  <img
+                                    src={item.image}
+                                    alt={item.name}
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                  />
+                                  {isSelected && (
+                                    <div className="absolute top-2 right-2 w-7 h-7 bg-primary rounded-full flex items-center justify-center shadow">
+                                      <Check className="w-4 h-4 text-primary-foreground" />
                                     </div>
-                                    <p className="text-muted-foreground mb-2" style={{ fontSize: 'var(--text-small)' }}>
-                                      {item.description}
-                                    </p>
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <p className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                          {item.variants && item.variants.length > 0 ? 'From ' : ''}CHF {item.price.toFixed(2)}
-                                        </p>
-                                        {item.pricingType === 'billed_by_consumption' && (
-                                          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                            Billed by consumption based on actual usage
-                                          </p>
-                                        )}
-                                        {item.pricingType === 'flat_fee' && (
-                                          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                            Flat fee - one-time charge
-                                          </p>
+                                  )}
+                                </div>
+
+                                {/* Item Content */}
+                                <div className="flex-1 p-4 flex flex-col">
+                                  <div className="flex items-start gap-2 mb-2">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                      <DietaryIcon type={item.dietaryType} size="sm" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                          {item.name}
+                                        </h5>
+                                        {/* Amber "Pay by consumption" badge for beverages */}
+                                        {item.category === 'Beverages' && (
+                                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded text-xs font-medium">
+                                            Pay by consumption
+                                          </span>
                                         )}
                                       </div>
-                                      
-                                      {!isSelected ? (
-                                        <button
-                                          onClick={() => openDetailsModal(item)}
-                                          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-secondary hover:text-secondary-foreground transition-colors"
-                                          style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                        >
-                                          <Plus className="w-4 h-4" />
-                                          Add
-                                        </button>
-                                      ) : (
-                                        <div className="flex items-center gap-2">
-                                          <button
-                                            onClick={() => openDetailsModal(item)}
-                                            className="px-3 py-1.5 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
-                                            style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-                                          >
-                                            Edit
-                                          </button>
-                                          <button
-                                            onClick={() => removeFromCart(item.id)}
-                                            className="w-8 h-8 flex items-center justify-center bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-colors"
-                                            style={{ borderRadius: 'var(--radius)' }}
-                                          >
-                                            <X className="w-4 h-4" />
-                                          </button>
-                                        </div>
-                                      )}
                                     </div>
                                   </div>
+                                  <p className="text-muted-foreground mb-3 flex-1" style={{ fontSize: 'var(--text-small)' }}>
+                                    {item.description}
+                                  </p>
+                                  <div className="flex flex-col gap-0.5 mb-3">
+                                    <p className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                      {item.category === 'Beverages'
+                                        ? `CHF ${item.price.toFixed(2)}/bottle`
+                                        : (item.variants && item.variants.length > 0 ? 'From ' : '') + `CHF ${item.price.toFixed(2)}`}
+                                    </p>
+                                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                      {item.category === 'Beverages' ? 'billed by consumption' :
+                                       item.pricingType === 'flat_fee' ? 'flat fee' : 'per person'}
+                                    </span>
+                                  </div>
+
+                                  {!isSelected ? (
+                                    <button
+                                      onClick={() => openDetailsModal(item)}
+                                      className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-secondary hover:text-secondary-foreground transition-colors w-full"
+                                      style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                      Add
+                                    </button>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => openDetailsModal(item)}
+                                        className="flex-1 px-3 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
+                                        style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        onClick={() => removeFromCart(item.id)}
+                                        className="w-10 h-10 flex items-center justify-center bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-colors flex-shrink-0"
+                                        style={{ borderRadius: 'var(--radius)' }}
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -1127,130 +1222,214 @@ export function CustomMenuWizard() {
                     {/* Cart Summary - 1 column on desktop, full width on mobile */}
                     <div className="lg:col-span-1">
                       <div className="sticky top-6">
-                        <div className="bg-muted/30 border border-border rounded-lg p-5" style={{ borderRadius: 'var(--radius-card)' }}>
-                          {/* Guest Count in Cart */}
-
-
-                          <div className="flex items-center gap-2 mb-4">
-                            <ShoppingCart className="w-5 h-5 text-primary" />
-                            <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                              Your Selection
-                            </h4>
-                          </div>
-
-                          {selectedItems.length === 0 ? (
-                            <div className="text-center py-8">
-                              <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
-                              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                No items selected yet
-                              </p>
-                              <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                Browse categories and add dishes
-                              </p>
+                        <div className="bg-muted/30 border border-border rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius-card)' }}>
+                          {/* Collapsible Header */}
+                          <button
+                            onClick={() => setIsCartCollapsed(!isCartCollapsed)}
+                            className="w-full px-5 py-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <ShoppingCart className="w-5 h-5 text-primary" />
+                              <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                Your Menu
+                              </h4>
+                              {selectedItems.length > 0 && (
+                                <span className="px-2 py-0.5 bg-primary text-primary-foreground rounded-full" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                                  {selectedItems.length}
+                                </span>
+                              )}
                             </div>
-                          ) : (
-                            <>
-                              {/* Selected Items List */}
-                              <div className="space-y-3 mb-6 max-h-96 overflow-y-auto">
-                                {selectedItems.map((itemId) => {
-                                  const item = menuItems.find(i => i.id === itemId);
-                                  if (!item) return null;
-                                  const quantity = itemQuantities[itemId] || 1;
+                            {isCartCollapsed ? (
+                              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                            ) : (
+                              <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                            )}
+                          </button>
 
-                                  return (
-                                    <div
-                                      key={itemId}
-                                      className="bg-card border border-border rounded-lg p-3"
-                                      style={{ borderRadius: 'var(--radius)' }}
-                                    >
-                                      <div className="flex items-start justify-between gap-2 mb-2">
-                                        <div className="flex-1">
-                                          <div className="flex items-center gap-2">
-                                            <p className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                              {item.name}
-                                            </p>
-                                            <span className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs" style={{ fontSize: 'var(--text-small)' }}>
-                                              ×{quantity}
-                                            </span>
+                          {/* Collapsed State Summary */}
+                          {isCartCollapsed && selectedItems.length > 0 && (
+                            <div className="px-5 pb-4 border-t border-border">
+                              <div className="pt-4 flex items-center justify-between">
+                                <div>
+                                  <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                    {selectedItems.length} {selectedItems.length === 1 ? 'item' : 'items'} selected
+                                  </p>
+                                  <p className="text-muted-foreground mt-0.5" style={{ fontSize: 'var(--text-small)' }}>
+                                    For {eventDetails.guestCount || '0'} {parseInt(eventDetails.guestCount) === 1 ? 'guest' : 'guests'}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-primary" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                    CHF {getPerPersonSubtotal().toFixed(2)} <span className="text-sm font-normal text-muted-foreground">/person</span>
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Collapsible Content */}
+                          {!isCartCollapsed && (
+                            <div className="px-5 pb-5">
+                              <div className="mb-4 pt-2 border-t border-border">
+                                <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                  Per-person items calculated for {eventDetails.guestCount || '0'} {parseInt(eventDetails.guestCount) === 1 ? 'guest' : 'guests'}
+                                </p>
+                              </div>
+
+                              {selectedItems.length === 0 ? (
+                                <div className="text-center py-8">
+                                  <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
+                                  <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                    No items selected yet
+                                  </p>
+                                  <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-small)' }}>
+                                    Browse categories and add dishes
+                                  </p>
+                                </div>
+                              ) : (
+                                <>
+                                  {/* Selected Items List */}
+                                  <div className="space-y-3 mb-6 max-h-96 overflow-y-auto">
+                                    {selectedItems.map((itemId) => {
+                                      const item = menuItems.find(i => i.id === itemId);
+                                      if (!item) return null;
+                                      const quantity = itemQuantities[itemId] || 1;
+                                      const isBeverage = item.category === 'Beverages';
+                                      const isPerPerson = item.pricingType === 'per_person';
+
+                                      return (
+                                        <div key={itemId} className="bg-card border border-border rounded-lg p-2.5" style={{ borderRadius: 'var(--radius)' }}>
+                                          {/* Header Row */}
+                                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-center gap-2 flex-wrap">
+                                                <p className="text-foreground truncate" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                  {item.name}
+                                                </p>
+                                                {isBeverage && (
+                                                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded text-xs font-medium">
+                                                    Pay by consumption
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <p className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
+                                                {item.category}
+                                                {itemVariants[itemId] && item.variants && (() => {
+                                                  const variant = item.variants.find(v => v.id === itemVariants[itemId]);
+                                                  return variant ? ` • ${variant.name}` : '';
+                                                })()}
+                                                {itemAddOns[itemId] && itemAddOns[itemId].length > 0 && ` • +${itemAddOns[itemId].length}`}
+                                              </p>
+                                              {itemComments[itemId] && (
+                                                <p className="text-muted-foreground italic mt-0.5 text-xs truncate">
+                                                  "{itemComments[itemId]}"
+                                                </p>
+                                              )}
+                                            </div>
+                                            <div className="flex items-start gap-1.5 flex-shrink-0">
+                                              <button
+                                                onClick={() => openDetailsModal(item)}
+                                                className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+                                                style={{ borderRadius: 'var(--radius)' }}
+                                                title="Edit item"
+                                              >
+                                                <Edit2 className="w-3.5 h-3.5" />
+                                              </button>
+                                              <button
+                                                onClick={() => removeFromCart(itemId)}
+                                                className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
+                                                style={{ borderRadius: 'var(--radius)' }}
+                                                title="Remove item"
+                                              >
+                                                <X className="w-3.5 h-3.5" />
+                                              </button>
+                                            </div>
                                           </div>
-                                          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                            {item.category}
-                                            {itemVariants[itemId] && item.variants && (() => {
-                                              const variant = item.variants.find(v => v.id === itemVariants[itemId]);
-                                              return variant ? ` • ${variant.name}` : '';
-                                            })()}
-                                            {itemAddOns[itemId] && itemAddOns[itemId].length > 0 && ` • ${itemAddOns[itemId].length} add-on${itemAddOns[itemId].length > 1 ? 's' : ''}`}
-                                          </p>
-                                          {/* Show comments if any */}
-                                          {itemComments[itemId] && (
-                                            <div className="mt-1">
-                                              <p className="text-muted-foreground italic" style={{ fontSize: 'var(--text-small)' }}>
-                                                Note: {itemComments[itemId]}
+
+                                          {/* Footer Row */}
+                                          {isBeverage ? (
+                                            <div className="pt-1.5 border-t border-border">
+                                              <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-1.5">
+                                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
+                                                    Available
+                                                  </span>
+                                                  <span className="text-muted-foreground text-xs">for your event</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                  <span className="text-muted-foreground text-xs">Pricing: CHF {item.price.toFixed(2)}/bottle</span>
+                                                  <span className="text-amber-600 dark:text-amber-400 text-xs">(billed by consumption)</span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <div className="flex items-center justify-between pt-1.5 border-t border-border">
+                                              <div className="flex items-center gap-1.5">
+                                                {isPerPerson && (
+                                                  <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                                                    {quantity}× pp
+                                                  </span>
+                                                )}
+                                                {!isPerPerson && (
+                                                  <span className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
+                                                    {quantity > 1 ? `${quantity}×` : 'Flat rate'}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                                CHF {getItemPerPersonPrice(item).toFixed(2)}
+                                                {isPerPerson && <span className="text-muted-foreground text-sm">/person</span>}
                                               </p>
                                             </div>
                                           )}
                                         </div>
-                                        <button
-                                          onClick={() => removeFromCart(itemId)}
-                                          className="text-muted-foreground hover:text-destructive transition-colors"
-                                        >
-                                          <X className="w-4 h-4" />
-                                        </button>
-                                      </div>
-                                      
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                          <button
-                                            onClick={() => openDetailsModal(item)}
-                                            className="px-2 py-1 text-xs bg-muted text-foreground rounded hover:bg-muted/80 transition-colors"
-                                            style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-small)' }}
-                                          >
-                                            Edit
-                                          </button>
-                                        </div>
-                                        <p className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                          CHF {getItemTotalPrice(item).toFixed(2)}
+                                      );
+                                    })}
+                                  </div>
+
+                                  {/* Subtotals */}
+                                  <div className="border-t border-border pt-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Per-person items</p>
+                                      <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                        CHF {getPerPersonSubtotal().toFixed(2)}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center justify-between mb-2">
+                                      <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Additional items</p>
+                                      <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                        CHF {getFlatRateSubtotal().toFixed(2)}
+                                      </p>
+                                    </div>
+                                    {getConsumptionSubtotal() > 0 && (
+                                      <div className="flex items-center justify-between mb-4 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg" style={{ borderRadius: 'var(--radius)' }}>
+                                        <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                          Billed by consumption
+                                        </p>
+                                        <p className="text-amber-700 dark:text-amber-300 font-medium" style={{ fontSize: 'var(--text-base)' }}>
+                                          CHF {getConsumptionSubtotal().toFixed(2)}
                                         </p>
                                       </div>
+                                    )}
+                                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3" style={{ borderRadius: 'var(--radius)' }}>
+                                      <div className="flex items-start gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                          <Check className="w-3 h-3 text-primary" />
+                                        </div>
+                                        <div>
+                                          <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                            Complete total will be shown in the review step
+                                          </p>
+                                          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                            Continue to next step to see your full order breakdown
+                                          </p>
+                                        </div>
+                                      </div>
                                     </div>
-                                  );
-                                })}
-                              </div>
-
-                              {/* Total */}
-                              <div className="border-t border-border pt-4">
-                                <div className="flex items-center justify-between mb-2">
-                                  <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                    Subtotal
-                                  </p>
-                                  <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                                    CHF {getTotalPriceWithAddOns().toFixed(2)}
-                                  </p>
-                                </div>
-                                <div className="flex items-center justify-between mb-4">
-                                  <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                    Total items
-                                  </p>
-                                  <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                                    {selectedItems.reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0)}
-                                  </p>
-                                </div>
-                                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4" style={{ borderRadius: 'var(--radius)' }}>
-                                  <div className="flex items-center justify-between">
-                                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                      Estimated Total
-                                    </p>
-                                    <p className="text-primary" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                      CHF {getTotalPriceWithAddOns().toFixed(2)}
-                                    </p>
                                   </div>
-                                </div>
-                                
-                                <p className="text-muted-foreground text-center" style={{ fontSize: 'var(--text-small)' }}>
-                                  Final pricing will be confirmed based on your event details
-                                </p>
-                              </div>
-                            </>
+                                </>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1952,6 +2131,182 @@ export function CustomMenuWizard() {
                   </span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Mobile Cart FAB - side-attached style, only on step 2 with items selected */}
+      {currentStep === 2 && selectedItems.length > 0 && showCartFab && (
+        <button
+          onClick={() => setIsMobileDrawerOpen(true)}
+          className="lg:hidden fixed right-0 bottom-24 z-40 bg-primary text-primary-foreground shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 p-4 flex items-center gap-2.5 border-2 border-primary-foreground/10 border-r-0"
+          style={{ borderRadius: 'var(--radius-card) 0 0 var(--radius-card)' }}
+          aria-label="View shopping cart"
+        >
+          <div className="relative">
+            <ShoppingCart className="w-5 h-5" />
+            <span
+              className="absolute -top-2 -right-2 bg-secondary text-secondary-foreground rounded-full w-5 h-5 flex items-center justify-center"
+              style={{ fontSize: '11px', fontWeight: 'var(--font-weight-semibold)' }}
+            >
+              {selectedItems.length}
+            </span>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="opacity-80" style={{ fontSize: '11px', fontWeight: 'var(--font-weight-medium)' }}>
+              Per person
+            </span>
+            <span style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)', lineHeight: '1' }}>
+              CHF {getPerPersonSubtotal().toFixed(2)}
+            </span>
+          </div>
+        </button>
+      )}
+
+      {/* Mobile Cart Drawer */}
+      {isMobileDrawerOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setIsMobileDrawerOpen(false)}>
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/40" />
+          {/* Drawer */}
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl max-h-[80vh] flex flex-col animate-slide-up"
+            style={{ borderRadius: 'var(--radius-card) var(--radius-card) 0 0' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1.5 bg-muted rounded-full" />
+            </div>
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5 text-primary" />
+                <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  Your Selection
+                </h4>
+                <span className="px-2 py-0.5 bg-primary text-primary-foreground rounded-full text-xs">
+                  {selectedItems.length}
+                </span>
+              </div>
+              <button onClick={() => setIsMobileDrawerOpen(false)} className="w-8 h-8 flex items-center justify-center hover:bg-muted rounded-lg transition-colors" style={{ borderRadius: 'var(--radius)' }}>
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+            {/* Drawer Content */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-small)' }}>
+                Per-person items for {eventDetails.guestCount || '0'} {parseInt(eventDetails.guestCount) === 1 ? 'guest' : 'guests'}
+              </p>
+              <div className="space-y-3 mb-4">
+                {selectedItems.map((itemId) => {
+                  const item = menuItems.find(i => i.id === itemId);
+                  if (!item) return null;
+                  const quantity = itemQuantities[itemId] || 1;
+                  const isBeverage = item.category === 'Beverages';
+                  const isPerPerson = item.pricingType === 'per_person';
+                  return (
+                    <div key={itemId} className="bg-card border border-border rounded-lg p-2.5" style={{ borderRadius: 'var(--radius)' }}>
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-foreground truncate" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
+                              {item.name}
+                            </p>
+                            {isBeverage && (
+                              <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded text-xs">Pay by consumption</span>
+                            )}
+                          </div>
+                          <p className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
+                            {item.category}
+                            {itemVariants[itemId] && item.variants && (() => {
+                              const variant = item.variants.find(v => v.id === itemVariants[itemId]);
+                              return variant ? ` • ${variant.name}` : '';
+                            })()}
+                          </p>
+                        </div>
+                        <div className="flex items-start gap-1 flex-shrink-0">
+                          <button onClick={() => { setIsMobileDrawerOpen(false); openDetailsModal(item); }} className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" style={{ borderRadius: 'var(--radius)' }}>
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => removeFromCart(itemId)} className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors" style={{ borderRadius: 'var(--radius)' }}>
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      {isBeverage ? (
+                        <div className="pt-1.5 border-t border-border">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="px-1.5 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
+                                Available
+                              </span>
+                              <span className="text-muted-foreground text-xs">for your event</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground text-xs">Pricing: CHF {item.price.toFixed(2)}/bottle</span>
+                              <span className="text-amber-600 dark:text-amber-400 text-xs">(billed by consumption)</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between pt-1.5 border-t border-border">
+                          <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs">
+                            {isPerPerson ? `${quantity}× pp` : (quantity > 1 ? `${quantity}×` : 'Flat rate')}
+                          </span>
+                          <p className="text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
+                            CHF {getItemPerPersonPrice(item).toFixed(2)}{isPerPerson && <span className="text-muted-foreground text-xs">/person</span>}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Subtotals */}
+              <div className="border-t border-border pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Per-person items</p>
+                  <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>CHF {getPerPersonSubtotal().toFixed(2)}</p>
+                </div>
+                {getFlatRateSubtotal() > 0 && (
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Additional items</p>
+                    <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>CHF {getFlatRateSubtotal().toFixed(2)}</p>
+                  </div>
+                )}
+                {getConsumptionSubtotal() > 0 && (
+                  <div className="flex items-center justify-between mb-4 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg" style={{ borderRadius: 'var(--radius)' }}>
+                    <div className="flex items-center gap-2">
+                      <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Billed by consumption</p>
+                      <span className="text-amber-600 dark:text-amber-400 text-xs">🍷</span>
+                    </div>
+                    <p className="text-amber-700 dark:text-amber-300 font-medium" style={{ fontSize: 'var(--text-base)' }}>CHF {getConsumptionSubtotal().toFixed(2)}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* Drawer Footer */}
+            <div className="px-5 py-4 border-t border-border">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                    Per Person
+                  </p>
+                  <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>Complete total in review step</p>
+                </div>
+                <p className="text-primary" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
+                  CHF {getPerPersonSubtotal().toFixed(2)}<span className="text-sm font-normal text-muted-foreground">/person</span>
+                </p>
+              </div>
+              <button
+                onClick={() => { setIsMobileDrawerOpen(false); handleNext(); }}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-secondary hover:text-secondary-foreground transition-colors"
+                style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
+              >
+                <ChevronRight className="w-5 h-5" />
+                Continue to Review
+              </button>
             </div>
           </div>
         </div>

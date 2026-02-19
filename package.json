@@ -15,7 +15,10 @@
     "db:reset-admin": "dotenv -e .env.local -- tsx lib/db/reset-admin.ts",
     "db:verify": "dotenv -e .env.local -- tsx lib/db/verify-admin.ts",
     "db:create-user": "dotenv -e .env.local -- tsx lib/db/create-user.ts",
-    "db:recalculate-totals": "dotenv -e .env.local -- tsx lib/db/recalculate-totals.ts"
+    "db:recalculate-totals": "dotenv -e .env.local -- tsx lib/db/recalculate-totals.ts",
+    "email:test": "dotenv -e .env.local -- tsx scripts/test-email.ts",
+    "email:test-dummy": "tsx scripts/test-email-with-dummy.ts",
+    "email:send-reminders": "dotenv -e .env.local -- tsx -e \"require('./lib/actions/reminders').sendRemindersForNext24Hours()\""
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
@@ -76,6 +79,7 @@
     "lucide-react": "0.487.0",
     "motion": "12.23.24",
     "next": "16.1.6",
+    "next-intl": "^4.8.3",
     "next-themes": "0.4.6",
     "react": "19.0.0",
     "react-day-picker": "8.10.1",
@@ -93,6 +97,8 @@
     "tailwind-merge": "3.2.0",
     "tw-animate-css": "1.3.8",
     "vaul": "1.1.2",
+    "xlsx": "^0.18.5",
+    "zeptomail": "^7.0.1-alpha-3",
     "zod": "^3.24.1"
   },
   "devDependencies": {
