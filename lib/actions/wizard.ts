@@ -83,11 +83,10 @@ export async function submitWizardForm(data: WizardFormData) {
       .from(menuItems)
       .where(eq(menuItems.isActive, true));
 
-    // Create a map of menu items for easy lookup
+    // Create a map of menu items for quick lookup by ID
     const menuItemMap = new Map(allMenuItems.map(item => [item.id, item]));
 
-    // For the wizard, we'll use the database menu items in order
-    // Map selected item indices to actual menu items
+    // Calculate estimated total using actual database menu items
     let estimatedTotal = 0;
     const itemsToCreate: Array<{
       itemType: "menu_item";
@@ -96,16 +95,12 @@ export async function submitWizardForm(data: WizardFormData) {
       unitPrice: string;
     }> = [];
 
-    // Use database menu items (cycling through them based on selected count)
-    const dbMenuItems = allMenuItems.slice(0, Math.min(data.selectedItems.length, allMenuItems.length));
+    // Process each selected item from the frontend
+    for (const itemId of data.selectedItems) {
+      const dbItem = menuItemMap.get(itemId);
+      const quantity = data.itemQuantities[itemId] || 1;
 
-    for (let i = 0; i < data.selectedItems.length; i++) {
-      const mockItemId = data.selectedItems[i];
-      const mockItem = mockMenuItems[mockItemId];
-      const quantity = data.itemQuantities[mockItemId] || 1;
-
-      if (mockItem && i < dbMenuItems.length) {
-        const dbItem = dbMenuItems[i];
+      if (dbItem) {
         const unitPrice = Number(dbItem.pricePerPerson);
         const itemTotal = unitPrice * quantity * data.guestCount;
         estimatedTotal += itemTotal;
@@ -117,6 +112,8 @@ export async function submitWizardForm(data: WizardFormData) {
           quantity,
           unitPrice: dbItem.pricePerPerson,
         });
+      } else {
+        console.warn(`Menu item with ID ${itemId} not found in database`);
       }
     }
 
