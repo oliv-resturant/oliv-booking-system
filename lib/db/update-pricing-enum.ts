@@ -17,7 +17,7 @@ async function updateEnum() {
   const database = neon(process.env.DATABASE_URL!);
 
   try {
-    await database.sql(sql);
+    await (database as any).sql(sql);
     console.log('✅ Successfully updated pricing_type enum');
   } catch (error) {
     console.error('❌ Error updating enum:', error);

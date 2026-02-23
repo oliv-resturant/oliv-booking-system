@@ -33,6 +33,15 @@ import {
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
+  createAddonGroup,
+  updateAddonGroup,
+  deleteAddonGroup,
+  createAddonItem,
+  updateAddonItem,
+  deleteAddonItem,
+  updateCategoryAddonGroups,
+  getAllAddonGroups,
+  getAllAddonItems,
 } from '@/lib/actions/menu';
 
 interface MenuItemData {
@@ -325,7 +334,7 @@ export function MenuConfigPage() {
     isActive: true,
   });
   const [itemSettings, setItemSettings] = useState({
-    dietaryType: 'none' as 'none' | 'veg' | 'non-veg' | 'vegan',
+    dietaryType: 'veg' as 'veg' | 'non-veg' | 'vegan',
     dietaryTags: [] as string[],
     ingredients: '',
     allergens: [] as string[],
@@ -366,23 +375,29 @@ export function MenuConfigPage() {
               price: Number(item.pricePerPerson) || 0,
               isActive: item.isActive,
               variants: [],
-              dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : (!item.isVegetarian && !item.isVegan && !item.isGlutenFree) ? 'none' : 'non-veg',
+              dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : 'non-veg',
               dietaryTags: [],
             })) || [],
             assignedAddonGroups: [],
           }));
 
-          // Map database addons to component format
-          const mappedAddons: AddonGroup[] = data.addons.map((addon: any) => ({
-            id: addon.id,
-            name: addon.name,
-            subtitle: addon.description || '',
-            minSelect: 0,
-            maxSelect: 1,
-            items: [],
+          // Map database addon groups to component format
+          const mappedAddons: AddonGroup[] = (data.addonGroups || []).map((group: any) => ({
+            id: group.id,
+            name: group.name,
+            subtitle: group.subtitle || '',
+            minSelect: group.minSelect || 0,
+            maxSelect: group.maxSelect || 1,
+            items: (data.addonItemsByGroup?.[group.id] || []).map((item: any) => ({
+              id: item.id,
+              name: item.name,
+              price: Number(item.price) || 0,
+              dietaryType: (item.dietaryType === 'veg' || item.dietaryType === 'non-veg' || item.dietaryType === 'vegan') ? item.dietaryType : 'veg',
+              isActive: item.isActive,
+            })),
             isExpanded: false,
-            isRequired: addon.pricingType === 'mandatory',
-            isActive: addon.isActive,
+            isRequired: group.isRequired || false,
+            isActive: group.isActive,
           }));
 
           setCategories(mappedCategories);
@@ -523,7 +538,7 @@ export function MenuConfigPage() {
             price: Number(item.pricePerPerson) || 0,
             isActive: item.isActive,
             variants: [],
-            dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : (!item.isVegetarian && !item.isVegan && !item.isGlutenFree) ? 'none' : 'non-veg',
+            dietaryType: item.isVegan ? 'vegan' : item.isVegetarian ? 'veg' : 'non-veg',
             dietaryTags: [],
           })) || [],
           assignedAddonGroups: [],
@@ -804,7 +819,7 @@ export function MenuConfigPage() {
                     </Tooltip>
 
                     <Tooltip title="Add menu item" position="top">
-                      <button 
+                      <button
                         onClick={() => {
                           setActiveCategoryId(category.id);
                           setEditingMenuItemId(null);
@@ -812,6 +827,7 @@ export function MenuConfigPage() {
                             name: '',
                             description: '',
                             price: '',
+                            pricingType: 'per_person',
                             image: null,
                             imageUrl: '',
                             isActive: true,
@@ -859,6 +875,21 @@ export function MenuConfigPage() {
                           <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-20">
                             <button
                               onClick={() => {
+                                setChoiceCategoryId(category.id);
+                                setSelectedAddonGroups(category.assignedAddonGroups || []);
+                                setIsAddChoiceModalOpen(true);
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent transition-colors text-left border-b border-border"
+                            >
+                              <ListPlus className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>
+                                Add choice
+                              </span>
+                            </button>
+
+                            <button
+                              onClick={() => {
                                 console.log('Duplicate', category.name);
                                 setOpenDropdownId(null);
                               }}
@@ -869,7 +900,7 @@ export function MenuConfigPage() {
                                 Duplicate
                               </span>
                             </button>
-                            
+
                             <button
                               onClick={() => {
                                 toggleCategoryActive(category.id);
@@ -893,7 +924,7 @@ export function MenuConfigPage() {
                                 </>
                               )}
                             </button>
-                            
+
                             <button
                               onClick={() => {
                                 setDeleteCategoryId(category.id);
@@ -975,7 +1006,7 @@ export function MenuConfigPage() {
                         {/* Actions */}
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <Tooltip title="Edit item" position="top">
-                            <button 
+                            <button
                               onClick={() => {
                                 setActiveCategoryId(category.id);
                                 setEditingMenuItemId(item.id);
@@ -983,6 +1014,7 @@ export function MenuConfigPage() {
                                   name: item.name,
                                   description: item.description,
                                   price: item.price.toString(),
+                                  pricingType: 'per_person',
                                   image: null,
                                   imageUrl: item.image,
                                   isActive: item.isActive,
@@ -1067,6 +1099,7 @@ export function MenuConfigPage() {
                           name: '',
                           description: '',
                           price: '',
+                          pricingType: 'per_person',
                           image: null,
                           imageUrl: '',
                           isActive: true,
@@ -1095,7 +1128,7 @@ export function MenuConfigPage() {
 
       {/* Addons Tab */}
       {activeTab === 'addons' && (
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="bg-card border border-border rounded-xl">
           {/* Search Bar with Add Button */}
           <div className="p-4 border-b border-border">
             <div className="flex items-center gap-3">
@@ -1192,24 +1225,24 @@ export function MenuConfigPage() {
                       <Trash2 className="w-4 h-4" />
                     </button>
                     <div className="relative">
-                      <button 
+                      <button
                         onClick={() => setOpenAddonGroupDropdownId(openAddonGroupDropdownId === group.id ? null : group.id)}
-                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                        className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground relative z-30"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
-                      
+
                       {/* Dropdown Menu */}
                       {openAddonGroupDropdownId === group.id && (
                         <>
                           {/* Backdrop to close dropdown */}
-                          <div 
-                            className="fixed inset-0 z-10" 
+                          <div
+                            className="fixed inset-0 z-40"
                             onClick={() => setOpenAddonGroupDropdownId(null)}
                           />
-                          
+
                           {/* Dropdown */}
-                          <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-20">
+                          <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50">
                             <button
                               onClick={() => {
                                 setCurrentGroupId(group.id);
@@ -1956,37 +1989,61 @@ export function MenuConfigPage() {
             <Button
               variant="primary"
               icon={editingGroupId ? Check : Plus}
-              onClick={() => {
+              onClick={async () => {
                 if (!newGroup.name) return;
 
                 if (editingGroupId) {
-                  // Edit existing group
-                  setAddonGroups(addonGroups.map(group =>
-                    group.id === editingGroupId
-                      ? {
-                          ...group,
-                          name: newGroup.name,
-                          subtitle: newGroup.subtitle,
-                          minSelect: newGroup.type === 'mandatory' ? newGroup.minSelect : 0,
-                          maxSelect: newGroup.type === 'mandatory' ? newGroup.maxSelect : 999,
-                          isRequired: newGroup.type === 'mandatory',
-                        }
-                      : group
-                  ));
-                } else {
-                  // Add new group
-                  const newAddonGroup: AddonGroup = {
-                    id: `group-${Date.now()}`,
+                  // Edit existing group - update in database
+                  const result = await updateAddonGroup(editingGroupId, {
                     name: newGroup.name,
+                    nameDe: newGroup.name,
                     subtitle: newGroup.subtitle,
+                    subtitleDe: newGroup.subtitle,
                     minSelect: newGroup.type === 'mandatory' ? newGroup.minSelect : 0,
                     maxSelect: newGroup.type === 'mandatory' ? newGroup.maxSelect : 999,
-                    items: [],
-                    isExpanded: false,
                     isRequired: newGroup.type === 'mandatory',
-                  };
+                  });
 
-                  setAddonGroups([...addonGroups, newAddonGroup]);
+                  if (result.success) {
+                    setAddonGroups(addonGroups.map(group =>
+                      group.id === editingGroupId
+                        ? {
+                            ...group,
+                            name: newGroup.name,
+                            subtitle: newGroup.subtitle,
+                            minSelect: newGroup.type === 'mandatory' ? newGroup.minSelect : 0,
+                            maxSelect: newGroup.type === 'mandatory' ? newGroup.maxSelect : 999,
+                            isRequired: newGroup.type === 'mandatory',
+                          }
+                        : group
+                    ));
+                  }
+                } else {
+                  // Add new group - save to database
+                  const result = await createAddonGroup({
+                    name: newGroup.name,
+                    nameDe: newGroup.name,
+                    subtitle: newGroup.subtitle,
+                    subtitleDe: newGroup.subtitle,
+                    minSelect: newGroup.type === 'mandatory' ? newGroup.minSelect : 0,
+                    maxSelect: newGroup.type === 'mandatory' ? newGroup.maxSelect : 999,
+                    isRequired: newGroup.type === 'mandatory',
+                  });
+
+                  if (result.success && result.data) {
+                    const newAddonGroup: AddonGroup = {
+                      id: result.data.id,
+                      name: newGroup.name,
+                      subtitle: newGroup.subtitle,
+                      minSelect: newGroup.type === 'mandatory' ? newGroup.minSelect : 0,
+                      maxSelect: newGroup.type === 'mandatory' ? newGroup.maxSelect : 999,
+                      items: [],
+                      isExpanded: false,
+                      isRequired: newGroup.type === 'mandatory',
+                    };
+
+                    setAddonGroups([...addonGroups, newAddonGroup]);
+                  }
                 }
 
                 setIsAddGroupModalOpen(false);
@@ -2161,46 +2218,73 @@ export function MenuConfigPage() {
             <Button
               variant="primary"
               icon={editingAddonItemId ? Check : Plus}
-              onClick={() => {
+              onClick={async () => {
                 if (!currentGroupId) return;
 
-                const updatedGroups = addonGroups.map(group => {
-                  if (group.id === currentGroupId) {
-                    if (editingAddonItemId) {
-                      // Edit existing item
-                      return {
-                        ...group,
-                        items: group.items.map(item =>
-                          item.id === editingAddonItemId
-                            ? {
-                                ...item,
-                                name: newAddonItem.name,
-                                price: parseFloat(newAddonItem.price),
-                                dietaryType: newAddonItem.dietaryType,
-                                isActive: newAddonItem.isActive,
-                              }
-                            : item
-                        ),
-                      };
-                    } else {
-                      // Add new item
-                      const newItem: AddonItem = {
-                        id: `item-${Date.now()}`,
-                        name: newAddonItem.name,
-                        price: parseFloat(newAddonItem.price),
-                        dietaryType: newAddonItem.dietaryType,
-                        isActive: newAddonItem.isActive,
-                      };
-                      return {
-                        ...group,
-                        items: [...group.items, newItem],
-                      };
-                    }
-                  }
-                  return group;
-                });
+                if (editingAddonItemId) {
+                  // Edit existing item - update in database
+                  const result = await updateAddonItem(editingAddonItemId, {
+                    name: newAddonItem.name,
+                    nameDe: newAddonItem.name,
+                    price: parseFloat(newAddonItem.price) as any,
+                    dietaryType: newAddonItem.dietaryType,
+                    isActive: newAddonItem.isActive,
+                  });
 
-                setAddonGroups(updatedGroups);
+                  if (result.success) {
+                    const updatedGroups = addonGroups.map(group => {
+                      if (group.id === currentGroupId) {
+                        return {
+                          ...group,
+                          items: group.items.map(item =>
+                            item.id === editingAddonItemId
+                              ? {
+                                  ...item,
+                                  name: newAddonItem.name,
+                                  price: parseFloat(newAddonItem.price),
+                                  dietaryType: newAddonItem.dietaryType,
+                                  isActive: newAddonItem.isActive,
+                                }
+                              : item
+                          ),
+                        };
+                      }
+                      return group;
+                    });
+                    setAddonGroups(updatedGroups);
+                  }
+                } else {
+                  // Add new item - save to database
+                  const result = await createAddonItem({
+                    addonGroupId: currentGroupId,
+                    name: newAddonItem.name,
+                    nameDe: newAddonItem.name,
+                    price: parseFloat(newAddonItem.price) as any,
+                    dietaryType: newAddonItem.dietaryType,
+                    pricingType: 'per_person',
+                  });
+
+                  if (result.success && result.data) {
+                    const updatedGroups = addonGroups.map(group => {
+                      if (group.id === currentGroupId) {
+                        const newItem: AddonItem = {
+                          id: result.data.id,
+                          name: newAddonItem.name,
+                          price: parseFloat(newAddonItem.price),
+                          dietaryType: newAddonItem.dietaryType,
+                          isActive: newAddonItem.isActive,
+                        };
+                        return {
+                          ...group,
+                          items: [...group.items, newItem],
+                        };
+                      }
+                      return group;
+                    });
+                    setAddonGroups(updatedGroups);
+                  }
+                }
+
                 setIsAddAddonItemModalOpen(false);
                 setEditingAddonItemId(null);
                 setCurrentGroupId(null);
@@ -2474,13 +2558,18 @@ export function MenuConfigPage() {
             <Button
               variant="primary"
               icon={Check}
-              onClick={() => {
+              onClick={async () => {
                 if (choiceCategoryId) {
-                  setCategories(categories.map(cat =>
-                    cat.id === choiceCategoryId
-                      ? { ...cat, assignedAddonGroups: selectedAddonGroups }
-                      : cat
-                  ));
+                  // Save to database
+                  const result = await updateCategoryAddonGroups(choiceCategoryId, selectedAddonGroups);
+
+                  if (result.success) {
+                    setCategories(categories.map(cat =>
+                      cat.id === choiceCategoryId
+                        ? { ...cat, assignedAddonGroups: selectedAddonGroups }
+                        : cat
+                    ));
+                  }
                 }
                 setIsAddChoiceModalOpen(false);
                 setChoiceCategoryId(null);

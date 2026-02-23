@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Calendar, Clock, Users, Phone, Mail, Download, Search, RefreshCw, X, User, CalendarDays, Edit, UtensilsCrossed, Send, MessageSquare, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, Users, Phone, Mail, Download, Search, RefreshCw, X, User, CalendarDays, Edit, UtensilsCrossed, Send, MessageSquare, ArrowLeft, Lock, Unlock, History } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { Button } from './Button';
 import * as XLSX from 'xlsx';
@@ -139,6 +139,11 @@ function BookingDetailPage({ booking, onBack }: { booking: any | null; onBack: (
   const [notes, setNotes] = useState(booking?.notes || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingReminder, setIsSendingReminder] = useState(false);
+  const [isLocked, setIsLocked] = useState(booking?.isLocked || false);
+  const [lockLoading, setLockLoading] = useState(false);
+  const [showAuditHistory, setShowAuditHistory] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   // Update local state when booking changes
   useEffect(() => {
@@ -150,7 +155,118 @@ function BookingDetailPage({ booking, onBack }: { booking: any | null; onBack: (
     }
     setAllergies(booking?.allergies || '');
     setNotes(booking?.notes || '');
+
+    // Debug logging
+    console.log('Booking data isLocked field:', booking?.isLocked);
+    console.log('Full booking object:', booking);
+
+    setIsLocked(booking?.isLocked || false);
   }, [booking]);
+
+  // Fetch audit history when shown
+  useEffect(() => {
+    if (showAuditHistory && booking?.id) {
+      fetchAuditHistory();
+    }
+  }, [showAuditHistory, booking?.id]);
+
+  const fetchAuditHistory = async () => {
+    setAuditLoading(true);
+    try {
+      const response = await fetch(`/api/bookings/${booking.id}/audit`);
+      if (response.ok) {
+        const data = await response.json();
+        setAuditLogs(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching audit history:', error);
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
+  const handleToggleLock = async () => {
+    setLockLoading(true);
+    try {
+      const action = isLocked ? 'unlock' : 'lock';
+      console.log(`Toggle lock: ${action} (current state: ${isLocked})`);
+
+      const response = await fetch(`/api/bookings/${booking.id}/lock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Lock response:', data);
+
+        // Toggle the lock state
+        const newLockedState = !isLocked;
+        setIsLocked(newLockedState);
+
+        // Refresh audit history if it's shown
+        if (showAuditHistory) {
+          fetchAuditHistory();
+        }
+
+        alert(`Booking ${newLockedState ? 'locked' : 'unlocked'} successfully!`);
+      } else {
+        const errorData = await response.json();
+        console.error('Lock API error:', errorData);
+        alert(`Failed to ${action} booking: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error toggling lock:', error);
+      alert('Failed to toggle lock. Please try again.');
+    } finally {
+      setLockLoading(false);
+    }
+  };
+
+  const handleCopyEditLink = async () => {
+    try {
+      const response = await fetch(`/api/bookings/${booking.id}`);
+      if (response.ok) {
+        const data = await response.json();
+
+        // If secret exists in the response, use it
+        if (data.editSecret) {
+          const baseUrl = window.location.origin;
+          const editLink = `${baseUrl}/booking/${booking.id}/edit/${data.editSecret}`;
+          await navigator.clipboard.writeText(editLink);
+          alert('Edit link copied to clipboard!\n\n' + editLink);
+          console.log('✅ Edit link copied:', editLink);
+          return;
+        }
+
+        // If no secret, try to generate one via API
+        console.log('No edit secret found, attempting to generate one...');
+
+        // Try to call a function to generate the secret
+        const generateResponse = await fetch(`/api/bookings/${booking.id}/generate-secret`, {
+          method: 'POST',
+        });
+
+        if (generateResponse.ok) {
+          const generateData = await generateResponse.json();
+          if (generateData.success && generateData.editSecret) {
+            const baseUrl = window.location.origin;
+            const editLink = `${baseUrl}/booking/${booking.id}/edit/${generateData.editSecret}`;
+            await navigator.clipboard.writeText(editLink);
+            alert('Edit link generated and copied to clipboard!\n\n' + editLink);
+            console.log('✅ Edit link generated and copied:', editLink);
+            return;
+          }
+        }
+      }
+
+      alert('Unable to generate edit link. Please try again.');
+    } catch (error) {
+      console.error('Error copying edit link:', error);
+      alert('Failed to copy edit link. Please try again.');
+    }
+  };
 
   const statusOptions = [
     { value: 'pending', label: 'Pending' },
@@ -269,16 +385,87 @@ function BookingDetailPage({ booking, onBack }: { booking: any | null; onBack: (
             <span className="hidden sm:inline">Back to Bookings</span>
           </button>
         </div>
-        <button
-          onClick={handleSendReminder}
-          disabled={isSendingReminder}
-          className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-        >
-          <Send className="w-4 h-4" />
-          {isSendingReminder ? 'Sending...' : 'Send Reminder'}
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Lock/Unlock Button */}
+          <button
+            onClick={handleToggleLock}
+            disabled={lockLoading}
+            className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${
+              isLocked
+                ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                : 'bg-secondary hover:bg-primary text-white'
+            }`}
+            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+            title={isLocked ? 'Unlock booking (allows client edits)' : 'Lock booking (prevents client edits)'}
+          >
+            {lockLoading ? (
+              'Loading...'
+            ) : isLocked ? (
+              <>
+                <Unlock className="w-4 h-4" />
+                Unlock
+              </>
+            ) : (
+              <>
+                <Lock className="w-4 h-4" />
+                Lock
+              </>
+            )}
+          </button>
+
+          {/* Audit History Toggle */}
+          <button
+            onClick={() => setShowAuditHistory(!showAuditHistory)}
+            className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
+            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+          >
+            <History className="w-4 h-4" />
+            {showAuditHistory ? 'Hide History' : 'Show History'}
+          </button>
+
+          {/* Copy Edit Link Button */}
+          <button
+            onClick={handleCopyEditLink}
+            className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
+            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+            title="Copy client edit link to clipboard"
+          >
+            <Send className="w-4 h-4" />
+            Copy Edit Link
+          </button>
+        </div>
       </div>
+
+      {/* Lock Status Banner */}
+      {isLocked && (
+        <div
+          className="mb-6 p-4 border rounded-lg flex items-center gap-3"
+          style={{
+            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+            borderColor: 'rgba(245, 158, 11, 0.4)',
+            borderWidth: '1px'
+          }}
+        >
+          <Lock
+            className="w-5 h-5 flex-shrink-0"
+            style={{ color: '#f59e0b' }}
+          />
+          <div>
+            <p
+              className="font-medium"
+              style={{ color: '#b45309', fontSize: 'var(--text-base)' }}
+            >
+              Booking is Locked
+            </p>
+            <p
+              className="text-sm"
+              style={{ color: '#d97706', fontSize: 'var(--text-small)' }}
+            >
+              Clients cannot edit this booking. You can still make changes as an admin.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Page Title */}
       <div className="mb-6">
@@ -581,6 +768,79 @@ function BookingDetailPage({ booking, onBack }: { booking: any | null; onBack: (
             </div>
           </div>
         </div>
+
+        {/* Audit History Section */}
+        {showAuditHistory && (
+          <div className="bg-card border border-border rounded-xl p-6">
+            <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+              <History className="w-5 h-5 text-primary" />
+              Audit History
+            </h3>
+
+            {auditLoading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Loading audit history...
+              </div>
+            ) : auditLogs.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No changes recorded yet
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {auditLogs.map((log) => (
+                  <div key={log.id} className="bg-background border border-border rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 ${
+                            log.actor_type === 'admin' ? 'bg-primary' : 'bg-secondary'
+                          }`}
+                          style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}
+                        >
+                          {log.actor_label.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-foreground font-medium" style={{ fontSize: 'var(--text-base)' }}>
+                            {log.actor_label}
+                          </p>
+                          {log.admin_name && (
+                            <p className="text-muted-foreground text-sm">{log.admin_email}</p>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-muted-foreground text-sm">
+                        {new Date(log.created_at).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {log.changes.map((change: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground">
+                            {change.field.replace(/([A-Z])/g, ' $1').replace(/^./, (str: string) => str.toUpperCase())}:
+                          </span>
+                          <span className={`line-through ${change.from ? 'text-red-500' : 'text-muted-foreground'}`}>
+                            {change.from === null || change.from === undefined ? 'None' : String(change.from)}
+                          </span>
+                          <span className="text-muted-foreground">→</span>
+                          <span className="text-green-500 font-medium">
+                            {change.to === null || change.to === undefined ? 'None' : String(change.to)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {log.ip_address && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        IP: {log.ip_address}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Save Button */}
         <div className="pb-4">

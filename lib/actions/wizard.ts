@@ -5,6 +5,7 @@ import { leads, bookings, bookingItems, menuItems, menuCategories } from "@/lib/
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { eq, sql } from "drizzle-orm";
+import { ensureBookingSecret } from "@/lib/booking-security";
 
 // Mock menu items data with prices (same as menuItemsData.ts)
 const mockMenuItems: Record<string, { name: string; price: number }> = {
@@ -50,12 +51,98 @@ export interface WizardFormData {
   selectedItems: string[];
   itemQuantities: Record<string, number>;
   allergyDetails?: string[];
+  bookingId?: string | null; // For editing existing bookings
 }
 
 export async function submitWizardForm(data: WizardFormData) {
   try {
+    console.log('\n========================================');
+    console.log('📝 WIZARD FORM SUBMIT');
+    console.log('========================================');
+    console.log('Booking ID:', data.bookingId);
+    console.log('Edit Mode:', !!data.bookingId);
+
+    // If bookingId is provided, this is an UPDATE to existing booking
+    if (data.bookingId) {
+      console.log('🔄 UPDATING EXISTING BOOKING');
+
+      // Delete existing booking items first
+      await db.delete(bookingItems).where(eq(bookingItems.bookingId, data.bookingId));
+
+      // Fetch menu items and calculate new totals
+      const allMenuItems = await db
+        .select({
+          id: menuItems.id,
+          pricePerPerson: menuItems.pricePerPerson,
+        })
+        .from(menuItems)
+        .where(eq(menuItems.isActive, true));
+
+      const menuItemMap = new Map(allMenuItems.map(item => [item.id, item]));
+      let estimatedTotal = 0;
+
+      // Create new booking items
+      for (const itemId of data.selectedItems) {
+        const dbItem = menuItemMap.get(itemId);
+        const quantity = data.itemQuantities[itemId] || 1;
+
+        if (dbItem) {
+          const unitPrice = Number(dbItem.pricePerPerson);
+          const itemTotal = unitPrice * quantity * data.guestCount;
+          estimatedTotal += itemTotal;
+
+          await db.insert(bookingItems).values({
+            id: randomUUID(),
+            bookingId: data.bookingId,
+            itemType: "menu_item",
+            itemId: dbItem.id,
+            quantity,
+            unitPrice: dbItem.pricePerPerson,
+          });
+        }
+      }
+
+      // Update booking details
+      const eventTime = data.eventTime || '18:00:00';
+      const updateData: any = {
+        eventDate: new Date(data.eventDate),
+        eventTime: eventTime,
+        guestCount: data.guestCount,
+        allergyDetails: data.allergyDetails || [],
+        specialRequests: data.specialRequests || null,
+        estimatedTotal: estimatedTotal.toString(),
+        requiresDeposit: estimatedTotal > 1000,
+        updatedAt: new Date(),
+      };
+
+      await db.update(bookings)
+        .set(updateData)
+        .where(eq(bookings.id, data.bookingId));
+
+      // Generate edit secret if needed
+      const editSecret = await ensureBookingSecret(data.bookingId);
+
+      // Get the booking to get lead ID
+      const [booking] = await db.select().from(bookings).where(eq(bookings.id, data.bookingId)).limit(1);
+
+      console.log('✅ BOOKING UPDATED SUCCESSFULLY');
+      console.log('========================================\n');
+
+      return {
+        success: true,
+        data: {
+          bookingId: data.bookingId,
+          editSecret: editSecret,
+          inquiryNumber: booking.leadId ? booking.leadId.substring(0, 8).toUpperCase() : 'INQ-UNKNOWN',
+          estimatedTotal: estimatedTotal,
+        },
+      };
+    }
+
     // Default time if not provided
     const eventTime = data.eventTime || '18:00:00';
+
+    console.log('✨ CREATING NEW BOOKING');
 
     // First, create a lead with the customer's contact info
     // @ts-ignore - Drizzle ORM type compatibility issue
@@ -149,8 +236,29 @@ export async function submitWizardForm(data: WizardFormData) {
         internalNotes: internalNotesParts.join('\n'),
         termsAccepted: true,
         termsAcceptedAt: new Date(),
+        isLocked: true, // Bookings are locked by default - admin must unlock to allow client edits
       })
       .returning();
+
+    // Generate edit secret for the booking
+    const editSecret = await ensureBookingSecret(booking.id);
+
+    // Log edit link to console (for development/testing when emails are disabled)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oliv-restaurant.ch";
+    const bookingEditUrl = `${baseUrl}/booking/${booking.id}/edit/${editSecret}`;
+    console.log('\n========================================');
+    console.log('📧 BOOKING EDIT LINK (WIZARD)');
+    console.log('========================================');
+    console.log(`To: ${data.contactEmail}`);
+    console.log(`Booking ID: ${booking.id}`);
+    console.log(`Customer: ${data.contactName}`);
+    console.log(`Event Date: ${data.eventDate}`);
+    console.log(`Guests: ${data.guestCount}`);
+    console.log(`Total: CHF ${estimatedTotal.toFixed(2)}`);
+    console.log(`Status: LOCKED (by default)`);
+    console.log(`Edit Link: ${bookingEditUrl}`);
+    console.log(`Note: Client cannot edit until admin unlocks the booking`);
+    console.log('========================================\n');
 
     // Create booking items
     for (const item of itemsToCreate) {
@@ -172,6 +280,7 @@ export async function submitWizardForm(data: WizardFormData) {
       data: {
         leadId: lead.id,
         bookingId: booking.id,
+        editSecret: editSecret,
         inquiryNumber: lead.id.substring(0, 8).toUpperCase(),
         estimatedTotal: estimatedTotal,
       },

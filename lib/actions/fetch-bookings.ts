@@ -20,6 +20,7 @@ export async function fetchBookings() {
         b.estimated_total,
         b.status,
         b.created_at,
+        b.is_locked,
         l.contact_name,
         l.contact_email,
         l.contact_phone
@@ -122,10 +123,11 @@ export async function fetchBookings() {
           when: `${daysAgo}d ago`,
         },
         booking: `${daysAgo}d ago`,
-        allergies: booking.allergy_details?.join(', ') || '',
+        allergies: booking.allergy_details || '',
         notes: displayNotes,
         menuItems: menuItemsList,
         contactHistory: [],
+        isLocked: booking.is_locked || false,
       };
     });
   } catch (error) {

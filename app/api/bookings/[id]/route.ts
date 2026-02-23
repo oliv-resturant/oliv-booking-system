@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { updateBooking } from "@/lib/actions/bookings";
 import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth/server";
+import type { AuditContext } from "@/lib/booking-audit";
 
 export async function GET(
   request: NextRequest,
@@ -24,6 +26,8 @@ export async function GET(
         b.estimated_total,
         b.status,
         b.created_at,
+        b.edit_secret,
+        b.is_locked,
         l.contact_name,
         l.contact_email,
         l.contact_phone
@@ -151,10 +155,31 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Verify admin authentication
+    const session = await requireAuth();
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
     const body = await request.json();
 
-    const result = await updateBooking(id, body);
+    // Create audit context for admin edit
+    const auditContext: AuditContext = {
+      actorType: "admin",
+      adminUserId: session.user.id,
+      actorLabel: `Admin: ${session.user.name || "Unknown"}`,
+      ipAddress: request.headers.get("x-forwarded-for") ||
+                 request.headers.get("x-real-ip") ||
+                 undefined,
+      userAgent: request.headers.get("user-agent") || undefined,
+    };
+
+    const result = await updateBooking(id, body, auditContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -166,6 +191,15 @@ export async function PUT(
     return NextResponse.json({ success: true, data: result.data });
   } catch (error) {
     console.error("Error in PUT /api/bookings/[id]:", error);
+
+    // Handle authentication errors
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }

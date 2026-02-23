@@ -1,6 +1,6 @@
 import type { Booking, Lead } from "@/lib/db/schema";
 
-interface BookingConfirmedEmailParams {
+export interface BookingConfirmedEmailParams {
   booking: Booking & {
     lead?: Lead | null;
   };

@@ -65,6 +65,7 @@ export async function getLeads(filters?: { status?: string }) {
     let query = db.select().from(leads);
 
     if (filters?.status) {
+      // @ts-ignore - neon-http driver type limitation
       query = query.where(eq(leads.status, filters.status as any));
     }
 

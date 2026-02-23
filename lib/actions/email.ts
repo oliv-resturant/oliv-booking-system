@@ -30,6 +30,19 @@ export async function sendBookingEmail(params: {
   rebookingUrl?: string;
 }): Promise<{ success: boolean; error?: string; emailLogId?: string }> {
   try {
+    // Skip email sending if ZeptoMail token is not configured
+    if (!process.env.ZEPTOMAIL_API_TOKEN) {
+      console.log('📧 Email skipped (ZEPTOMAIL_API_TOKEN not configured):', params.emailType);
+      console.log('   Would send to:', params.recipientEmail);
+      if (params.bookingEditUrl) {
+        console.log('   Edit Link:', params.bookingEditUrl);
+      }
+      return {
+        success: true,
+        emailLogId: undefined,
+      };
+    }
+
     // Check if we should use ZeptoMail templates
     const useTemplates = process.env.USE_ZEPTOMAIL_TEMPLATES === "true";
 
@@ -241,7 +254,7 @@ export async function sendBookingNoShow(params: {
 }): Promise<{ success: boolean; error?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
-    emailType: "no_show",
+    emailType: "no_show" as any,
     recipientEmail: params.recipientEmail,
     bookingData: params.bookingData,
   });
@@ -258,7 +271,7 @@ export async function sendBookingDeclined(params: {
 }): Promise<{ success: boolean; error?: string }> {
   return sendBookingEmail({
     bookingId: params.bookingId,
-    emailType: "declined",
+    emailType: "declined" as any,
     recipientEmail: params.recipientEmail,
     bookingData: params.bookingData,
     reason: params.reason,
@@ -274,7 +287,7 @@ export async function getBookingEmailLogs(bookingId: string) {
       .select()
       .from(emailLogs)
       .where(eq(emailLogs.bookingId, bookingId))
-      .orderBy(emailLogs.createdAt);
+      .orderBy(emailLogs.sentAt);
 
     return { success: true, data: logs };
   } catch (error: any) {

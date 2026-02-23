@@ -38,7 +38,9 @@
       "Bash(lsof:*)",
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx drizzle-kit migrate:*)",
+      "Bash(cd D:\\\\Oliv-Booking-System\\\\lib\\\\email\\\\templates:*)"
     ]
   }
 }

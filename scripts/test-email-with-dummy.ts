@@ -86,7 +86,9 @@ async function generateTestEmails() {
 
     const smallBooking = {
       id: "test-small-booking",
-      eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       eventTime: "19:00",
       guestCount: 8,
       estimatedTotal: "4500.00",
@@ -94,7 +96,10 @@ async function generateTestEmails() {
       specialRequests: "Vegetarische Optionen benötigt",
       allergyDetails: ["Nüsse", "Laktose"],
       requiresDeposit: false,
+      leadId: "test-lead-id",
+      internalNotes: "",
       lead: {
+        id: "test-lead-id",
         contactName: "Max Mustermann",
         contactEmail: "max.mustermann@example.com",
         contactPhone: "+41 44 123 45 67",
@@ -125,7 +130,9 @@ async function generateTestEmails() {
 
     const largeBooking = {
       id: "test-large-booking",
-      eventDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      eventDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       eventTime: "18:30",
       guestCount: 25,
       estimatedTotal: "7500.00",
@@ -133,7 +140,10 @@ async function generateTestEmails() {
       specialRequests: "Privater Event - getrennter Bereich gewünscht",
       allergyDetails: [],
       requiresDeposit: true,
+      leadId: "test-lead-id-2",
+      internalNotes: "",
       lead: {
+        id: "test-lead-id-2",
         contactName: "Sarah Schweizer",
         contactEmail: "sarah.schweizer@company.ch",
         contactPhone: "+41 44 987 65 43",
@@ -164,7 +174,9 @@ async function generateTestEmails() {
 
     const cancelledBooking = {
       id: "test-cancelled-booking",
-      eventDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      eventDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       eventTime: "20:00",
       guestCount: 12,
       estimatedTotal: "5500.00",
@@ -172,7 +184,10 @@ async function generateTestEmails() {
       specialRequests: "Jubiläum - Torte bestellen",
       allergyDetails: [],
       requiresDeposit: false,
+      leadId: "test-lead-id-3",
+      internalNotes: "",
       lead: {
+        id: "test-lead-id-3",
         contactName: "Peter Müller",
         contactEmail: "peter.mueller@example.ch",
         contactPhone: "+41 44 555 66 77",
@@ -202,15 +217,20 @@ async function generateTestEmails() {
 
     const reminderBooking = {
       id: "test-reminder-booking",
-      eventDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      eventDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Tomorrow
       eventTime: "19:30",
       guestCount: 15,
       estimatedTotal: "4800.00",
+      leadId: "test-lead-id-4",
+      internalNotes: "",
       status: "confirmed" as const,
       specialRequests: "",
       allergyDetails: ["Gluten"],
       requiresDeposit: false,
       lead: {
+        id: "test-lead-id-4",
         contactName: "Anna Andrea",
         contactEmail: "anna.andrea@example.ch",
         contactPhone: "+41 44 333 44 55",
@@ -240,7 +260,9 @@ async function generateTestEmails() {
 
     const completedBooking = {
       id: "test-completed-booking",
-      eventDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      eventDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 2 days ago
       eventTime: "19:00",
       guestCount: 10,
       estimatedTotal: "4200.00",
@@ -248,7 +270,10 @@ async function generateTestEmails() {
       specialRequests: "Ruhiger Tisch gewünscht",
       allergyDetails: [],
       requiresDeposit: false,
+      leadId: "test-lead-id-5",
+      internalNotes: "",
       lead: {
+        id: "test-lead-id-5",
         contactName: "Thomas Weber",
         contactEmail: "thomas.weber@example.ch",
         contactPhone: "+41 44 222 33 44",
@@ -279,15 +304,20 @@ async function generateTestEmails() {
 
     const noShowBooking = {
       id: "test-noshow-booking",
-      eventDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // Yesterday
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      eventDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Yesterday
       eventTime: "19:00",
       guestCount: 6,
       estimatedTotal: "2400.00",
       status: "no_show" as const,
       specialRequests: "",
+      leadId: "test-lead-id-6",
+      internalNotes: "",
       allergyDetails: [],
       requiresDeposit: false,
       lead: {
+        id: "test-lead-id-6",
         contactName: "Julia Jenkins",
         contactEmail: "julia.jenkins@example.ch",
         contactPhone: "+41 44 111 22 33",
@@ -316,15 +346,20 @@ async function generateTestEmails() {
 
     const declinedBooking = {
       id: "test-declined-booking",
-      eventDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      eventDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       eventTime: "20:00",
       guestCount: 30,
+      leadId: "test-lead-id-7",
+      internalNotes: "",
       estimatedTotal: "9000.00",
       status: "declined" as const,
       specialRequests: "Hochzeit",
       allergyDetails: [],
       requiresDeposit: false,
       lead: {
+        id: "test-lead-id-7",
         contactName: "Marco Marco",
         contactEmail: "marco.marco@example.ch",
         contactPhone: "+41 44 777 88 99",

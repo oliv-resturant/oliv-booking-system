@@ -101,6 +101,8 @@ export const emailTypeEnum = [
   "reminder",
   "follow_up",
   "cancellation",
+  "no_show",
+  "declined",
   "custom",
 ] as const;
 export type EmailType = (typeof emailTypeEnum)[number];
@@ -175,6 +177,11 @@ export const bookings = pgTable(
     internalNotes: text("internal_notes"),
     termsAccepted: boolean("terms_accepted").notNull().default(false),
     termsAcceptedAt: timestamp("terms_accepted_at"),
+    // Client edit fields
+    editSecret: text("edit_secret").unique(),
+    isLocked: boolean("is_locked").notNull().default(false),
+    lockedBy: text("locked_by").references(() => adminUser.id),
+    lockedAt: timestamp("locked_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -182,6 +189,7 @@ export const bookings = pgTable(
     leadIdIdx: index("bookings_lead_id_idx").on(table.leadId),
     statusIdx: index("bookings_status_idx").on(table.status),
     dateIdx: index("bookings_date_idx").on(table.eventDate),
+    editSecretIdx: index("bookings_edit_secret_idx").on(table.editSecret),
   }),
 );
 
@@ -281,6 +289,73 @@ export const addons = pgTable(
   }),
 );
 
+// ADDON_GROUPS table - for organizing addon choices into groups
+export const addonGroups = pgTable(
+  "addon_groups",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    nameDe: text("name_de").notNull(),
+    subtitle: text("subtitle"),
+    subtitleDe: text("subtitle_de"),
+    minSelect: integer("min_select").notNull().default(0),
+    maxSelect: integer("max_select").notNull().default(1),
+    isRequired: boolean("is_required").notNull().default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    sortOrderIdx: index("addon_groups_sort_order_idx").on(table.sortOrder),
+  }),
+);
+
+// ADDON_ITEMS table - individual items within addon groups
+export const addonItems = pgTable(
+  "addon_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    addonGroupId: uuid("addon_group_id").references(() => addonGroups.id, {
+      onDelete: "cascade",
+    }),
+    name: text("name").notNull(),
+    nameDe: text("name_de").notNull(),
+    description: text("description"),
+    descriptionDe: text("description_de"),
+    price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+    pricingType: text("pricing_type", { enum: pricingTypeEnum }).notNull().default("per_person"),
+    dietaryType: text("dietary_type"), // vegetarian, vegan, gluten-free, etc.
+    isActive: boolean("is_active").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    addonGroupIdIdx: index("addon_items_addon_group_id_idx").on(table.addonGroupId),
+    sortOrderIdx: index("addon_items_sort_order_idx").on(table.sortOrder),
+  }),
+);
+
+// CATEGORY_ADDON_GROUPS table - junction table for linking categories to addon groups
+export const categoryAddonGroups = pgTable(
+  "category_addon_groups",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    categoryId: uuid("category_id").references(() => menuCategories.id, {
+      onDelete: "cascade",
+    }),
+    addonGroupId: uuid("addon_group_id").references(() => addonGroups.id, {
+      onDelete: "cascade",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    categoryIdIdx: index("category_addon_groups_category_id_idx").on(table.categoryId),
+    addonGroupIdIdx: index("category_addon_groups_addon_group_id_idx").on(table.addonGroupId),
+  }),
+);
+
 // BOOKING_ITEMS table
 export const bookingItems = pgTable(
   "booking_items",
@@ -351,6 +426,38 @@ export const emailLogs = pgTable(
   }),
 );
 
+// BOOKING_AUDIT_LOG table
+export const bookingAuditLog = pgTable(
+  "booking_audit_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    bookingId: uuid("booking_id")
+      .notNull()
+      .references(() => bookings.id, { onDelete: "cascade" }),
+    adminUserId: text("admin_user_id").references(() => adminUser.id),
+    actorType: text("actor_type")
+      .notNull()
+      .$type<"admin" | "client">(),
+    actorLabel: text("actor_label").notNull(),
+    changes: jsonb("changes").notNull().$type<Array<{
+      field: string;
+      from: any;
+      to: any;
+    }>>(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    bookingIdIdx: index("booking_audit_log_booking_id_idx").on(
+      table.bookingId
+    ),
+    createdAtIdx: index("booking_audit_log_created_at_idx").on(
+      table.createdAt
+    ),
+  }),
+);
+
 // LANDING_PAGE_CONTENT table
 export const landingPageContent = pgTable(
   "landing_page_content",
@@ -401,6 +508,12 @@ export type MenuItem = typeof menuItems.$inferSelect;
 export type NewMenuItem = typeof menuItems.$inferInsert;
 export type Addon = typeof addons.$inferSelect;
 export type NewAddon = typeof addons.$inferInsert;
+export type AddonGroup = typeof addonGroups.$inferSelect;
+export type NewAddonGroup = typeof addonGroups.$inferInsert;
+export type AddonItem = typeof addonItems.$inferSelect;
+export type NewAddonItem = typeof addonItems.$inferInsert;
+export type CategoryAddonGroup = typeof categoryAddonGroups.$inferSelect;
+export type NewCategoryAddonGroup = typeof categoryAddonGroups.$inferInsert;
 export type BookingItem = typeof bookingItems.$inferSelect;
 export type NewBookingItem = typeof bookingItems.$inferInsert;
 export type BookingContactHistory = typeof bookingContactHistory.$inferSelect;
@@ -408,5 +521,7 @@ export type NewBookingContactHistory =
   typeof bookingContactHistory.$inferInsert;
 export type EmailLog = typeof emailLogs.$inferSelect;
 export type NewEmailLog = typeof emailLogs.$inferInsert;
+export type BookingAuditLog = typeof bookingAuditLog.$inferSelect;
+export type NewBookingAuditLog = typeof bookingAuditLog.$inferInsert;
 export type LandingPageContent = typeof landingPageContent.$inferSelect;
 export type NewLandingPageContent = typeof landingPageContent.$inferInsert;

@@ -13,6 +13,13 @@ import {
   sendBookingNoShow,
   sendBookingReminder,
 } from "@/lib/actions/email";
+import {
+  calculateBookingChanges,
+  logBookingChange,
+  type AuditContext,
+  type FieldChange,
+} from "@/lib/booking-audit";
+import { ensureBookingSecret } from "@/lib/booking-security";
 
 export interface CreateBookingInput {
   leadId?: string;
@@ -40,11 +47,28 @@ export async function createBooking(input: CreateBookingInput & { leadEmail?: st
         requiresDeposit: input.requiresDeposit || false,
         status: "pending",
         internalNotes: input.internalNotes,
+        isLocked: true, // Bookings are locked by default - admin must unlock to allow client edits
       })
       .returning();
 
+    // Generate edit secret for the booking
+    const editSecret = await ensureBookingSecret(booking.id);
+
+    // Log edit link to console (for development/testing when emails are disabled)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oliv-restaurant.ch";
+    const bookingEditUrl = `${baseUrl}/booking/${booking.id}/edit/${editSecret}`;
+    console.log('\n========================================');
+    console.log('📧 BOOKING EDIT LINK (EMAIL)');
+    console.log('========================================');
+    console.log(`To: ${input.leadEmail || 'No email provided'}`);
+    console.log(`Booking ID: ${booking.id}`);
+    console.log(`Status: LOCKED (by default)`);
+    console.log(`Edit Link: ${bookingEditUrl}`);
+    console.log(`Note: Client cannot edit until admin unlocks the booking`);
+    console.log('========================================\n');
+
     // Send confirmation email if lead email is provided
-    if (input.leadEmail && !input.skipEmail) {
+    if (input.leadEmail && !(input as any).skipEmail) {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oliv-restaurant.ch";
 
       await sendBookingConfirmation({
@@ -53,10 +77,11 @@ export async function createBooking(input: CreateBookingInput & { leadEmail?: st
         bookingData: {
           ...booking,
           lead: input.leadName && input.leadEmail ? {
+            id: crypto.randomUUID(),
             contactName: input.leadName,
             contactEmail: input.leadEmail,
             contactPhone: "",
-            eventDate: input.eventDate,
+            eventDate: input.eventDate instanceof Date ? input.eventDate.toISOString() : input.eventDate,
             eventTime: input.eventTime,
             guestCount: input.guestCount,
             source: "booking",
@@ -66,13 +91,13 @@ export async function createBooking(input: CreateBookingInput & { leadEmail?: st
           } : null,
         },
         estimatedTotal: input.estimatedTotal,
-        bookingEditUrl: `${baseUrl}/booking/${booking.id}/edit`,
+        bookingEditUrl: `${baseUrl}/booking/${booking.id}/edit/${editSecret}`,
       });
     }
 
     revalidatePath("/admin/bookings");
 
-    return { success: true, data: booking };
+    return { success: true, data: { ...booking, editSecret } };
   } catch (error) {
     console.error("Error creating booking:", error);
     return { success: false, error: "Failed to create booking" };
@@ -142,6 +167,20 @@ export async function updateBookingStatus(
     if (!options?.skipEmail && leadData?.contactEmail) {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oliv-restaurant.ch";
 
+      // Ensure booking has an edit secret
+      const editSecret = await ensureBookingSecret(id);
+
+      // Log edit link to console (for development/testing when emails are disabled)
+      const bookingEditUrl = `${baseUrl}/booking/${id}/edit/${editSecret}`;
+      console.log('\n========================================');
+      console.log(`📧 ${(status || 'confirmation').toUpperCase()} EMAIL WITH EDIT LINK`);
+      console.log('========================================');
+      console.log(`To: ${leadData.contactEmail}`);
+      console.log(`Booking ID: ${id}`);
+      console.log(`Status: ${status}`);
+      console.log(`Edit Link: ${bookingEditUrl}`);
+      console.log('========================================\n');
+
       switch (status) {
         case "confirmed":
           await sendBookingConfirmation({
@@ -151,7 +190,7 @@ export async function updateBookingStatus(
             estimatedTotal: bookingData.estimatedTotal
               ? parseFloat(bookingData.estimatedTotal)
               : undefined,
-            bookingEditUrl: `${baseUrl}/booking/${id}/edit`,
+            bookingEditUrl: `${baseUrl}/booking/${id}/edit/${editSecret}`,
           });
           break;
 
@@ -207,30 +246,88 @@ export async function updateBookingStatus(
   }
 }
 
-export async function updateBooking(id: string, updates: Partial<CreateBookingInput>) {
+export async function updateBooking(
+  id: string,
+  updates: Partial<CreateBookingInput>,
+  auditContext?: AuditContext
+) {
   try {
+    console.log('\n========================================');
+    console.log('🔄 UPDATE BOOKING FUNCTION START');
+    console.log('========================================');
+    console.log(`📋 Booking ID to UPDATE: ${id}`);
+    console.log('📝 Updates requested:', JSON.stringify(updates, null, 2));
+    console.log('👤 Actor:', auditContext?.actorLabel || 'Unknown');
+
+    // Get current booking for change detection
+    const [currentBooking] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, id))
+      .limit(1);
+
+    if (!currentBooking) {
+      console.error('❌ ERROR: Booking not found with ID:', id);
+      console.log('========================================\n');
+      return { success: false, error: "Booking not found" };
+    }
+
+    console.log('✅ Found existing booking:', {
+      id: currentBooking.id,
+      status: currentBooking.status,
+      eventDate: currentBooking.eventDate,
+      guestCount: currentBooking.guestCount,
+    });
+
     const updateData: any = {
       updatedAt: new Date(),
     };
 
-    if (updates.eventDate !== undefined) updateData.eventDate = updates.eventDate;
-    if (updates.eventTime !== undefined) updateData.eventTime = updates.eventTime;
-    if (updates.guestCount !== undefined) updateData.guestCount = updates.guestCount;
+    if (updates.eventDate !== undefined) {
+      updateData.eventDate = updates.eventDate;
+      console.log('  → Updating eventDate:', updates.eventDate);
+    }
+    if (updates.eventTime !== undefined) {
+      updateData.eventTime = updates.eventTime;
+      console.log('  → Updating eventTime:', updates.eventTime);
+    }
+    if (updates.guestCount !== undefined) {
+      updateData.guestCount = updates.guestCount;
+      console.log('  → Updating guestCount:', updates.guestCount);
+    }
     if (updates.allergyDetails !== undefined) {
       // Convert array to string for storage (can be converted back to array when reading)
       updateData.allergyDetails = Array.isArray(updates.allergyDetails)
         ? updates.allergyDetails.join(', ')
         : updates.allergyDetails;
+      console.log('  → Updating allergyDetails:', updateData.allergyDetails);
     }
-    if (updates.specialRequests !== undefined) updateData.specialRequests = updates.specialRequests;
-    if (updates.estimatedTotal !== undefined) updateData.estimatedTotal = updates.estimatedTotal.toString();
-    if (updates.requiresDeposit !== undefined) updateData.requiresDeposit = updates.requiresDeposit;
-    if (updates.internalNotes !== undefined) updateData.internalNotes = updates.internalNotes;
-    if (updates.menuItems !== undefined) {
+    if (updates.specialRequests !== undefined) {
+      updateData.specialRequests = updates.specialRequests;
+      console.log('  → Updating specialRequests:', updates.specialRequests);
+    }
+    if (updates.estimatedTotal !== undefined) {
+      updateData.estimatedTotal = updates.estimatedTotal.toString();
+      console.log('  → Updating estimatedTotal:', updateData.estimatedTotal);
+    }
+    if (updates.requiresDeposit !== undefined) {
+      updateData.requiresDeposit = updates.requiresDeposit;
+      console.log('  → Updating requiresDeposit:', updates.requiresDeposit);
+    }
+    if (updates.internalNotes !== undefined) {
+      updateData.internalNotes = updates.internalNotes;
+      console.log('  → Updating internalNotes');
+    }
+    if ((updates as any).menuItems !== undefined) {
       // menuItems is an array of objects with { id, name, quantity, unitPrice }
       // We'll store it as a JSON string to preserve the structure
-      updateData.menuItems = JSON.stringify(updates.menuItems);
+      (updateData as any).menuItems = JSON.stringify((updates as any).menuItems);
+      console.log('  → Updating menuItems');
     }
+
+    console.log('\n🔧 Executing UPDATE query...');
+    console.log('   WHERE id =', id);
+    console.log('   SET:', JSON.stringify(updateData, null, 2));
 
     const [booking] = await db
       .update(bookings)
@@ -238,11 +335,41 @@ export async function updateBooking(id: string, updates: Partial<CreateBookingIn
       .where(eq(bookings.id, id))
       .returning();
 
+    console.log('\n✅ SUCCESS: Booking updated in database');
+    console.log('   Updated booking ID:', booking.id);
+    console.log('   Updated booking status:', booking.status);
+    console.log('========================================\n');
+
+    // Log changes to audit trail if context is provided
+    if (auditContext) {
+      const changes = calculateBookingChanges(currentBooking, booking);
+
+      console.log('📊 Changes detected:', changes.length);
+      console.log('📝 Logging to audit trail...');
+
+      await logBookingChange({
+        bookingId: id,
+        adminUserId: auditContext.adminUserId,
+        actorType: auditContext.actorType,
+        actorLabel: auditContext.actorLabel,
+        changes,
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent,
+      });
+
+      console.log('✅ Audit log created');
+    }
+
+    console.log('🔄 Revalidating path: /admin/bookings');
     revalidatePath("/admin/bookings");
+
+    console.log('✅ UPDATE BOOKING FUNCTION COMPLETE');
+    console.log('========================================\n');
 
     return { success: true, data: booking };
   } catch (error) {
-    console.error("Error updating booking:", error);
+    console.error('\n❌ ERROR in updateBooking:', error);
+    console.log('========================================\n');
     return { success: false, error: "Failed to update booking" };
   }
 }
@@ -276,6 +403,74 @@ export async function getBookingById(id: string) {
     return { success: true, data: booking };
   } catch (error) {
     console.error("Error fetching booking:", error);
+    return { success: false, error: "Failed to fetch booking", data: null };
+  }
+}
+
+export async function getBookingWithDetails(id: string) {
+  try {
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+
+    if (!booking) {
+      return { success: false, error: "Booking not found", data: null };
+    }
+
+    // Get lead information
+    const lead = booking.leadId ? await db.select().from(leads).where(eq(leads.id, booking.leadId)).limit(1) : null;
+
+    // Get booking items
+    const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, id));
+
+    // Parse internalNotes to extract business, address, and occasion
+    // Format: "Business: X\nOccasion: Y\nAddress: Z"
+    let businessName = '';
+    let occasion = '';
+    let street = '';
+    let plz = '';
+    let location = '';
+
+    if (booking.internalNotes) {
+      const lines = booking.internalNotes.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('Business: ')) {
+          businessName = line.replace('Business: ', '');
+        } else if (line.startsWith('Occasion: ')) {
+          occasion = line.replace('Occasion: ', '');
+        } else if (line.startsWith('Address: ')) {
+          const address = line.replace('Address: ', '');
+          // Parse address "Street, PLZ Location"
+          const addressParts = address.split(', ');
+          if (addressParts.length >= 2) {
+            street = addressParts[0];
+            const plzLocation = addressParts.slice(1).join(', ');
+            // Try to separate PLZ from location
+            const plzMatch = plzLocation.match(/^(\d{4,5})\s+(.+)$/);
+            if (plzMatch) {
+              plz = plzMatch[1];
+              location = plzMatch[2];
+            } else {
+              location = plzLocation;
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        ...booking,
+        businessName,
+        occasion,
+        street,
+        plz,
+        location,
+        lead: lead && lead[0] ? lead[0] : null,
+        booking_items: items
+      }
+    };
+  } catch (error) {
+    console.error("Error fetching booking with details:", error);
     return { success: false, error: "Failed to fetch booking", data: null };
   }
 }
@@ -362,5 +557,170 @@ export async function getBookingContactHistory(bookingId: string) {
   } catch (error) {
     console.error("Error fetching contact history:", error);
     return { success: false, error: "Failed to fetch contact history", data: [] };
+  }
+}
+
+/**
+ * Lock a booking to prevent client edits
+ *
+ * @param bookingId - The booking ID
+ * @param adminUserId - The admin user ID performing the lock
+ * @param adminUserName - The admin user name for audit log
+ * @returns Success status
+ */
+export async function lockBooking(
+  bookingId: string,
+  adminUserId: string,
+  adminUserName: string
+) {
+  try {
+    const [booking] = await db
+      .update(bookings)
+      .set({
+        isLocked: true,
+        lockedBy: adminUserId,
+        lockedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(bookings.id, bookingId))
+      .returning();
+
+    if (!booking) {
+      return { success: false, error: "Booking not found" };
+    }
+
+    // Log the lock action
+    const { logLockAction } = await import("@/lib/booking-audit");
+    await logLockAction({
+      bookingId,
+      adminUserId,
+      adminUserName,
+      action: "lock",
+    });
+
+    revalidatePath("/admin/bookings");
+    revalidatePath(`/admin/bookings/${bookingId}`);
+
+    return { success: true, data: booking };
+  } catch (error) {
+    console.error("Error locking booking:", error);
+    return { success: false, error: "Failed to lock booking" };
+  }
+}
+
+/**
+ * Unlock a booking to allow client edits
+ *
+ * @param bookingId - The booking ID
+ * @param adminUserId - The admin user ID performing the unlock
+ * @param adminUserName - The admin user name for audit log
+ * @returns Success status
+ */
+export async function unlockBooking(
+  bookingId: string,
+  adminUserId: string,
+  adminUserName: string
+) {
+  try {
+    const [booking] = await db
+      .update(bookings)
+      .set({
+        isLocked: false,
+        lockedBy: null,
+        lockedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(bookings.id, bookingId))
+      .returning();
+
+    if (!booking) {
+      return { success: false, error: "Booking not found" };
+    }
+
+    // Log the unlock action
+    const { logLockAction } = await import("@/lib/booking-audit");
+    await logLockAction({
+      bookingId,
+      adminUserId,
+      adminUserName,
+      action: "unlock",
+    });
+
+    revalidatePath("/admin/bookings");
+    revalidatePath(`/admin/bookings/${bookingId}`);
+
+    return { success: true, data: booking };
+  } catch (error) {
+    console.error("Error unlocking booking:", error);
+    return { success: false, error: "Failed to unlock booking" };
+  }
+}
+
+/**
+ * Get a booking with its edit secret
+ * Only for use in trusted contexts (admin, server-side)
+ *
+ * @param bookingId - The booking ID
+ * @returns Booking with edit secret
+ */
+export async function getBookingWithEditSecret(bookingId: string) {
+  try {
+    const [booking] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1);
+
+    if (!booking) {
+      return { success: false, error: "Booking not found", data: null };
+    }
+
+    // Ensure secret exists
+    const editSecret = await ensureBookingSecret(bookingId);
+
+    return {
+      success: true,
+      data: {
+        ...booking,
+        editSecret,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching booking with edit secret:", error);
+    return { success: false, error: "Failed to fetch booking", data: null };
+  }
+}
+
+/**
+ * Get a booking with audit history
+ *
+ * @param bookingId - The booking ID
+ * @returns Booking with audit history
+ */
+export async function getBookingWithAudit(bookingId: string) {
+  try {
+    const [booking] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1);
+
+    if (!booking) {
+      return { success: false, error: "Booking not found", data: null };
+    }
+
+    const { getBookingAuditHistoryWithAdmin } = await import("@/lib/booking-audit");
+    const auditResult = await getBookingAuditHistoryWithAdmin(bookingId);
+
+    return {
+      success: true,
+      data: {
+        booking,
+        auditHistory: auditResult.success ? auditResult.data : [],
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching booking with audit:", error);
+    return { success: false, error: "Failed to fetch booking", data: null };
   }
 }

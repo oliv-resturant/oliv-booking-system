@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Calendar, Users, Mail, Phone, User, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Send, Eye, Edit2, ClipboardList, Building2, MapPin, Clock, Sparkles, ShoppingCart, X, Plus, Minus, AlertTriangle, Lock } from 'lucide-react';
 import { Button } from './Button';
 import { MenuItem, MenuItemVariant } from './menuItemsData';
@@ -25,6 +26,9 @@ interface EventDetails {
 }
 
 export function CustomMenuWizard() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [currentStep, setCurrentStep] = useState(1);
   const [activeTab, setActiveTab] = useState('contact');
   const [eventDetails, setEventDetails] = useState<EventDetails>({
@@ -74,6 +78,86 @@ export function CustomMenuWizard() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingMenu, setLoadingMenu] = useState(true);
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  const [editSecret, setEditSecret] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+
+  // Check for edit mode from sessionStorage
+  useEffect(() => {
+    const editMode = searchParams.get('edit');
+
+    if (editMode === 'true') {
+      const bookingIdParam = sessionStorage.getItem('edit_booking_id');
+      const secretParam = sessionStorage.getItem('edit_secret');
+
+      if (bookingIdParam && secretParam) {
+        console.log('Edit mode activated from sessionStorage');
+
+        setBookingId(bookingIdParam);
+        setEditSecret(secretParam);
+        setIsEditMode(true);
+
+        // Check lock status by fetching booking
+        const checkLockStatus = async () => {
+          try {
+            const response = await fetch(`/api/booking/${bookingIdParam}/edit/${secretParam}`);
+            if (response.ok) {
+              const result = await response.json();
+              if (result.success && result.data) {
+                setIsLocked(result.data.isLocked || false);
+
+                const booking = result.data;
+                const lead = booking.lead;
+
+                console.log('Booking data loaded:', booking);
+
+                // Populate eventDetails from booking
+                setEventDetails({
+                  name: lead?.contactName || '',
+                  business: booking.businessName || '',
+                  email: lead?.contactEmail || '',
+                  telephone: lead?.contactPhone || '',
+                  street: booking.street || '',
+                  plz: booking.plz || '',
+                  location: booking.location || '',
+                  eventDate: booking.eventDate ? booking.eventDate.split('T')[0] : '',
+                  eventTime: booking.eventTime || '',
+                  guestCount: booking.guestCount?.toString() || '',
+                  occasion: booking.occasion || '',
+                  specialRequests: booking.specialRequests || '',
+                });
+
+                // Load menu items from booking_items
+                if (booking.booking_items && booking.booking_items.length > 0) {
+                  const items = booking.booking_items.map((item: any) => item.item_id);
+                  setSelectedItems(items);
+
+                  const quantities: Record<string, number> = {};
+                  booking.booking_items.forEach((item: any) => {
+                    quantities[item.item_id] = item.quantity || 1;
+                  });
+                  setItemQuantities(quantities);
+                }
+
+                // Clear sessionStorage
+                sessionStorage.removeItem('edit_booking_id');
+                sessionStorage.removeItem('edit_secret');
+                sessionStorage.removeItem('edit_mode');
+
+                // Go to summary page
+                setCurrentStep(3);
+              }
+            }
+          } catch (error) {
+            console.error('Error checking lock status:', error);
+          }
+        };
+
+        checkLockStatus();
+      }
+    }
+  }, [searchParams]);
 
   // Fetch menu data from database
   useEffect(() => {
@@ -120,7 +204,7 @@ export function CustomMenuWizard() {
             setSelectedCategory(categoryNames[0]);
             setVisitedCategories([categoryNames[0]]);
             // Initialize all categories as collapsed (closed by default)
-            const initialCollapsedState = categoryNames.reduce((acc, cat) => {
+            const initialCollapsedState = categoryNames.reduce((acc: Record<string, boolean>, cat: string) => {
               acc[cat] = true;
               return acc;
             }, {} as Record<string, boolean>);
@@ -396,6 +480,8 @@ export function CustomMenuWizard() {
 
     console.log('Event Details:', eventDetails);
     console.log('Selected Menu Items:', selectedItems);
+    console.log('Is Edit Mode:', isEditMode);
+    console.log('Booking ID:', bookingId);
 
     // Submit to server
     const result = await submitWizardForm({
@@ -414,14 +500,25 @@ export function CustomMenuWizard() {
       selectedItems,
       itemQuantities,
       allergyDetails: [],
+      bookingId, // Pass bookingId if editing
     });
 
     setIsSubmitting(false);
 
     if (result.success) {
+      // Store booking ID and edit secret for editing later
+      setBookingId(result.data?.bookingId || null);
+      setEditSecret(result.data?.editSecret || null);
+
       // Use the inquiry number from the server response
       setInquiryNumber(result.data?.inquiryNumber || `INQ-${Math.floor(Math.random() * 9000) + 1000}`);
+      setIsEditMode(false); // Reset edit mode after successful submit
       setIsSubmitted(true);
+
+      // Show success message
+      if (isEditMode) {
+        alert('Your order has been updated successfully!');
+      }
     } else {
       alert(result.error || 'Failed to submit your request. Please try again.');
     }
@@ -631,6 +728,7 @@ export function CustomMenuWizard() {
         inquiryNumber={inquiryNumber}
         variant="split" // Options: 'centered' | 'split' | 'minimal'
         onCreateNew={() => {
+          setIsEditMode(false);
           setIsSubmitted(false);
           setCurrentStep(1);
           setSelectedItems([]);
@@ -640,10 +738,18 @@ export function CustomMenuWizard() {
           setItemComments({});
           setTermsAccepted(false);
           setInquiryNumber('');
+          setBookingId(null);
+          setEditSecret(null);
         }}
         onEditOrder={() => {
+          // Go back to summary/review page with edit mode enabled
+          console.log('Edit Order clicked!');
+          console.log('Current eventDetails:', eventDetails);
+          console.log('Current selectedItems:', selectedItems);
+          console.log('Current itemQuantities:', itemQuantities);
+          setIsEditMode(true);
           setIsSubmitted(false);
-          setCurrentStep(3);
+          setCurrentStep(3); // Step 3 is the Review & Submit page
         }}
         onGoHome={() => {
           // Navigation is handled by the WizardHeader back button
@@ -666,7 +772,7 @@ export function CustomMenuWizard() {
               Step {currentStep}/3
             </p>
             <h2 className="text-primary-foreground text-right" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-              {steps[currentStep - 1].title}
+              {steps[currentStep - 1]?.title || 'Review & Submit'}
             </h2>
           </div>
 
@@ -1547,9 +1653,14 @@ export function CustomMenuWizard() {
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0" style={{ borderRadius: 'var(--radius)' }}>
                         <Eye className="w-5 h-5 text-primary" />
                       </div>
-                      <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                        Review your request
-                      </h3>
+                      <div>
+                        <h3 className="text-foreground" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+                          Review your request
+                        </h3>
+                        {isEditMode && (
+                          <p className="text-primary text-sm">Edit Mode - Make changes below</p>
+                        )}
+                      </div>
                     </div>
                     <p className="text-muted-foreground" style={{ fontSize: 'var(--text-base)' }}>
                       Check all details before submitting
@@ -2597,7 +2708,11 @@ export function CustomMenuWizard() {
                       disabled={!termsAccepted || isSubmitting}
                       size="sm"
                     >
-                      {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                      {isSubmitting
+                        ? 'Submitting...'
+                        : isEditMode
+                        ? 'Update Request'
+                        : 'Submit Request'}
                     </Button>
                   )}
                 </div>

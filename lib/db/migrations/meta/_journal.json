@@ -29,6 +29,20 @@
       "when": 1771314166976,
       "tag": "0003_purple_gamma_corps",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1771825300667,
+      "tag": "0004_vengeful_natasha_romanoff",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1771849721693,
+      "tag": "0005_parched_synch",
+      "breakpoints": true
     }
   ]
 }

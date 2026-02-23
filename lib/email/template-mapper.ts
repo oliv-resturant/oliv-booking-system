@@ -47,7 +47,7 @@ export function getBookingConfirmedDepositTemplateData(
   estimatedTotal: number
 ): TemplateData {
   const lead = booking.lead;
-  const customerName = lead?.contactName || lead?.name || "Gast";
+  const customerName = lead?.contactName || "Gast";
 
   return {
     customer_name: customerName,
@@ -74,7 +74,7 @@ export function getBookingConfirmedNoDepositTemplateData(
   bookingEditUrl?: string
 ): TemplateData {
   const lead = booking.lead;
-  const customerName = lead?.contactName || lead?.name || "Gast";
+  const customerName = lead?.contactName || "Gast";
 
   return {
     customer_name: customerName,
@@ -98,7 +98,7 @@ export function getBookingCancelledTemplateData(
   reason?: string
 ): TemplateData {
   const lead = booking.lead;
-  const customerName = lead?.contactName || lead?.name || "Gast";
+  const customerName = lead?.contactName || "Gast";
 
   return {
     customer_name: customerName,
@@ -119,7 +119,7 @@ export function getBookingCompletedTemplateData(
   rebookingUrl?: string
 ): TemplateData {
   const lead = booking.lead;
-  const customerName = lead?.contactName || lead?.name || "Gast";
+  const customerName = lead?.contactName || "Gast";
 
   return {
     customer_name: customerName,
@@ -139,7 +139,7 @@ export function getBookingReminderTemplateData(
   estimatedTotal?: number
 ): TemplateData {
   const lead = booking.lead;
-  const customerName = lead?.contactName || lead?.name || "Gast";
+  const customerName = lead?.contactName || "Gast";
 
   const DEPOSIT_THRESHOLD = 5000;
   const requiresDeposit = estimatedTotal && estimatedTotal >= DEPOSIT_THRESHOLD;
@@ -166,7 +166,7 @@ export function getBookingNoShowTemplateData(
   booking: Booking & { lead?: Lead | null }
 ): TemplateData {
   const lead = booking.lead;
-  const customerName = lead?.contactName || lead?.name || "Gast";
+  const customerName = lead?.contactName || "Gast";
 
   return {
     customer_name: customerName,
@@ -184,7 +184,7 @@ export function getBookingDeclinedTemplateData(
   reason?: string
 ): TemplateData {
   const lead = booking.lead;
-  const customerName = lead?.contactName || lead?.name || "Gast";
+  const customerName = lead?.contactName || "Gast";
 
   return {
     customer_name: customerName,
@@ -240,16 +240,16 @@ export function getTemplateData(
     case "reminder":
       return getBookingReminderTemplateData(booking, params.estimatedTotal);
 
-    case "no_show":
+    case "no_show" as any:
       return getBookingNoShowTemplateData(booking);
 
-    case "declined":
+    case "declined" as any:
       return getBookingDeclinedTemplateData(booking, params.reason);
 
     case "custom":
       // For custom emails, return basic data
       return {
-        customer_name: booking.lead?.contactName || booking.lead?.name || "Gast",
+        customer_name: booking.lead?.contactName || "Gast",
         event_date: formatGermanDate(booking.eventDate),
         event_time: booking.eventTime,
         guest_count: booking.guestCount,
@@ -302,7 +302,7 @@ export function getEmailSubject(
 ): string {
   const formattedDate = formatGermanDate(booking.eventDate);
 
-  const subjects: Record<EmailType, string> = {
+  const subjects: Record<string, string> = {
     confirmation: `Buchungsbestätigung - Oliv Restaurant - ${formattedDate}`,
     cancellation: `Stornierung Ihrer Buchung - Oliv Restaurant - ${formattedDate}`,
     follow_up: `Vielen Dank für Ihren Besuch - Oliv Restaurant`,

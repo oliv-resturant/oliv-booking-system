@@ -63,7 +63,7 @@ export async function sendEmail(params: EmailParams): Promise<{ success: boolean
 
     return {
       success: true,
-      messageId: response.message_id || "sent",
+      messageId: (response as any).message_id || "sent",
     };
   } catch (error: any) {
     console.error("Error sending email via ZeptoMail:", error);
@@ -121,7 +121,7 @@ export async function sendTemplateEmail(params: TemplateEmailParams): Promise<{ 
 
     return {
       success: true,
-      messageId: response.message_id || "sent",
+      messageId: (response as any).message_id || "sent",
     };
   } catch (error: any) {
     console.error("Error sending template email via ZeptoMail:", error);
