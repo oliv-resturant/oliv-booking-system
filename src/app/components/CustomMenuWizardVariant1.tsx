@@ -24,6 +24,7 @@ import {
   Minus,
   AlertTriangle,
   Lock,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "./Button";
 import {
@@ -49,11 +50,15 @@ interface EventDetails {
   guestCount: string;
   occasion: string;
   specialRequests: string;
+  paymentMethod: string;
+  useSameAddressForBilling: boolean;
+  billingStreet: string;
+  billingPlz: string;
+  billingLocation: string;
 }
 
 export function CustomMenuWizard() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [activeTab, setActiveTab] = useState("contact");
   const [eventDetails, setEventDetails] = useState<EventDetails>({
     name: "",
     business: "",
@@ -67,6 +72,11 @@ export function CustomMenuWizard() {
     guestCount: "",
     occasion: "",
     specialRequests: "",
+    paymentMethod: "",
+    useSameAddressForBilling: true,
+    billingStreet: "",
+    billingPlz: "",
+    billingLocation: "",
   });
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>(
@@ -102,6 +112,7 @@ export function CustomMenuWizard() {
   const [summaryViewMode, setSummaryViewMode] = useState<
     "per-person" | "total"
   >("total"); // Step 3 summary view mode - default to "total+extra"
+  const [includeBeveragePrices, setIncludeBeveragePrices] = useState(false); // Toggle to include/exclude beverage prices from total
 
   // Track guest distribution per main course category
   const [mainCourseGuests, setMainCourseGuests] = useState<
@@ -237,13 +248,6 @@ export function CustomMenuWizard() {
     },
   ];
 
-  const tabs = [
-    { id: "contact", label: "Contact", icon: User },
-    { id: "address", label: "Address", icon: MapPin },
-    { id: "event", label: "Event", icon: Calendar },
-    { id: "requests", label: "Requests", icon: ClipboardList },
-  ];
-
   const validateStep1 = () => {
     const newErrors: Partial<EventDetails> = {};
 
@@ -287,63 +291,10 @@ export function CustomMenuWizard() {
     );
   };
 
-  // Helper functions for tab navigation
-  const getNextTab = () => {
-    const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
-    if (currentIndex < tabs.length - 1) {
-      return tabs[currentIndex + 1].id;
-    }
-    return null;
-  };
-
-  const isLastTab = () => {
-    return activeTab === tabs[tabs.length - 1].id;
-  };
-
-  const isContactTabValid = () => {
-    return (
-      eventDetails.name.trim() !== "" &&
-      eventDetails.email.trim() !== "" &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.email) &&
-      eventDetails.telephone.trim() !== ""
-    );
-  };
-
-  const isEventTabValid = () => {
-    return (
-      eventDetails.eventDate !== "" &&
-      eventDetails.guestCount !== "" &&
-      parseInt(eventDetails.guestCount) >= 1
-    );
-  };
-
-  const isCurrentTabValid = () => {
-    switch (activeTab) {
-      case "contact":
-        return isContactTabValid();
-      case "address":
-        return true; // No required fields on address tab
-      case "event":
-        return isEventTabValid();
-      case "requests":
-        return isStep1Valid(); // Validate all required fields before proceeding to step 2
-      default:
-        return true;
-    }
-  };
-
   const handleStep1Navigation = () => {
-    if (!isLastTab()) {
-      // Move to next tab
-      const nextTab = getNextTab();
-      if (nextTab) {
-        setActiveTab(nextTab);
-      }
-    } else {
-      // On last tab, validate all step 1 fields and move to step 2
-      if (validateStep1()) {
-        setCurrentStep(2);
-      }
+    // Validate all step 1 fields and move to step 2
+    if (validateStep1()) {
+      setCurrentStep(2);
     }
   };
 
@@ -667,6 +618,11 @@ export function CustomMenuWizard() {
   };
 
   const getItemTotalPrice = (item: MenuItem) => {
+    // Exclude beverage prices if the toggle is off
+    if (item.category === "Beverages" && !includeBeveragePrices) {
+      return 0;
+    }
+
     const quantity = itemQuantities[item.id] || 1;
     const addOns = itemAddOns[item.id] || [];
     const addOnsPrice = addOns.reduce((total, addOnId) => {
@@ -1080,51 +1036,37 @@ export function CustomMenuWizard() {
                         className="text-muted-foreground"
                         style={{ fontSize: "var(--text-base)" }}
                       >
-                        Fill out the information across the tabs below
-                      </p>
-                      <p
-                        className="text-muted-foreground mt-2 sm:hidden"
-                        style={{ fontSize: "var(--text-small)" }}
-                      >
-                        👉 Swipe left to see more tabs
+                        Fill out the information below
                       </p>
                     </div>
 
-                    {/* Tab Navigation */}
-                    <div className="mb-6 -mx-4 sm:mx-0">
-                      <div className="flex overflow-x-auto gap-2 pb-4 border-b border-border pl-4 pr-0 sm:px-0 scrollbar-hide">
-                        {tabs.map((tab, index) => {
-                          const TabIcon = tab.icon;
-                          const isActive = activeTab === tab.id;
-                          return (
-                            <button
-                              key={tab.id}
-                              onClick={() => setActiveTab(tab.id)}
-                              className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg transition-all flex-shrink-0 ${
-                                isActive
-                                  ? "bg-primary text-primary-foreground hover:bg-secondary hover:text-secondary-foreground"
-                                  : "bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground"
-                              } ${index === tabs.length - 1 ? "mr-8 sm:mr-0" : ""}`}
-                              style={{
-                                borderRadius: "var(--radius)",
-                                fontSize: "var(--text-small)",
-                                fontWeight: "var(--font-weight-medium)",
-                              }}
+                    {/* Single Page Form - All Sections Combined */}
+                    {/* Single Page Form - All Sections Combined */}
+                    <div className="space-y-8">
+                      {/* Contact Information Section */}
+                      <div>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div
+                            className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
+                            style={{ borderRadius: "var(--radius)" }}
+                          >
+                            <User className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4
+                              className="text-foreground font-semibold"
+                              style={{ fontSize: "var(--text-h4)" }}
                             >
-                              <TabIcon className="w-4 h-4 flex-shrink-0" />
-                              <span className="whitespace-nowrap">
-                                {tab.label}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Tab Content */}
-                    <div className="space-y-5">
-                      {/* Contact Tab */}
-                      {activeTab === "contact" && (
+                              Contact Information
+                            </h4>
+                            <p
+                              className="text-muted-foreground text-sm"
+                              style={{ fontSize: "var(--text-small)" }}
+                            >
+                              How can we reach you?
+                            </p>
+                          </div>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           {/* Name */}
                           <div>
@@ -1278,10 +1220,32 @@ export function CustomMenuWizard() {
                             )}
                           </div>
                         </div>
-                      )}
+                      </div>
 
-                      {/* Address Tab */}
-                      {activeTab === "address" && (
+                      {/* Event Location Section */}
+                      <div>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div
+                            className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
+                            style={{ borderRadius: "var(--radius)" }}
+                          >
+                            <MapPin className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4
+                              className="text-foreground font-semibold"
+                              style={{ fontSize: "var(--text-h4)" }}
+                            >
+                              Event Location
+                            </h4>
+                            <p
+                              className="text-muted-foreground text-sm"
+                              style={{ fontSize: "var(--text-small)" }}
+                            >
+                              Where should we deliver?
+                            </p>
+                          </div>
+                        </div>
                         <div className="space-y-5">
                           <div>
                             <label
@@ -1369,10 +1333,32 @@ export function CustomMenuWizard() {
                             </div>
                           </div>
                         </div>
-                      )}
+                      </div>
 
-                      {/* Event Tab */}
-                      {activeTab === "event" && (
+                      {/* Event Details Section */}
+                      <div>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div
+                            className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
+                            style={{ borderRadius: "var(--radius)" }}
+                          >
+                            <Calendar className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4
+                              className="text-foreground font-semibold"
+                              style={{ fontSize: "var(--text-h4)" }}
+                            >
+                              Event Details
+                            </h4>
+                            <p
+                              className="text-muted-foreground text-sm"
+                              style={{ fontSize: "var(--text-small)" }}
+                            >
+                              When is your event?
+                            </p>
+                          </div>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           <div>
                             <label
@@ -1510,10 +1496,32 @@ export function CustomMenuWizard() {
                             />
                           </div>
                         </div>
-                      )}
+                      </div>
 
-                      {/* Requests Tab */}
-                      {activeTab === "requests" && (
+                      {/* Special Requests Section */}
+                      <div>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div
+                            className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
+                            style={{ borderRadius: "var(--radius)" }}
+                          >
+                            <ClipboardList className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4
+                              className="text-foreground font-semibold"
+                              style={{ fontSize: "var(--text-h4)" }}
+                            >
+                              Special Requests
+                            </h4>
+                            <p
+                              className="text-muted-foreground text-sm"
+                              style={{ fontSize: "var(--text-small)" }}
+                            >
+                              Any special requirements?
+                            </p>
+                          </div>
+                        </div>
                         <div>
                           <label
                             className="block text-foreground mb-2"
@@ -1541,7 +1549,256 @@ export function CustomMenuWizard() {
                             }}
                           />
                         </div>
-                      )}
+                      </div>
+
+                      {/* Payment Options Section */}
+                      <div className="mt-8">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div
+                            className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
+                            style={{ borderRadius: "var(--radius)" }}
+                          >
+                            <CreditCard className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4
+                              className="text-foreground"
+                              style={{
+                                fontSize: "var(--text-h4)",
+                                fontWeight: "var(--font-weight-semibold)",
+                              }}
+                            >
+                              Payment Options
+                            </h4>
+                            <p
+                              className="text-muted-foreground text-sm"
+                              style={{ fontSize: "var(--text-small)" }}
+                            >
+                              Select your preferred payment method
+                            </p>
+                          </div>
+                        </div>
+
+                        <div
+                          className="bg-input-background/50 border border-border rounded-lg p-4 space-y-3"
+                          style={{ borderRadius: "var(--radius)" }}
+                        >
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <div className="relative flex items-center justify-center">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                checked={eventDetails.paymentMethod === "on_bill"}
+                                onChange={() =>
+                                  setEventDetails({
+                                    ...eventDetails,
+                                    paymentMethod: "on_bill",
+                                  })
+                                }
+                                className="w-5 h-5 appearance-none border-2 border-border rounded-full checked:border-primary checked:border-[6px] transition-all cursor-pointer"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <span
+                                className="text-foreground"
+                                style={{
+                                  fontSize: "var(--text-base)",
+                                  fontWeight: "var(--font-weight-medium)",
+                                }}
+                              >
+                                On bill
+                              </span>
+                              <span
+                                className="text-muted-foreground ml-2"
+                                style={{ fontSize: "var(--text-small)" }}
+                              >
+                                (invoice/rechnung)
+                              </span>
+                            </div>
+                          </label>
+
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <div className="relative flex items-center justify-center">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                checked={
+                                  eventDetails.paymentMethod === "cash_card"
+                                }
+                                onChange={() =>
+                                  setEventDetails({
+                                    ...eventDetails,
+                                    paymentMethod: "cash_card",
+                                  })
+                                }
+                                className="w-5 h-5 appearance-none border-2 border-border rounded-full checked:border-primary checked:border-[6px] transition-all cursor-pointer"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <span
+                                className="text-foreground"
+                                style={{
+                                  fontSize: "var(--text-base)",
+                                  fontWeight: "var(--font-weight-medium)",
+                                }}
+                              >
+                                Cash card accepted on venue
+                              </span>
+                              <span
+                                className="text-muted-foreground ml-2"
+                                style={{ fontSize: "var(--text-small)" }}
+                              >
+                                (EC-Bar/Karte vor Ort)
+                              </span>
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Billing Address Section */}
+                      <div className="mt-8">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div
+                            className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
+                            style={{ borderRadius: "var(--radius)" }}
+                          >
+                            <Building2 className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4
+                              className="text-foreground"
+                              style={{
+                                fontSize: "var(--text-h4)",
+                                fontWeight: "var(--font-weight-semibold)",
+                              }}
+                            >
+                              Billing Address
+                            </h4>
+                            <p
+                              className="text-muted-foreground text-sm"
+                              style={{ fontSize: "var(--text-small)" }}
+                            >
+                              Specify where to send the invoice
+                            </p>
+                          </div>
+                        </div>
+
+                        <div
+                          className="bg-input-background/50 border border-border rounded-lg p-4 space-y-4"
+                          style={{ borderRadius: "var(--radius)" }}
+                        >
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={eventDetails.useSameAddressForBilling}
+                              onChange={(e) =>
+                                setEventDetails({
+                                  ...eventDetails,
+                                  useSameAddressForBilling: e.target.checked,
+                                })
+                              }
+                              className="w-5 h-5 rounded border-border text-primary focus:ring-2 focus:ring-primary/20 flex-shrink-0"
+                              style={{ accentColor: "var(--color-primary)" }}
+                            />
+                            <span
+                              className="text-foreground"
+                              style={{ fontSize: "var(--text-base)" }}
+                            >
+                              Use the same address for billing
+                            </span>
+                          </label>
+
+                          {!eventDetails.useSameAddressForBilling && (
+                            <div className="space-y-4 mt-4 pt-4 border-t border-border">
+                              <div>
+                                <label
+                                  className="block text-foreground mb-2"
+                                  style={{
+                                    fontSize: "var(--text-small)",
+                                    fontWeight: "var(--font-weight-medium)",
+                                  }}
+                                >
+                                  Billing Street
+                                </label>
+                                <input
+                                  type="text"
+                                  value={eventDetails.billingStreet}
+                                  onChange={(e) =>
+                                    setEventDetails({
+                                      ...eventDetails,
+                                      billingStreet: e.target.value,
+                                    })
+                                  }
+                                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg transition-colors focus:border-primary"
+                                  placeholder="Street and house number"
+                                  style={{
+                                    borderRadius: "var(--radius)",
+                                    fontSize: "var(--text-base)",
+                                  }}
+                                />
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label
+                                    className="block text-foreground mb-2"
+                                    style={{
+                                      fontSize: "var(--text-small)",
+                                      fontWeight: "var(--font-weight-medium)",
+                                    }}
+                                  >
+                                    PLZ
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={eventDetails.billingPlz}
+                                    onChange={(e) =>
+                                      setEventDetails({
+                                        ...eventDetails,
+                                        billingPlz: e.target.value,
+                                      })
+                                    }
+                                    className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg transition-colors focus:border-primary"
+                                    placeholder="Postal code"
+                                    style={{
+                                      borderRadius: "var(--radius)",
+                                      fontSize: "var(--text-base)",
+                                    }}
+                                  />
+                                </div>
+
+                                <div>
+                                  <label
+                                    className="block text-foreground mb-2"
+                                    style={{
+                                      fontSize: "var(--text-small)",
+                                      fontWeight: "var(--font-weight-medium)",
+                                    }}
+                                  >
+                                    Location
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={eventDetails.billingLocation}
+                                    onChange={(e) =>
+                                      setEventDetails({
+                                        ...eventDetails,
+                                        billingLocation: e.target.value,
+                                      })
+                                    }
+                                    className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg transition-colors focus:border-primary"
+                                    placeholder="City"
+                                    style={{
+                                      borderRadius: "var(--radius)",
+                                      fontSize: "var(--text-base)",
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -3080,6 +3337,33 @@ export function CustomMenuWizard() {
                                     </div>
                                   </div>
                                 </div>
+
+                                {/* Beverage Price Inclusion Toggle - Mobile Drawer Footer */}
+                                {selectedItems.some(itemId => {
+                                  const item = menuItems.find(i => i.id === itemId);
+                                  return item?.category === 'Beverages';
+                                }) && (
+                                  <div className="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3" style={{ borderRadius: "var(--radius)" }}>
+                                    <label className="flex items-center gap-3 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={includeBeveragePrices}
+                                        onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
+                                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary focus:ring-offset-0 flex-shrink-0"
+                                      />
+                                      <div className="flex-1">
+                                        <span className="text-foreground font-medium text-sm">
+                                          Include beverage prices in estimate
+                                        </span>
+                                        {!includeBeveragePrices && (
+                                          <p className="text-amber-700 dark:text-amber-300 text-xs mt-1">
+                                            ⚠️ Beverage prices excluded
+                                          </p>
+                                        )}
+                                      </div>
+                                    </label>
+                                  </div>
+                                )}
                               </>
                             )}
                           </div>
@@ -4490,6 +4774,33 @@ export function CustomMenuWizard() {
                               </div>
                             </div>
                           )}
+
+                          {/* Beverage Price Inclusion Toggle - Only show if beverages are selected */}
+                          {selectedItems.some(itemId => {
+                            const item = menuItems.find(i => i.id === itemId);
+                            return item?.category === 'Beverages';
+                          }) && (
+                            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4" style={{ borderRadius: "var(--radius)" }}>
+                              <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={includeBeveragePrices}
+                                  onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
+                                  className="w-5 h-5 rounded border-border text-primary focus:ring-primary focus:ring-offset-0"
+                                />
+                                <div className="flex-1">
+                                  <span className="text-foreground font-medium" style={{ fontSize: "var(--text-base)" }}>
+                                    Include beverage prices in estimate
+                                  </span>
+                                  {!includeBeveragePrices && (
+                                    <p className="text-amber-700 dark:text-amber-300 text-sm mt-1">
+                                      ⚠️ Beverage prices are currently excluded from the total estimate
+                                    </p>
+                                  )}
+                                </div>
+                              </label>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -4580,21 +4891,12 @@ export function CustomMenuWizard() {
                     borderRadius: "0 0 var(--radius-card) var(--radius-card)",
                   }}
                 >
-                  {/* Back button - Show when: 1) on Step 2 or 3, OR 2) on Step 1 but not on first tab */}
-                  {(currentStep > 1 ||
-                    (currentStep === 1 && activeTab !== "contact")) && (
+                  {/* Back button - Show when on Step 2 or 3 */}
+                  {currentStep > 1 && (
                     <Button
                       variant="outline"
                       onClick={() => {
-                        if (currentStep === 1) {
-                          // Navigate to previous tab
-                          const currentIndex = tabs.findIndex(
-                            (tab) => tab.id === activeTab,
-                          );
-                          if (currentIndex > 0) {
-                            setActiveTab(tabs[currentIndex - 1].id);
-                          }
-                        } else if (currentStep === 2) {
+                        if (currentStep === 2) {
                           // On Step 2, check if on first category
                           const currentCategoryIndex =
                             categories.indexOf(selectedCategory);
@@ -4628,10 +4930,10 @@ export function CustomMenuWizard() {
                         onClick={handleStep1Navigation}
                         icon={ChevronRight}
                         iconPosition="right"
-                        disabled={!isCurrentTabValid()}
+                        disabled={!isStep1Valid()}
                         size="sm"
                       >
-                        {isLastTab() ? "Start Menu" : "Next"}
+                        Start Menu
                       </Button>
                     )}
 
@@ -4988,8 +5290,8 @@ export function CustomMenuWizard() {
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   {/* Left: Quantity & Guest Count Selectors */}
                   <div className="flex items-center gap-4 flex-wrap">
-                    {/* Quantity Selector - Hide for flat-rate items and beverages */}
-                    {detailsModalItem.pricingType !== 'flat-rate' && (
+                    {/* Quantity Selector - Hide for flat-rate items, but show for beverages */}
+                    {(detailsModalItem.pricingType !== 'flat-rate' || detailsModalItem.category === 'Beverages') && (
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground text-sm whitespace-nowrap">Qty:</span>
                         <button

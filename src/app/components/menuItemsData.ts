@@ -648,7 +648,11 @@ export const menuItems: MenuItem[] = [
     image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     allergens: ['Sulfites'],
     dietaryType: 'vegan',
-    pricingType: 'flat-rate'
+    pricingType: 'flat-rate',
+    variants: [
+      { id: 'bev1-750ml', name: '750ml Bottle', price: 45, description: 'Standard bottle' },
+      { id: 'bev1-1500ml', name: '1.5L Magnum', price: 85, description: 'Large format bottle' }
+    ]
   },
   {
     id: 'bev2',
@@ -659,7 +663,11 @@ export const menuItems: MenuItem[] = [
     image: 'https://images.unsplash.com/photo-1547595628-c61a29f496f0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     allergens: ['Sulfites'],
     dietaryType: 'vegan',
-    pricingType: 'flat-rate'
+    pricingType: 'flat-rate',
+    variants: [
+      { id: 'bev2-750ml', name: '750ml Bottle', price: 32, description: 'Standard bottle' },
+      { id: 'bev2-1500ml', name: '1.5L Magnum', price: 60, description: 'Large format bottle' }
+    ]
   },
   {
     id: 'bev3',
@@ -670,7 +678,11 @@ export const menuItems: MenuItem[] = [
     image: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     allergens: ['Gluten'],
     dietaryType: 'vegan',
-    pricingType: 'flat-rate'
+    pricingType: 'flat-rate',
+    variants: [
+      { id: 'bev3-330ml', name: '330ml Bottle', price: 6, description: 'Single bottle' },
+      { id: 'bev3-500ml', name: '500ml Bottle', price: 8, description: 'Large bottle' }
+    ]
   },
   {
     id: 'bev4',
@@ -681,7 +693,12 @@ export const menuItems: MenuItem[] = [
     image: 'https://images.unsplash.com/photo-1625772452859-1c03d5bf1137?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     allergens: [],
     dietaryType: 'vegan',
-    pricingType: 'flat-rate'
+    pricingType: 'flat-rate',
+    variants: [
+      { id: 'bev4-250ml', name: '250ml', price: 4, description: 'Small glass' },
+      { id: 'bev4-500ml', name: '500ml', price: 6, description: 'Large glass' },
+      { id: 'bev4-1000ml', name: '1L Bottle', price: 10, description: 'Full bottle' }
+    ]
   },
   {
     id: 'bev5',
@@ -692,7 +709,12 @@ export const menuItems: MenuItem[] = [
     image: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     allergens: [],
     dietaryType: 'vegan',
-    pricingType: 'per-person'
+    pricingType: 'per-person',
+    variants: [
+      { id: 'bev5-150ml', name: '150ml Espresso', price: 4, description: 'Single shot' },
+      { id: 'bev5-250ml', name: '250ml Coffee', price: 5, description: 'Standard cup' },
+      { id: 'bev5-400ml', name: '400ml Large', price: 7, description: 'Large cup' }
+    ]
   },
   {
     id: 'bev6',
@@ -703,7 +725,11 @@ export const menuItems: MenuItem[] = [
     image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     allergens: [],
     dietaryType: 'vegan',
-    pricingType: 'flat-rate'
+    pricingType: 'flat-rate',
+    variants: [
+      { id: 'bev6-150ml', name: '150ml Cocktail', price: 12, description: 'Standard cocktail' },
+      { id: 'bev6-250ml', name: '250ml Cocktail', price: 18, description: 'Large cocktail' }
+    ]
   },
   {
     id: 'bev7',
@@ -725,7 +751,11 @@ export const menuItems: MenuItem[] = [
     image: 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
     allergens: [],
     dietaryType: 'vegan',
-    pricingType: 'flat-rate'
+    pricingType: 'flat-rate',
+    variants: [
+      { id: 'bev8-250ml', name: '250ml', price: 6, description: 'Small glass' },
+      { id: 'bev8-500ml', name: '500ml', price: 10, description: 'Large glass' }
+    ]
   },
 ];
 
