@@ -92,16 +92,28 @@ function CenteredVariant({
 }: Omit<ThankYouScreenProps, 'variant'>) {
   return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--background)' }}>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="w-full max-w-xl rounded-2xl p-12 text-center"
-        style={{ 
+        style={{
           backgroundColor: 'var(--surface)',
           border: '1px solid var(--border)'
         }}
       >
+        {/* OLIV Logo */}
+        <motion.div
+          className="flex justify-center mb-8"
+        >
+          <img
+            src="https://img.enacton.com/ShareX/2026/02/chrome_PHT9Ca0HbK.png"
+            alt="OLIV Restaurant & Bar"
+            className="h-16 w-auto"
+            style={{ maxWidth: '200px' }}
+          />
+        </motion.div>
+
         {/* Animated Checkmark Icon */}
         <motion.div 
           initial={{ scale: 0 }}
@@ -305,7 +317,7 @@ function SplitVariant({
   return (
     <div className="min-h-screen flex flex-col lg:flex-row" style={{ backgroundColor: 'var(--background)' }}>
       {/* Left Side - Success Message */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
@@ -313,6 +325,20 @@ function SplitVariant({
         style={{ backgroundColor: 'var(--primary)' }}
       >
         <div className="max-w-md text-center lg:text-left">
+          {/* OLIV Logo */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="flex justify-center lg:justify-start mb-8"
+          >
+            <img
+              src="https://img.enacton.com/ShareX/2026/02/chrome_PHT9Ca0HbK.png"
+              alt="OLIV Restaurant & Bar"
+              className="h-14 w-auto"
+              style={{ maxWidth: '180px' }}
+            />
+          </motion.div>
           <motion.div 
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -643,12 +669,27 @@ function MinimalVariant({
 }: Omit<ThankYouScreenProps, 'variant'>) {
   return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--background)' }}>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="w-full max-w-2xl"
       >
+        {/* OLIV Logo */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="flex justify-center mb-8"
+        >
+          <img
+            src="https://img.enacton.com/ShareX/2026/02/chrome_PHT9Ca0HbK.png"
+            alt="OLIV Restaurant & Bar"
+            className="h-16 w-auto"
+            style={{ maxWidth: '200px' }}
+          />
+        </motion.div>
+
         {/* Success Icon */}
         <motion.div 
           initial={{ scale: 0, rotate: -180 }}

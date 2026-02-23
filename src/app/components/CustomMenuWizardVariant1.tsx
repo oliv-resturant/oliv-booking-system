@@ -227,23 +227,23 @@ export function CustomMenuWizard() {
   const steps = [
     {
       number: 1,
-      title: "Event Details",
+      title: "Kontakt & Veranstaltungsdetails",
       subtitle:
-        "Share your contact details, event date, and number of guests with us.",
+        "Teilen Sie uns Ihre Kontaktdaten, Veranstaltungsdatum und Anzahl Gäste mit.",
       icon: User,
     },
     {
       number: 2,
-      title: "Choose Menu",
+      title: "Wählen Sie Ihr Menü",
       subtitle:
-        "Select from our curated offerings - from appetizers to desserts.",
+        "Wählen Sie aus unserem kuratierten Angebot - von Apéro bis Dessert.",
       icon: ClipboardList,
     },
     {
       number: 3,
-      title: "Review & Submit",
+      title: "Anfrage überprüfen",
       subtitle:
-        "We'll contact you to review your request and confirm availability.",
+        "Wir kontaktieren Sie, um Ihre Anfrage zu überprüfen und die Verfügbarkeit zu bestätigen.",
       icon: Check,
     },
   ];
@@ -252,27 +252,27 @@ export function CustomMenuWizard() {
     const newErrors: Partial<EventDetails> = {};
 
     if (!eventDetails.name.trim()) {
-      newErrors.name = "Name is required";
+      newErrors.name = "Name ist erforderlich";
     }
 
     if (!eventDetails.email.trim()) {
-      newErrors.email = "Email is required";
+      newErrors.email = "E-Mail ist erforderlich";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.email)) {
-      newErrors.email = "Please enter a valid email";
+      newErrors.email = "Bitte geben Sie eine gültige E-Mail ein";
     }
 
     if (!eventDetails.telephone.trim()) {
-      newErrors.telephone = "Phone number is required";
+      newErrors.telephone = "Telefonnummer ist erforderlich";
     }
 
     if (!eventDetails.eventDate) {
-      newErrors.eventDate = "Event date is required";
+      newErrors.eventDate = "Veranstaltungsdatum ist erforderlich";
     }
 
     if (!eventDetails.guestCount) {
-      newErrors.guestCount = "Number of guests is required";
+      newErrors.guestCount = "Anzahl der Gäste ist erforderlich";
     } else if (parseInt(eventDetails.guestCount) < 1) {
-      newErrors.guestCount = "Must have at least 1 guest";
+      newErrors.guestCount = "Mindestens 1 Gast erforderlich";
     }
 
     setErrors(newErrors);
@@ -300,7 +300,7 @@ export function CustomMenuWizard() {
 
   const validateStep2 = () => {
     if (selectedItems.length === 0) {
-      setStep2Error("Please select at least one menu item to continue");
+      setStep2Error("Bitte wählen Sie mindestens einen Menüartikel aus, um fortzufahren");
       return false;
     }
 
@@ -324,14 +324,14 @@ export function CustomMenuWizard() {
 
       if (assignedGuests < totalGuests) {
         setStep2Error(
-          `Please assign all ${totalGuests} guests to main courses (${assignedGuests} of ${totalGuests} assigned)`,
+          `Bitte weisen Sie alle ${totalGuests} Gäste Hauptgeräten zu (${assignedGuests} von ${totalGuests} zugewiesen)`,
         );
         return false;
       }
 
       if (assignedGuests > totalGuests) {
         setStep2Error(
-          `Assigned guests (${assignedGuests}) cannot exceed total guests (${totalGuests})`,
+          `Zugewiesene Gäste (${assignedGuests}) können die Gesamtzahl der Gäste (${totalGuests}) nicht überschreiten`,
         );
         return false;
       }
@@ -479,7 +479,7 @@ export function CustomMenuWizard() {
       // Show error
       setGuestCountErrors((prev) => ({
         ...prev,
-        [categoryId]: `Cannot exceed ${maxAllowed} guests (${totalGuests} total - ${otherCategoriesGuests} already assigned)`,
+        [categoryId]: `Kann ${maxAllowed} Gäste nicht überschreiten (${totalGuests} gesamt - ${otherCategoriesGuests} bereits zugewiesen)`,
       }));
       // Don't update the state
       return;
@@ -672,6 +672,11 @@ export function CustomMenuWizard() {
 
   // Get per-person price (without multiplying by guest count)
   const getItemPerPersonPrice = (item: MenuItem) => {
+    // Exclude beverage prices if the toggle is off
+    if (item.category === "Beverages" && !includeBeveragePrices) {
+      return 0;
+    }
+
     const quantity = itemQuantities[item.id] || 1;
     const addOns = itemAddOns[item.id] || [];
     const addOnsPrice = addOns.reduce((total, addOnId) => {
@@ -1029,14 +1034,14 @@ export function CustomMenuWizard() {
                             fontWeight: "var(--font-weight-semibold)",
                           }}
                         >
-                          Tell us about your event
+                          Erzählen Sie uns von Ihrer Veranstaltung
                         </h3>
                       </div>
                       <p
                         className="text-muted-foreground"
                         style={{ fontSize: "var(--text-base)" }}
                       >
-                        Fill out the information below
+                        Füllen Sie die untenstehenden Informationen aus
                       </p>
                     </div>
 
@@ -1057,13 +1062,13 @@ export function CustomMenuWizard() {
                               className="text-foreground font-semibold"
                               style={{ fontSize: "var(--text-h4)" }}
                             >
-                              Contact Information
+                              Kontaktinformationen
                             </h4>
                             <p
                               className="text-muted-foreground text-sm"
                               style={{ fontSize: "var(--text-small)" }}
                             >
-                              How can we reach you?
+                              Wie können wir Sie erreichen?
                             </p>
                           </div>
                         </div>
@@ -1236,13 +1241,13 @@ export function CustomMenuWizard() {
                               className="text-foreground font-semibold"
                               style={{ fontSize: "var(--text-h4)" }}
                             >
-                              Event Location
+                              Veranstaltungsort
                             </h4>
                             <p
                               className="text-muted-foreground text-sm"
                               style={{ fontSize: "var(--text-small)" }}
                             >
-                              Where should we deliver?
+                              Wo sollen wir liefern?
                             </p>
                           </div>
                         </div>
@@ -1349,13 +1354,13 @@ export function CustomMenuWizard() {
                               className="text-foreground font-semibold"
                               style={{ fontSize: "var(--text-h4)" }}
                             >
-                              Event Details
+                              Veranstaltungsdetails
                             </h4>
                             <p
                               className="text-muted-foreground text-sm"
                               style={{ fontSize: "var(--text-small)" }}
                             >
-                              When is your event?
+                              Wann ist Ihre Veranstaltung?
                             </p>
                           </div>
                         </div>
@@ -1408,7 +1413,7 @@ export function CustomMenuWizard() {
                                 fontWeight: "var(--font-weight-medium)",
                               }}
                             >
-                              time
+                              Uhrzeit
                             </label>
                             <input
                               type="time"
@@ -1435,7 +1440,7 @@ export function CustomMenuWizard() {
                                 fontWeight: "var(--font-weight-medium)",
                               }}
                             >
-                              Number of guests *
+                              Anzahl Gäste *
                             </label>
                             <input
                               type="number"
@@ -1476,7 +1481,7 @@ export function CustomMenuWizard() {
                                 fontWeight: "var(--font-weight-medium)",
                               }}
                             >
-                              Occasion
+                              Anlass
                             </label>
                             <input
                               type="text"
@@ -1488,7 +1493,7 @@ export function CustomMenuWizard() {
                                 })
                               }
                               className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg transition-colors focus:border-primary"
-                              placeholder="e.g. company party"
+                              placeholder="z.B. Firmenfeier"
                               style={{
                                 borderRadius: "var(--radius)",
                                 fontSize: "var(--text-base)",
@@ -1512,13 +1517,13 @@ export function CustomMenuWizard() {
                               className="text-foreground font-semibold"
                               style={{ fontSize: "var(--text-h4)" }}
                             >
-                              Special Requests
+                              Sonderwünsche
                             </h4>
                             <p
                               className="text-muted-foreground text-sm"
                               style={{ fontSize: "var(--text-small)" }}
                             >
-                              Any special requirements?
+                              Besondere Anforderungen?
                             </p>
                           </div>
                         </div>
@@ -1530,7 +1535,7 @@ export function CustomMenuWizard() {
                               fontWeight: "var(--font-weight-medium)",
                             }}
                           >
-                            Allergies, dietary requirements or other comments
+                            Allergien, Ernährungsvorschriften oder andere Kommentare
                           </label>
                           <textarea
                             value={eventDetails.specialRequests}
@@ -1541,7 +1546,7 @@ export function CustomMenuWizard() {
                               })
                             }
                             className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg transition-colors focus:border-primary resize-none"
-                            placeholder="e.g. 2 people vegetarian, 1 person gluten-free..."
+                            placeholder="z.B. 2 Personen vegetarisch, 1 Person glutenfrei..."
                             rows={6}
                             style={{
                               borderRadius: "var(--radius)",
@@ -1568,13 +1573,13 @@ export function CustomMenuWizard() {
                                 fontWeight: "var(--font-weight-semibold)",
                               }}
                             >
-                              Payment Options
+                              Zahlungsoptionen
                             </h4>
                             <p
                               className="text-muted-foreground text-sm"
                               style={{ fontSize: "var(--text-small)" }}
                             >
-                              Select your preferred payment method
+                              Wählen Sie Ihre bevorzugte Zahlungsmethode
                             </p>
                           </div>
                         </div>
@@ -1606,13 +1611,13 @@ export function CustomMenuWizard() {
                                   fontWeight: "var(--font-weight-medium)",
                                 }}
                               >
-                                On bill
+                                Auf Rechnung
                               </span>
                               <span
                                 className="text-muted-foreground ml-2"
                                 style={{ fontSize: "var(--text-small)" }}
                               >
-                                (invoice/rechnung)
+                                (Rechnung)
                               </span>
                             </div>
                           </label>
@@ -1642,13 +1647,12 @@ export function CustomMenuWizard() {
                                   fontWeight: "var(--font-weight-medium)",
                                 }}
                               >
-                                Cash card accepted on venue
+                                EC-Bar/Karte vor Ort
                               </span>
                               <span
                                 className="text-muted-foreground ml-2"
                                 style={{ fontSize: "var(--text-small)" }}
                               >
-                                (EC-Bar/Karte vor Ort)
                               </span>
                             </div>
                           </label>
@@ -1672,13 +1676,13 @@ export function CustomMenuWizard() {
                                 fontWeight: "var(--font-weight-semibold)",
                               }}
                             >
-                              Billing Address
+                              Rechnungsadresse
                             </h4>
                             <p
                               className="text-muted-foreground text-sm"
                               style={{ fontSize: "var(--text-small)" }}
                             >
-                              Specify where to send the invoice
+                              Geben Sie an, wohin die Rechnung gesendet werden soll
                             </p>
                           </div>
                         </div>
@@ -1704,7 +1708,7 @@ export function CustomMenuWizard() {
                               className="text-foreground"
                               style={{ fontSize: "var(--text-base)" }}
                             >
-                              Use the same address for billing
+                              Selbe Adresse für Rechnung verwenden
                             </span>
                           </label>
 
@@ -1718,7 +1722,7 @@ export function CustomMenuWizard() {
                                     fontWeight: "var(--font-weight-medium)",
                                   }}
                                 >
-                                  Billing Street
+                                  Rechnungsstrasse & Nr.
                                 </label>
                                 <input
                                   type="text"
@@ -1730,7 +1734,7 @@ export function CustomMenuWizard() {
                                     })
                                   }
                                   className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg transition-colors focus:border-primary"
-                                  placeholder="Street and house number"
+                                  placeholder="Strasse und Hausnummer"
                                   style={{
                                     borderRadius: "var(--radius)",
                                     fontSize: "var(--text-base)",
@@ -1759,7 +1763,7 @@ export function CustomMenuWizard() {
                                       })
                                     }
                                     className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg transition-colors focus:border-primary"
-                                    placeholder="Postal code"
+                                    placeholder="Postleitzahl"
                                     style={{
                                       borderRadius: "var(--radius)",
                                       fontSize: "var(--text-base)",
@@ -1787,7 +1791,7 @@ export function CustomMenuWizard() {
                                       })
                                     }
                                     className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg transition-colors focus:border-primary"
-                                    placeholder="City"
+                                    placeholder="Ort"
                                     style={{
                                       borderRadius: "var(--radius)",
                                       fontSize: "var(--text-base)",
@@ -1822,16 +1826,16 @@ export function CustomMenuWizard() {
                             fontWeight: "var(--font-weight-semibold)",
                           }}
                         >
-                          Choose your menu
+                          Wählen Sie Ihr Menü
                         </h3>
                       </div>
                       <p
                         className="text-muted-foreground"
                         style={{ fontSize: "var(--text-base)" }}
                       >
-                        Browse through all {categories.length} categories
-                        step-by-step • {visitedCategories.length} of{" "}
-                        {categories.length} visited
+                        Durchsuchen Sie alle {categories.length} Kategorien
+                        Schritt für Schritt • {visitedCategories.length} von{" "}
+                        {categories.length} besucht
                       </p>
                     </div>
 
@@ -1853,7 +1857,7 @@ export function CustomMenuWizard() {
                                 fontWeight: "var(--font-weight-semibold)",
                               }}
                             >
-                              Smart Selection Applied
+                              Intelligente Auswahl angewendet
                             </p>
                             <p
                               className="text-muted-foreground mt-0.5"
@@ -1893,8 +1897,8 @@ export function CustomMenuWizard() {
                         >
                           {eventDetails.guestCount || "0"}{" "}
                           {parseInt(eventDetails.guestCount) === 1
-                            ? "guest"
-                            : "guests"}
+                            ? "Gast"
+                            : "Gäste"}
                         </span>
                         <span
                           className="text-secondary-foreground/50 mx-1"
@@ -1907,8 +1911,8 @@ export function CustomMenuWizard() {
                           style={{ fontSize: "var(--text-small)" }}
                         >
                           {selectedCategory === "Beverages"
-                            ? "Charged by consumption • Per-person pricing available"
-                            : "All items apply per person"}
+                            ? "Nach Verbrauch berechnet • Preise pro Person verfügbar"
+                            : "Alle Artikel gelten pro Person"}
                         </span>
                       </div>
                     )}
@@ -2195,8 +2199,8 @@ export function CustomMenuWizard() {
                                 <span
                                   style={{ fontSize: "var(--text-small)" }}
                                 >
-                                  Please assign all{" "}
-                                  {eventDetails.guestCount || 0} guests
+                                  Bitte alle{" "}
+                                  {eventDetails.guestCount || 0} Gäste zuweisen
                                 </span>
                               </div>
                             )}
@@ -2308,7 +2312,7 @@ export function CustomMenuWizard() {
                                           item.pricingType === "flat-rate"
                                             ? "billed by consumption"
                                             : item.pricingType === "per-person"
-                                              ? "per person"
+                                              ? "pro Person"
                                               : ""}
                                         </span>
                                       </div>
@@ -2340,7 +2344,7 @@ export function CustomMenuWizard() {
                                               "var(--font-weight-medium)",
                                           }}
                                         >
-                                          Edit
+                                          Bearbeiten
                                         </button>
                                         <button
                                           onClick={() =>
@@ -2431,7 +2435,7 @@ export function CustomMenuWizard() {
                                       className="text-muted-foreground mt-0.5"
                                       style={{ fontSize: "var(--text-small)" }}
                                     >
-                                      For {eventDetails.guestCount || "0"}{" "}
+                                      Für {eventDetails.guestCount || "0"}{" "}
                                       {parseInt(eventDetails.guestCount) === 1
                                         ? "guest"
                                         : "guests"}
@@ -2479,7 +2483,7 @@ export function CustomMenuWizard() {
                                       className="text-muted-foreground"
                                       style={{ fontSize: "var(--text-small)" }}
                                     >
-                                      No items selected yet
+                                      Noch keine Artikel ausgewählt
                                     </p>
                                     <p
                                       className="text-muted-foreground mt-1"
@@ -2582,7 +2586,7 @@ export function CustomMenuWizard() {
                                                     borderRadius:
                                                       "var(--radius)",
                                                   }}
-                                                  title="Edit item"
+                                                  title="Artikel bearbeiten"
                                                 >
                                                   <Edit2 className="w-3.5 h-3.5" />
                                                 </button>
@@ -2595,7 +2599,7 @@ export function CustomMenuWizard() {
                                                     borderRadius:
                                                       "var(--radius)",
                                                   }}
-                                                  title="Remove item"
+                                                  title="Artikel entfernen"
                                                 >
                                                   <X className="w-3.5 h-3.5" />
                                                 </button>
@@ -2608,24 +2612,46 @@ export function CustomMenuWizard() {
                                               // Beverage pay-by-consumption display
                                               <div className="pt-1.5 border-t border-border">
                                                 <div className="flex flex-col gap-1">
-                                                  <div className="flex items-center gap-1.5">
-                                                    <span className="px-1.5 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
-                                                      Available
-                                                    </span>
-                                                    <span className="text-muted-foreground text-xs">
-                                                      for your event
-                                                    </span>
-                                                  </div>
                                                   <div className="flex items-center justify-between">
-                                                    <span className="text-muted-foreground text-xs">
-                                                      Pricing: CHF{" "}
-                                                      {item.price.toFixed(2)}
-                                                      /bottle
-                                                    </span>
+                                                    <div className="flex items-center gap-1.5">
+                                                      <span className="px-1.5 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
+                                                        Available
+                                                      </span>
+                                                      <span className="text-muted-foreground text-xs">
+                                                        for your event
+                                                      </span>
+                                                      {quantity > 0 && (
+                                                        <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
+                                                          {quantity}×
+                                                        </span>
+                                                      )}
+                                                    </div>
                                                     <span className="text-amber-600 dark:text-amber-400 text-xs">
                                                       (billed by consumption)
                                                     </span>
                                                   </div>
+                                                  {itemVariants[itemId] &&
+                                                    item.variants &&
+                                                    (() => {
+                                                      const variant =
+                                                        item.variants.find(
+                                                          (v) =>
+                                                            v.id ===
+                                                            itemVariants[itemId],
+                                                        );
+                                                      return variant ? (
+                                                        <div className="flex items-center justify-between">
+                                                          <span className="text-muted-foreground text-xs">
+                                                            Size: {variant.name}
+                                                          </span>
+                                                          <span className="text-foreground text-xs font-medium">
+                                                            {includeBeveragePrices
+                                                              ? `CHF ${variant.price.toFixed(2)}/bottle`
+                                                              : "Price on consumption"}
+                                                          </span>
+                                                        </div>
+                                                      ) : null;
+                                                    })()}
                                                 </div>
                                               </div>
                                             ) : (
@@ -2710,7 +2736,7 @@ export function CustomMenuWizard() {
                                                     "Main Courses Vegan",
                                                   ].includes(item.category) ? (
                                                     <span className="text-muted-foreground text-sm">
-                                                      /guest
+                                                      /Gast
                                                     </span>
                                                   ) : (
                                                     ""
@@ -2863,7 +2889,7 @@ export function CustomMenuWizard() {
                             className="text-muted-foreground"
                             style={{ fontSize: "var(--text-small)" }}
                           >
-                            You've visited {visitedCategories.length} of{" "}
+                            Sie haben {visitedCategories.length} von{" "}
                             {categories.length} categories. Use the category
                             buttons above to explore all menu sections before
                             continuing to the summary.
@@ -2900,7 +2926,7 @@ export function CustomMenuWizard() {
                           borderRadius:
                             "var(--radius-card) 0 0 var(--radius-card)",
                         }}
-                        aria-label="View shopping cart"
+                        aria-label="Warenkorb anzeigen"
                       >
                         <div className="relative">
                           <ShoppingCart className="w-5 h-5" />
@@ -3102,7 +3128,7 @@ export function CustomMenuWizard() {
                                               style={{
                                                 borderRadius: "var(--radius)",
                                               }}
-                                              title="Edit item"
+                                              title="Artikel bearbeiten"
                                             >
                                               <Edit2 className="w-3.5 h-3.5" />
                                             </button>
@@ -3114,7 +3140,7 @@ export function CustomMenuWizard() {
                                               style={{
                                                 borderRadius: "var(--radius)",
                                               }}
-                                              title="Remove item"
+                                              title="Artikel entfernen"
                                             >
                                               <X className="w-3.5 h-3.5" />
                                             </button>
@@ -3127,23 +3153,46 @@ export function CustomMenuWizard() {
                                           // Beverage pay-by-consumption display
                                           <div className="pt-1.5 border-t border-border">
                                             <div className="flex flex-col gap-1">
-                                              <div className="flex items-center gap-1.5">
-                                                <span className="px-1.5 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
-                                                  Available
-                                                </span>
-                                                <span className="text-muted-foreground text-xs">
-                                                  for your event
-                                                </span>
-                                              </div>
                                               <div className="flex items-center justify-between">
-                                                <span className="text-muted-foreground text-xs">
-                                                  Pricing: CHF{" "}
-                                                  {item.price.toFixed(2)}/bottle
-                                                </span>
+                                                <div className="flex items-center gap-1.5">
+                                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
+                                                    Available
+                                                  </span>
+                                                  <span className="text-muted-foreground text-xs">
+                                                    for your event
+                                                  </span>
+                                                  {quantity > 0 && (
+                                                    <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
+                                                      {quantity}×
+                                                    </span>
+                                                  )}
+                                                </div>
                                                 <span className="text-amber-600 dark:text-amber-400 text-xs">
                                                   (billed by consumption)
                                                 </span>
                                               </div>
+                                              {itemVariants[itemId] &&
+                                                item.variants &&
+                                                (() => {
+                                                  const variant =
+                                                    item.variants.find(
+                                                      (v) =>
+                                                        v.id ===
+                                                        itemVariants[itemId],
+                                                    );
+                                                  return variant ? (
+                                                    <div className="flex items-center justify-between">
+                                                      <span className="text-muted-foreground text-xs">
+                                                        Size: {variant.name}
+                                                      </span>
+                                                      <span className="text-foreground text-xs font-medium">
+                                                        {includeBeveragePrices
+                                                          ? `CHF ${variant.price.toFixed(2)}/bottle`
+                                                          : "Price on consumption"}
+                                                      </span>
+                                                    </div>
+                                                  ) : null;
+                                                })()}
                                             </div>
                                           </div>
                                         ) : (
@@ -3239,6 +3288,32 @@ export function CustomMenuWizard() {
                                     );
                                   })}
                                 </div>
+                                {/* Beverage Price Inclusion Toggle - Mobile Drawer Footer */}
+                                {selectedItems.some(itemId => {
+                                  const item = menuItems.find(i => i.id === itemId);
+                                  return item?.category === 'Beverages';
+                                }) && (
+                                  <div className="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3" style={{ borderRadius: "var(--radius)" }}>
+                                    <label className="flex items-center gap-3 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={includeBeveragePrices}
+                                        onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
+                                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary focus:ring-offset-0 flex-shrink-0"
+                                      />
+                                      <div className="flex-1">
+                                        <span className="text-foreground font-medium text-sm">
+                                          Include beverage prices in estimate
+                                        </span>
+                                        {!includeBeveragePrices && (
+                                          <p className="text-amber-700 dark:text-amber-300 text-xs mt-1">
+                                            ⚠️ Beverage prices excluded
+                                          </p>
+                                        )}
+                                      </div>
+                                    </label>
+                                  </div>
+                                )}
 
                                 {/* Total */}
                                 <div className="border-t border-border pt-4">
@@ -3337,33 +3412,6 @@ export function CustomMenuWizard() {
                                     </div>
                                   </div>
                                 </div>
-
-                                {/* Beverage Price Inclusion Toggle - Mobile Drawer Footer */}
-                                {selectedItems.some(itemId => {
-                                  const item = menuItems.find(i => i.id === itemId);
-                                  return item?.category === 'Beverages';
-                                }) && (
-                                  <div className="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3" style={{ borderRadius: "var(--radius)" }}>
-                                    <label className="flex items-center gap-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        checked={includeBeveragePrices}
-                                        onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
-                                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary focus:ring-offset-0 flex-shrink-0"
-                                      />
-                                      <div className="flex-1">
-                                        <span className="text-foreground font-medium text-sm">
-                                          Include beverage prices in estimate
-                                        </span>
-                                        {!includeBeveragePrices && (
-                                          <p className="text-amber-700 dark:text-amber-300 text-xs mt-1">
-                                            ⚠️ Beverage prices excluded
-                                          </p>
-                                        )}
-                                      </div>
-                                    </label>
-                                  </div>
-                                )}
                               </>
                             )}
                           </div>
@@ -3390,7 +3438,7 @@ export function CustomMenuWizard() {
                             fontWeight: "var(--font-weight-semibold)",
                           }}
                         >
-                          Review your request
+                          Anfrage überprüfen
                         </h3>
                       </div>
                       <p
@@ -3424,7 +3472,7 @@ export function CustomMenuWizard() {
                                   fontWeight: "var(--font-weight-semibold)",
                                 }}
                               >
-                                Contact Information
+                                Kontaktinformationen
                               </h4>
                             </div>
                             <button
@@ -3440,7 +3488,7 @@ export function CustomMenuWizard() {
                               }}
                             >
                               <Edit2 className="w-3.5 h-3.5" />
-                              Edit
+                              Bearbeiten
                             </button>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3551,7 +3599,7 @@ export function CustomMenuWizard() {
                               }}
                             >
                               <Edit2 className="w-3.5 h-3.5" />
-                              Edit
+                              Bearbeiten
                             </button>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -3629,7 +3677,7 @@ export function CustomMenuWizard() {
                                   fontWeight: "var(--font-weight-semibold)",
                                 }}
                               >
-                                Event Details
+                                Veranstaltungsdetails
                               </h4>
                             </div>
                             <button
@@ -3645,7 +3693,7 @@ export function CustomMenuWizard() {
                               }}
                             >
                               <Edit2 className="w-3.5 h-3.5" />
-                              Edit
+                              Bearbeiten
                             </button>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3717,7 +3765,7 @@ export function CustomMenuWizard() {
                                 className="text-muted-foreground mt-1"
                                 style={{ fontSize: "var(--text-small)" }}
                               >
-                                All menu items will be prepared per person
+                                Alle Menüartikel werden pro Person zubereitet
                               </p>
                             </div>
                             <div>
@@ -3725,7 +3773,7 @@ export function CustomMenuWizard() {
                                 className="text-muted-foreground mb-1"
                                 style={{ fontSize: "var(--text-small)" }}
                               >
-                                Occasion
+                                Anlass
                               </p>
                               <p
                                 className="text-foreground"
@@ -3762,7 +3810,7 @@ export function CustomMenuWizard() {
                                   fontWeight: "var(--font-weight-semibold)",
                                 }}
                               >
-                                Special Requests
+                                Sonderwünsche
                               </h4>
                             </div>
                             <button
@@ -3778,7 +3826,7 @@ export function CustomMenuWizard() {
                               }}
                             >
                               <Edit2 className="w-3.5 h-3.5" />
-                              Edit
+                              Bearbeiten
                             </button>
                           </div>
                           <p
@@ -3811,8 +3859,8 @@ export function CustomMenuWizard() {
                                   fontWeight: "var(--font-weight-semibold)",
                                 }}
                               >
-                                Selected Menu ({selectedItems.length}{" "}
-                                {selectedItems.length === 1 ? "item" : "items"})
+                                Ausgewähltes Menü ({selectedItems.length}{" "}
+                                {selectedItems.length === 1 ? "Artikel" : "Artikel"})
                               </h4>
                               <p
                                 className="text-muted-foreground mt-0.5"
@@ -3916,7 +3964,7 @@ export function CustomMenuWizard() {
                                         </span>
                                       </div>
                                       <span className="text-muted-foreground text-xs">
-                                        {isCollapsed ? "Show" : "Hide"}
+                                        {isCollapsed ? "Anzeigen" : "Ausblenden"}
                                       </span>
                                     </button>
 
@@ -3985,8 +4033,9 @@ export function CustomMenuWizard() {
                                                         );
                                                       return variant ? (
                                                         <span>
-                                                          Variant:{" "}
-                                                          {variant.name}
+                                                          {item.category === "Beverages"
+                                                            ? `Size: ${variant.name}`
+                                                            : `Variant: ${variant.name}`}
                                                         </span>
                                                       ) : null;
                                                     })()}
@@ -4017,6 +4066,12 @@ export function CustomMenuWizard() {
                                                       {itemComments[itemId]}
                                                     </span>
                                                   )}
+                                                  {item.category === "Beverages" &&
+                                                    item.pricingType === "flat-rate" && (
+                                                      <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
+                                                        Menge: {quantity}
+                                                      </span>
+                                                    )}
                                                 </div>
                                               </div>
 
@@ -4027,7 +4082,15 @@ export function CustomMenuWizard() {
                                                     "Beverages" &&
                                                   item.pricingType ===
                                                     "flat-rate"
-                                                    ? `CHF ${item.price.toFixed(2)}/unit`
+                                                    ? (() => {
+                                                        const variant = itemVariants[itemId] && item.variants
+                                                          ? item.variants.find((v) => v.id === itemVariants[itemId])
+                                                          : null;
+                                                        const price = variant ? variant.price : item.price;
+                                                        return includeBeveragePrices
+                                                          ? `CHF ${price.toFixed(2)}/unit`
+                                                          : "Price on consumption";
+                                                      })()
                                                     : `CHF ${getItemPerPersonPrice(item).toFixed(2)}${item.pricingType === "per-person" ? "" : ""}`}
                                                   {item.pricingType ===
                                                     "per-person" &&
@@ -4043,7 +4106,7 @@ export function CustomMenuWizard() {
                                                     "Beverages" &&
                                                   item.pricingType ===
                                                     "flat-rate"
-                                                    ? "billed by consumption"
+                                                    ? `billed by consumption • ${quantity}×`
                                                     : item.pricingType ===
                                                         "per-person"
                                                       ? [
@@ -4172,7 +4235,7 @@ export function CustomMenuWizard() {
                                   className="text-muted-foreground"
                                   style={{ fontSize: "var(--text-small)" }}
                                 >
-                                  Total:{" "}
+                                  Gesamt:{" "}
                                   {selectedItems
                                     .filter((itemId) => {
                                       const item = menuItems.find(
@@ -4189,7 +4252,7 @@ export function CustomMenuWizard() {
                                         total + (itemQuantities[itemId] || 1),
                                       0,
                                     ) * parseInt(eventDetails.guestCount)}{" "}
-                                  portions
+                                  Portionen
                                 </p>
                               )}
                             </div>
@@ -4230,7 +4293,7 @@ export function CustomMenuWizard() {
                                   className="text-muted-foreground"
                                   style={{ fontSize: "var(--text-small)" }}
                                 >
-                                  Total:{" "}
+                                  Gesamt:{" "}
                                   {selectedItems
                                     .filter((itemId) => {
                                       const item = menuItems.find(
@@ -4247,7 +4310,7 @@ export function CustomMenuWizard() {
                                         total + (itemQuantities[itemId] || 1),
                                       0,
                                     ) * parseInt(eventDetails.guestCount)}{" "}
-                                  portions
+                                  Portionen
                                 </p>
                               )}
                             </div>
@@ -4274,7 +4337,7 @@ export function CustomMenuWizard() {
                                   fontWeight: "var(--font-weight-semibold)",
                                 }}
                               >
-                                Order Summary
+                                Bestellübersicht
                               </h4>
                             </div>
                             {/* View Toggle */}
@@ -4287,7 +4350,7 @@ export function CustomMenuWizard() {
                                     : "text-muted-foreground hover:text-foreground"
                                 }`}
                               >
-                                Per Person
+                                Pro Person
                               </button>
                               <button
                                 onClick={() => setSummaryViewMode("total")}
@@ -4297,7 +4360,7 @@ export function CustomMenuWizard() {
                                     : "text-muted-foreground hover:text-foreground"
                                 }`}
                               >
-                                Total + Extras
+                                Gesamt + Extras
                               </button>
                             </div>
                           </div>
@@ -4313,7 +4376,7 @@ export function CustomMenuWizard() {
                                   className="text-foreground font-semibold mb-3"
                                   style={{ fontSize: "var(--text-base)" }}
                                 >
-                                  Per-Person Breakdown
+                                  Aufschlüsselung pro Person
                                 </p>
 
                                 {/* Menu Items by Category - Per Person */}
@@ -4414,8 +4477,8 @@ export function CustomMenuWizard() {
                                       Per Person Total
                                     </p>
                                     <p className="text-muted-foreground text-sm mt-1">
-                                      For {eventDetails.guestCount || "0"}{" "}
-                                      guests
+                                      Für {eventDetails.guestCount || "0"}{" "}
+                                      Gäste
                                     </p>
                                   </div>
                                   <div className="text-right">
@@ -4445,7 +4508,7 @@ export function CustomMenuWizard() {
                                     className="text-foreground font-semibold"
                                     style={{ fontSize: "var(--text-base)" }}
                                   >
-                                    🍽️ Food Menu
+                                    🍽️ Speisekarte
                                   </p>
                                 </div>
                                 <div className="p-4 space-y-2">
@@ -4516,7 +4579,7 @@ export function CustomMenuWizard() {
                                         ))}
                                         <div className="pt-2 mt-2 border-t-2 border-primary flex justify-between">
                                           <span className="text-foreground font-semibold">
-                                            Subtotal Food:
+                                            Zwischensumme Speisen:
                                           </span>
                                           <span className="text-foreground font-semibold">
                                             CHF{" "}
@@ -4576,14 +4639,34 @@ export function CustomMenuWizard() {
 
                                 if (beverageItems.length === 0) return null;
 
+                                // Calculate the actual beverage total (always show individual prices)
+                                // But only include in subtotal if checkbox is checked
                                 const beverageSubtotal = beverageItems.reduce(
                                   (sum, itemId) => {
                                     const item = menuItems.find(
                                       (i) => i.id === itemId,
                                     );
-                                    return (
-                                      sum + (item ? getItemTotalPrice(item) : 0)
-                                    );
+                                    if (!item) return sum;
+
+                                    // Always calculate actual price for display
+                                    const quantity = itemQuantities[item.id] || 1;
+                                    const addOns = itemAddOns[item.id] || [];
+                                    const addOnsPrice = addOns.reduce((total, addOnId) => {
+                                      const addOn = item.addOns?.find((ao) => ao.id === addOnId);
+                                      return total + (addOn?.price || 0);
+                                    }, 0);
+
+                                    let basePrice = item.price;
+                                    const variantId = itemVariants[item.id];
+                                    if (variantId && item.variants) {
+                                      const variant = item.variants.find((v) => v.id === variantId);
+                                      if (variant) basePrice = variant.price;
+                                    }
+
+                                    const itemTotal = (basePrice + addOnsPrice) * quantity;
+
+                                    // Only add to subtotal if includeBeveragePrices is true
+                                    return includeBeveragePrices ? sum + itemTotal : sum;
                                   },
                                   0,
                                 );
@@ -4598,11 +4681,12 @@ export function CustomMenuWizard() {
                                         className="text-foreground font-semibold"
                                         style={{ fontSize: "var(--text-base)" }}
                                       >
-                                        🍷️ Beverages
+                                        🍷️ Getränke
                                       </p>
                                       <p className="text-muted-foreground text-xs mt-0.5">
-                                        Pay by consumption • not included in
-                                        per-person pricing
+                                        {!includeBeveragePrices
+                                          ? "Preise werden angezeigt, aber nicht in der Gesamtsumme enthalten"
+                                          : "Pay by consumption • not included in per-person pricing"}
                                       </p>
                                     </div>
                                     <div className="p-4 space-y-1">
@@ -4611,8 +4695,28 @@ export function CustomMenuWizard() {
                                           (i) => i.id === itemId,
                                         );
                                         if (!item) return null;
-                                        const itemTotal =
-                                          getItemTotalPrice(item);
+
+                                        // Always calculate actual price for display (regardless of toggle)
+                                        const quantity = itemQuantities[item.id] || 1;
+                                        const addOns = itemAddOns[item.id] || [];
+                                        const addOnsPrice = addOns.reduce((total, addOnId) => {
+                                          const addOn = item.addOns?.find((ao) => ao.id === addOnId);
+                                          return total + (addOn?.price || 0);
+                                        }, 0);
+
+                                        let basePrice = item.price;
+                                        let variantName = "";
+                                        const variantId = itemVariants[item.id];
+                                        if (variantId && item.variants) {
+                                          const variant = item.variants.find((v) => v.id === variantId);
+                                          if (variant) {
+                                            basePrice = variant.price;
+                                            variantName = variant.name;
+                                          }
+                                        }
+
+                                        const itemTotal = (basePrice + addOnsPrice) * quantity;
+
                                         return (
                                           <div
                                             key={itemId}
@@ -4624,13 +4728,11 @@ export function CustomMenuWizard() {
                                                 fontSize: "var(--text-small)",
                                               }}
                                             >
-                                              {item.name} (
-                                              {item.pricingType === "flat-rate"
-                                                ? `CHF ${item.price.toFixed(2)}/bottle`
-                                                : "per person"}
-                                              )
+                                              {item.name}
+                                              {variantName && ` (${variantName})`}
+                                              {quantity > 1 && ` ×${quantity}`}
                                             </span>
-                                            <span className="text-foreground font-medium">
+                                            <span className={`font-medium ${!includeBeveragePrices ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                                               CHF {itemTotal.toFixed(2)}
                                             </span>
                                           </div>
@@ -4638,7 +4740,7 @@ export function CustomMenuWizard() {
                                       })}
                                       <div className="pt-2 mt-2 border-t border-border flex justify-between">
                                         <span className="text-foreground font-semibold">
-                                          Subtotal Beverages:
+                                          Zwischensumme Getränke:
                                         </span>
                                         <span className="text-foreground font-semibold">
                                           CHF {beverageSubtotal.toFixed(2)}
@@ -4693,7 +4795,7 @@ export function CustomMenuWizard() {
                                         className="text-foreground font-semibold"
                                         style={{ fontSize: "var(--text-base)" }}
                                       >
-                                        ✨ Additional Services
+                                        ✨ Zusätzliche Services
                                       </p>
                                     </div>
                                     <div className="p-4 space-y-1">
@@ -4725,7 +4827,7 @@ export function CustomMenuWizard() {
                                       })}
                                       <div className="pt-2 mt-2 border-t border-border flex justify-between">
                                         <span className="text-foreground font-semibold">
-                                          Subtotal Services:
+                                          Zwischensumme Services:
                                         </span>
                                         <span className="text-foreground font-semibold">
                                           CHF {serviceSubtotal.toFixed(2)}
@@ -4735,6 +4837,33 @@ export function CustomMenuWizard() {
                                   </div>
                                 );
                               })()}
+
+                              {/* Beverage Price Inclusion Toggle - Only show if beverages are selected */}
+                              {selectedItems.some(itemId => {
+                                const item = menuItems.find(i => i.id === itemId);
+                                return item?.category === 'Beverages';
+                              }) && (
+                                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4" style={{ borderRadius: "var(--radius)" }}>
+                                  <label className="flex items-center gap-3 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={includeBeveragePrices}
+                                      onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
+                                      className="w-5 h-5 rounded border-border text-primary focus:ring-primary focus:ring-offset-0"
+                                    />
+                                    <div className="flex-1">
+                                      <span className="text-foreground font-medium" style={{ fontSize: "var(--text-base)" }}>
+                                        Getränkepreise in die Schätzung aufnehmen
+                                      </span>
+                                      {!includeBeveragePrices && (
+                                        <p className="text-amber-700 dark:text-amber-300 text-sm mt-1">
+                                          ⚠️ Getränkepreise sind derzeit von der Gesamtschätzung ausgeschlossen
+                                        </p>
+                                      )}
+                                    </div>
+                                  </label>
+                                </div>
+                              )}
 
                               {/* GRAND TOTAL */}
                               <div
@@ -4757,7 +4886,7 @@ export function CustomMenuWizard() {
                                             fontSize: "var(--text-small)",
                                           }}
                                         >
-                                          For {eventDetails.guestCount} guests
+                                          Für {eventDetails.guestCount} Gäste
                                         </p>
                                       )}
                                   </div>
@@ -4772,33 +4901,6 @@ export function CustomMenuWizard() {
                                   </p>
                                 </div>
                               </div>
-                            </div>
-                          )}
-
-                          {/* Beverage Price Inclusion Toggle - Only show if beverages are selected */}
-                          {selectedItems.some(itemId => {
-                            const item = menuItems.find(i => i.id === itemId);
-                            return item?.category === 'Beverages';
-                          }) && (
-                            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4" style={{ borderRadius: "var(--radius)" }}>
-                              <label className="flex items-center gap-3 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={includeBeveragePrices}
-                                  onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
-                                  className="w-5 h-5 rounded border-border text-primary focus:ring-primary focus:ring-offset-0"
-                                />
-                                <div className="flex-1">
-                                  <span className="text-foreground font-medium" style={{ fontSize: "var(--text-base)" }}>
-                                    Include beverage prices in estimate
-                                  </span>
-                                  {!includeBeveragePrices && (
-                                    <p className="text-amber-700 dark:text-amber-300 text-sm mt-1">
-                                      ⚠️ Beverage prices are currently excluded from the total estimate
-                                    </p>
-                                  )}
-                                </div>
-                              </label>
                             </div>
                           )}
                         </div>
@@ -4874,7 +4976,7 @@ export function CustomMenuWizard() {
                                 fontWeight: "var(--font-weight-medium)",
                               }}
                             >
-                              Terms and Conditions
+                              Geschäftsbedingungen
                             </span>{" "}
                             and confirm that all information is correct.
                           </span>
@@ -4919,7 +5021,7 @@ export function CustomMenuWizard() {
                       iconPosition="left"
                       size="sm"
                     >
-                      Back
+                      Zurück
                     </Button>
                   )}
 
@@ -4933,7 +5035,7 @@ export function CustomMenuWizard() {
                         disabled={!isStep1Valid()}
                         size="sm"
                       >
-                        Start Menu
+                        Menü starten
                       </Button>
                     )}
 
@@ -4947,8 +5049,8 @@ export function CustomMenuWizard() {
                         size="sm"
                       >
                         {isLastCategory() && allCategoriesVisited()
-                          ? "Continue to Summary"
-                          : "Next Category"}
+                          ? "Zusammenfassung anzeigen"
+                          : "Nächste Kategorie"}
                       </Button>
                     )}
 
@@ -4961,7 +5063,7 @@ export function CustomMenuWizard() {
                         disabled={!termsAccepted}
                         size="sm"
                       >
-                        Submit Request
+                        Anfrage absenden
                       </Button>
                     )}
                   </div>
@@ -5011,7 +5113,7 @@ export function CustomMenuWizard() {
                           className="text-muted-foreground"
                           style={{ fontSize: "var(--text-small)" }}
                         >
-                          per person
+                          pro Person
                         </span>
                       )}
                     </div>
@@ -5068,16 +5170,15 @@ export function CustomMenuWizard() {
                             className="text-foreground font-semibold mb-1"
                             style={{ fontSize: "var(--text-base)" }}
                           >
-                            Billed by Consumption
+                            Nach Verbrauch abgerechnet
                           </p>
                           <p
                             className="text-muted-foreground"
                             style={{ fontSize: "var(--text-small)" }}
                           >
-                            Pricing starts at CHF{" "}
-                            {detailsModalItem.price.toFixed(2)} per unit. Final
-                            amount will be calculated based on actual
-                            consumption at your event.
+                            Preise beginnen bei CHF{" "}
+                            {detailsModalItem.price.toFixed(2)} pro Einheit. Der Endbetrag
+                            wird basierend auf dem tatsächlichen Verbrauch bei Ihrer Veranstaltung berechnet.
                           </p>
                         </div>
                       </div>
@@ -5095,7 +5196,7 @@ export function CustomMenuWizard() {
                           fontWeight: "var(--font-weight-semibold)",
                         }}
                       >
-                        Choose Size
+                        Größe wählen
                       </h4>
                       <div className="space-y-3">
                         {detailsModalItem.variants.map((variant) => {
@@ -5172,13 +5273,13 @@ export function CustomMenuWizard() {
                             fontWeight: "var(--font-weight-semibold)",
                           }}
                         >
-                          Allergen Information
+                          Allergeninformationen
                         </p>
                         <p
                           className="text-muted-foreground"
                           style={{ fontSize: "var(--text-small)" }}
                         >
-                          Contains: {detailsModalItem.allergens.join(", ")}
+                          Enthält: {detailsModalItem.allergens.join(", ")}
                         </p>
                       </div>
                     </div>
@@ -5195,7 +5296,7 @@ export function CustomMenuWizard() {
                           fontWeight: "var(--font-weight-semibold)",
                         }}
                       >
-                        Optional Add-ons
+                        Optionale Extras
                       </h4>
                       <div className="space-y-3">
                         {detailsModalItem.addOns.map((addOn) => {
@@ -5260,7 +5361,7 @@ export function CustomMenuWizard() {
                       fontWeight: "var(--font-weight-semibold)",
                     }}
                   >
-                    Additional Comments
+                    Zusätzliche Kommentare
                     <span
                       className="text-muted-foreground ml-1"
                       style={{
@@ -5274,7 +5375,7 @@ export function CustomMenuWizard() {
                   <textarea
                     value={tempComment}
                     onChange={(e) => setTempComment(e.target.value)}
-                    placeholder="Any special instructions or dietary requirements..."
+                    placeholder="Besondere Anweisungen oder Ernährungsvorschriften..."
                     rows={3}
                     className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
                     style={{
@@ -5286,39 +5387,34 @@ export function CustomMenuWizard() {
               </div>
 
               {/* Modal Footer */}
-              <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4">
-                <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="sticky bottom-0 bg-card border-t border-border px-3 sm:px-6 py-3">
+                <div className="flex items-center justify-between gap-2 sm:gap-4">
                   {/* Left: Quantity & Guest Count Selectors */}
-                  <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                     {/* Quantity Selector - Hide for flat-rate items, but show for beverages */}
                     {(detailsModalItem.pricingType !== 'flat-rate' || detailsModalItem.category === 'Beverages') && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground text-sm whitespace-nowrap">Qty:</span>
+                      <div className="flex items-center gap-1.5">
                         <button
                           onClick={() =>
                             setTempQuantity(Math.max(1, tempQuantity - 1))
                           }
-                          className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground flex-shrink-0"
+                          className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground flex-shrink-0 active:scale-95 touch-manipulation"
                           style={{ borderRadius: "var(--radius)" }}
                           disabled={tempQuantity <= 1}
                         >
-                          <Minus className="w-5 h-5" />
+                          <Minus className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                         <span
-                          className="text-foreground min-w-[3rem] text-center"
-                          style={{
-                            fontSize: "var(--text-h4)",
-                            fontWeight: "var(--font-weight-semibold)",
-                          }}
+                          className="text-foreground min-w-[2.5rem] sm:min-w-[3rem] text-center font-semibold text-base sm:text-lg"
                         >
                           {tempQuantity}
                         </span>
                         <button
                           onClick={() => setTempQuantity(tempQuantity + 1)}
-                          className="w-10 h-10 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors flex-shrink-0"
+                          className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center border-2 border-border text-foreground rounded-lg hover:border-primary hover:text-primary transition-colors flex-shrink-0 active:scale-95 touch-manipulation"
                           style={{ borderRadius: "var(--radius)" }}
                         >
-                          <Plus className="w-5 h-5" />
+                          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                       </div>
                     )}
@@ -5329,8 +5425,8 @@ export function CustomMenuWizard() {
                       "Main Courses Veggie",
                       "Main Courses Vegan",
                     ].includes(detailsModalItem.category) && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground text-sm whitespace-nowrap">Guests:</span>
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                        <span className="text-muted-foreground text-xs sm:text-sm whitespace-nowrap">Gäste:</span>
                         <div className="flex items-center gap-1">
                           <input
                             type="number"
@@ -5351,7 +5447,7 @@ export function CustomMenuWizard() {
                               if (newCount > maxAllowed) {
                                 setGuestCountErrors((prev) => ({
                                   ...prev,
-                                  [detailsModalItem.category]: `Cannot exceed ${maxAllowed} guests`,
+                                  [detailsModalItem.category]: `Kann ${maxAllowed} Gäste nicht überschreiten`,
                                 }));
                               } else {
                                 setGuestCountErrors((prev) => ({
@@ -5365,7 +5461,7 @@ export function CustomMenuWizard() {
                                 }));
                               }
                             }}
-                            className={`w-16 px-2 py-2 bg-input-background border rounded-lg transition-colors text-center ${
+                            className={`w-14 h-9 sm:w-16 sm:h-11 px-2 bg-input-background border rounded-lg transition-colors text-center text-sm sm:text-base ${
                               guestCountErrors[detailsModalItem.category]
                                 ? "border-destructive"
                                 : "border-border focus:border-primary"
@@ -5373,7 +5469,6 @@ export function CustomMenuWizard() {
                             placeholder="0"
                             style={{
                               borderRadius: "var(--radius)",
-                              fontSize: "var(--text-base)",
                             }}
                           />
                           <span className="text-muted-foreground text-xs whitespace-nowrap">
@@ -5387,17 +5482,17 @@ export function CustomMenuWizard() {
                   {/* Right: Add to Cart Button with Total */}
                   <button
                     onClick={addToCartFromModal}
-                    className="flex items-center gap-3 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors ml-auto"
+                    className="flex items-center justify-center gap-1.5 sm:gap-3 px-3 sm:px-5 py-2.5 h-9 sm:h-11 min-h-[36px] sm:min-h-[44px] bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors active:scale-[0.98] touch-manipulation flex-1 sm:flex-auto"
                     style={{
                       borderRadius: "var(--radius)",
-                      fontSize: "var(--text-base)",
+                      fontSize: "var(--text-small)",
                       fontWeight: "var(--font-weight-semibold)",
                     }}
                   >
-                    <ShoppingCart className="w-5 h-5" />
-                    <span>Add to Cart</span>
-                    <span style={{ fontWeight: "var(--font-weight-bold)" }}>
-                      CHF{" "}
+                    <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                    <span className="hidden sm:inline truncate">In den Warenkorb</span>
+                    <span className="sm:hidden truncate">Warenkorb</span>
+                    <span className="whitespace-nowrap text-sm sm:text-base" style={{ fontWeight: "var(--font-weight-bold)" }}>
                       {(() => {
                         let basePrice = detailsModalItem.price;
                         if (tempVariant && detailsModalItem.variants) {
