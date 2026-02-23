@@ -119,6 +119,12 @@ export function CustomMenuWizard() {
           if (categoryNames.length > 0) {
             setSelectedCategory(categoryNames[0]);
             setVisitedCategories([categoryNames[0]]);
+            // Initialize all categories as collapsed (closed by default)
+            const initialCollapsedState = categoryNames.reduce((acc, cat) => {
+              acc[cat] = true;
+              return acc;
+            }, {} as Record<string, boolean>);
+            setCollapsedCategories(initialCollapsedState);
           }
         } else {
           // Fallback to error state - show empty menu
@@ -1732,16 +1738,21 @@ export function CustomMenuWizard() {
                       </div>
                     )}
 
-                    {/* Selected Menu Items */}
+                    {/* Selected Menu Items - Grouped by Category */}
                     <div className="bg-muted/30 border border-border rounded-lg p-5" style={{ borderRadius: 'var(--radius-card)' }}>
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0" style={{ borderRadius: 'var(--radius)' }}>
                             <ShoppingCart className="w-4 h-4 text-primary" />
                           </div>
-                          <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            Selected Menu ({selectedItems.length} {selectedItems.length === 1 ? 'item' : 'items'})
-                          </h4>
+                          <div>
+                            <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
+                              Selected Menu ({selectedItems.length} {selectedItems.length === 1 ? 'item' : 'items'})
+                            </h4>
+                            <p className="text-muted-foreground mt-0.5" style={{ fontSize: 'var(--text-small)' }}>
+                              Per person quantities
+                            </p>
+                          </div>
                         </div>
                         <button
                           onClick={() => setCurrentStep(2)}
@@ -1761,94 +1772,162 @@ export function CustomMenuWizard() {
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-3">
-                          <div className="space-y-3">
-                            {selectedItems.map((itemId) => {
-                              const item = menuItems.find(i => i.id === itemId);
-                              if (!item) return null;
-                              const quantity = itemQuantities[itemId] || 1;
+                        <div className="space-y-4">
+                          {(() => {
+                            // Group items by category
+                            const categoryList = categories;
+
+                            return categoryList.map((category) => {
+                              const categoryItems = selectedItems
+                                .map((itemId) => menuItems.find((i) => i.id === itemId))
+                                .filter((item): item is MenuItem => item !== undefined && item.category === category);
+
+                              if (categoryItems.length === 0) return null;
+
+                              const isCollapsed = collapsedCategories[category];
 
                               return (
                                 <div
-                                  key={itemId}
+                                  key={category}
                                   className="bg-card border border-border rounded-lg overflow-hidden"
-                                  style={{ borderRadius: 'var(--radius-card)' }}
+                                  style={{ borderRadius: 'var(--radius)' }}
                                 >
-                                  <div className="flex gap-4">
-                                    {/* Item Image */}
-                                    <div className="w-28 h-28 flex-shrink-0">
-                                      <img 
-                                        src={item.image} 
-                                        alt={item.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-
-                                    {/* Item Content */}
-                                    <div className="flex-1 p-3 pl-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        {item.dietaryType !== 'none' && (
-                                          <DietaryIcon type={item.dietaryType} size="sm" isGlutenFree={item.isGlutenFree} />
-                                        )}
-                                        <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                          {item.name}
-                                        </h5>
-                                      </div>
-                                      
-                                      {/* Additional Details */}
-                                      {itemVariants[itemId] && item.variants && (() => {
-                                        const variant = item.variants.find(v => v.id === itemVariants[itemId]);
-                                        return variant ? (
-                                          <p className="text-muted-foreground mt-2" style={{ fontSize: 'var(--text-small)' }}>
-                                            <span className="font-medium">Variant:</span> {variant.name}
-                                          </p>
-                                        ) : null;
-                                      })()}
-                                      {itemAddOns[itemId] && itemAddOns[itemId].length > 0 && (
-                                        <div className="mt-1">
-                                          <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                            <span className="font-medium">Add-ons:</span> {itemAddOns[itemId].map(addOnId => {
-                                              const addOn = item.addOns?.find(ao => ao.id === addOnId);
-                                              return addOn ? addOn.name : null;
-                                            }).filter(Boolean).join(', ')}
-                                          </p>
-                                        </div>
+                                  {/* Collapsible Category Header */}
+                                  <button
+                                    onClick={() =>
+                                      setCollapsedCategories((prev) => ({
+                                        ...prev,
+                                        [category]: !prev[category],
+                                      }))
+                                    }
+                                    className="w-full flex items-center justify-between gap-2 p-4 pb-2 hover:bg-muted/50 transition-colors"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {isCollapsed ? (
+                                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                                      ) : (
+                                        <ChevronUp className="w-4 h-4 text-muted-foreground" />
                                       )}
-                                      {itemComments[itemId] && (
-                                        <p className="text-muted-foreground italic mt-1" style={{ fontSize: 'var(--text-small)' }}>
-                                          <span className="font-medium not-italic">Note:</span> {itemComments[itemId]}
-                                        </p>
-                                      )}
+                                      <h5 className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
+                                        {category}
+                                      </h5>
+                                      <span className="px-2 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">
+                                        {categoryItems.length}
+                                      </span>
                                     </div>
+                                    <span className="text-muted-foreground text-xs">
+                                      {isCollapsed ? 'Show' : 'Hide'}
+                                    </span>
+                                  </button>
 
-                                    {/* Price and Quantity */}
-                                    <div className="p-3 text-right flex flex-col justify-between">
-                                      <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                        Qty: {quantity}
-                                      </p>
-                                      <p className="text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                        CHF {getItemTotalPrice(item).toFixed(2)}
-                                      </p>
+                                  {/* Items in this category - collapsible */}
+                                  {!isCollapsed && (
+                                    <div className="p-4 pt-2 space-y-2">
+                                      {categoryItems.map((item) => {
+                                        const itemId = item.id;
+                                        const quantity = itemQuantities[itemId] || 1;
+
+                                        return (
+                                          <div
+                                            key={itemId}
+                                            className="flex items-center gap-3 p-2 rounded-lg bg-muted/20"
+                                          >
+                                            {/* Thumbnail */}
+                                            <div className="w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-muted">
+                                              <img
+                                                src={item.image}
+                                                alt={item.name}
+                                                className="w-full h-full object-cover"
+                                              />
+                                            </div>
+
+                                            {/* Item Details */}
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-start gap-2 flex-wrap">
+                                                {item.dietaryType !== 'none' && (
+                                                  <DietaryIcon type={item.dietaryType} size="sm" isGlutenFree={item.isGlutenFree} />
+                                                )}
+                                                <h6 className="text-foreground font-medium text-sm">
+                                                  {item.name}
+                                                </h6>
+                                                {/* Pay by consumption badge for beverages */}
+                                                {item.category === 'Beverages' && item.pricingType === 'flat-rate' && (
+                                                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded text-xs font-medium">
+                                                    Pay by consumption
+                                                  </span>
+                                                )}
+                                              </div>
+
+                                              {/* Variants, Add-ons, Comments */}
+                                              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
+                                                {itemVariants[itemId] && item.variants && (() => {
+                                                  const variant = item.variants.find((v) => v.id === itemVariants[itemId]);
+                                                  return variant ? (
+                                                    <span>Variant: {variant.name}</span>
+                                                  ) : null;
+                                                })()}
+                                                {itemAddOns[itemId] && itemAddOns[itemId].length > 0 && (
+                                                  <span>
+                                                    Add-ons:{' '}
+                                                    {itemAddOns[itemId]
+                                                      .map((addOnId) => {
+                                                        const addOn = item.addOns?.find((ao) => ao.id === addOnId);
+                                                        return addOn ? addOn.name : null;
+                                                      })
+                                                      .filter(Boolean)
+                                                      .join(', ')}
+                                                  </span>
+                                                )}
+                                                {itemComments[itemId] && (
+                                                  <span className="italic">Note: {itemComments[itemId]}</span>
+                                                )}
+                                              </div>
+                                            </div>
+
+                                            {/* Price */}
+                                            <div className="flex-shrink-0 text-right">
+                                              <p className="text-primary font-semibold text-sm">
+                                                {item.category === 'Beverages' && item.pricingType === 'flat-rate'
+                                                  ? `CHF ${item.price.toFixed(2)}/unit`
+                                                  : `CHF ${getItemPerPersonPrice(item).toFixed(2)}`}
+                                                {item.pricingType === 'per-person' && item.category !== 'Beverages' && (
+                                                  <span className="text-muted-foreground text-xs ml-1">/person</span>
+                                                )}
+                                              </p>
+                                              <p className="text-muted-foreground text-xs">
+                                                {item.category === 'Beverages' && item.pricingType === 'flat-rate'
+                                                  ? 'billed by consumption'
+                                                  : item.pricingType === 'per-person'
+                                                  ? `${parseInt(eventDetails.guestCount) || 0}×`
+                                                  : quantity > 1
+                                                  ? `${quantity}×`
+                                                  : 'flat'}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
-                                  </div>
+                                  )}
                                 </div>
                               );
-                            })}
-                          </div>
+                            });
+                          })()}
 
-                          {/* Total Summary */}
+                          {/* Per-Person Total */}
                           <div className="border-t border-border pt-4 mt-4">
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                  Estimated Total
+                                  Per Person Total
                                 </p>
                                 <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                  {selectedItems.reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0)} items • {eventDetails.guestCount || '0'} guests
+                                  {selectedItems.length} {selectedItems.length === 1 ? 'item' : 'items'} selected for {eventDetails.guestCount || '0'}{' '}
+                                  {parseInt(eventDetails.guestCount) === 1 ? 'guest' : 'guests'}
                                 </p>
                               </div>
                               <p className="text-primary" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                CHF {getTotalPriceWithAddOns().toFixed(2)}
+                                CHF {getPerPersonSubtotal().toFixed(2)}
                               </p>
                             </div>
                           </div>
@@ -1856,28 +1935,577 @@ export function CustomMenuWizard() {
                       )}
                     </div>
 
-                    {/* Deposit Requirement Alert */}
-                    <div className="bg-secondary border border-secondary rounded-lg p-5" style={{ borderRadius: 'var(--radius-card)' }}>
-                      <div className="flex gap-4">
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <AlertTriangle className="w-6 h-6 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-white mb-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                            Deposit Requirement
+                    {/* Dietary Breakdown & Order Summary - Side by Side */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* Dietary Breakdown Card */}
+                      <div className="bg-muted/30 border border-border rounded-lg p-5" style={{ borderRadius: 'var(--radius-card)' }}>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0" style={{ borderRadius: 'var(--radius)' }}>
+                            <Users className="w-4 h-4 text-primary" />
+                          </div>
+                          <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
+                            Dietary Breakdown
                           </h4>
-                          <p className="text-white/80 mb-3" style={{ fontSize: 'var(--text-base)' }}>
-                            A deposit is required for orders above <span className="text-primary font-semibold">CHF 2,000.00</span>. This deposit will be deducted from the final invoice.
-                          </p>
-                          <div className="flex items-start gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0"></div>
-                            <p className="text-white/70" style={{ fontSize: 'var(--text-small)' }}>
-                              Our team will connect you once order is locked and confirmed.
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Meat/Fish Summary */}
+                          <div className="bg-card border border-border rounded-lg p-4" style={{ borderRadius: 'var(--radius)' }}>
+                            <p className="text-muted-foreground mb-2" style={{ fontSize: 'var(--text-small)' }}>
+                              🍖 Meat/Fish Selections
                             </p>
+                            <p className="text-primary mb-1" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
+                              {selectedItems.filter((itemId) => {
+                                const item = menuItems.find((i) => i.id === itemId);
+                                return item?.dietaryType === 'non-vegetarian';
+                              }).length}{' '}
+                              items
+                            </p>
+                            {eventDetails.guestCount && (
+                              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                Total:{' '}
+                                {selectedItems
+                                  .filter((itemId) => {
+                                    const item = menuItems.find((i) => i.id === itemId);
+                                    return item?.dietaryType === 'non-vegetarian' && item?.pricingType === 'per-person';
+                                  })
+                                  .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * parseInt(eventDetails.guestCount)}{' '}
+                                portions
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Veggie/Vegan Summary */}
+                          <div className="bg-card border border-border rounded-lg p-4" style={{ borderRadius: 'var(--radius)' }}>
+                            <p className="text-muted-foreground mb-2" style={{ fontSize: 'var(--text-small)' }}>
+                              🥗 Veggie/Vegan Selections
+                            </p>
+                            <p className="text-primary mb-1" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
+                              {selectedItems.filter((itemId) => {
+                                const item = menuItems.find((i) => i.id === itemId);
+                                return item?.dietaryType === 'vegetarian' || item?.dietaryType === 'vegan';
+                              }).length}{' '}
+                              items
+                            </p>
+                            {eventDetails.guestCount && (
+                              <p className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                Total:{' '}
+                                {selectedItems
+                                  .filter((itemId) => {
+                                    const item = menuItems.find((i) => i.id === itemId);
+                                    return (item?.dietaryType === 'vegetarian' || item?.dietaryType === 'vegan') && item?.pricingType === 'per-person';
+                                  })
+                                  .reduce((total, itemId) => total + (itemQuantities[itemId] || 1), 0) * parseInt(eventDetails.guestCount)}{' '}
+                                portions
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
+
+                      {/* Order Summary Card with Toggle View */}
+                      <div className="bg-muted/30 border border-border rounded-lg p-5" style={{ borderRadius: 'var(--radius-card)' }}>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0" style={{ borderRadius: 'var(--radius)' }}>
+                            <ShoppingCart className="w-4 h-4 text-primary" />
+                          </div>
+                          <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
+                            Order Summary
+                          </h4>
+                        </div>
+                        {/* View Toggle */}
+                        <div className="flex items-center gap-1 bg-card rounded-lg p-1 border border-border">
+                          <button
+                            onClick={() => setSummaryViewMode('per-person')}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              summaryViewMode === 'per-person'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            Per Person
+                          </button>
+                          <button
+                            onClick={() => setSummaryViewMode('total')}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              summaryViewMode === 'total'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            Total + Extras
+                          </button>
+                        </div>
+                      </div>
+
+                      {summaryViewMode === 'per-person' ? (
+                        // Per-Person View
+                        <div className="space-y-4">
+                          <div className="bg-card border border-border rounded-lg p-4" style={{ borderRadius: 'var(--radius)' }}>
+                            <p className="text-foreground font-semibold mb-3" style={{ fontSize: 'var(--text-base)' }}>
+                              Per-Person Breakdown
+                            </p>
+
+                            {/* Menu Items by Category - Per Person */}
+                            {(() => {
+                              const foodCategories = categories.filter(cat =>
+                                !['Technology', 'Decoration', 'Furniture', 'Miscellaneous', 'Beverages'].includes(cat)
+                              );
+
+                              return (
+                                <div key="food-categories" className="space-y-3">
+                                  {foodCategories.map((category) => {
+                                    const categoryItems = selectedItems
+                                      .map((itemId) => menuItems.find((i) => i.id === itemId))
+                                      .filter((item) => {
+                                        return item &&
+                                          item.category === category &&
+                                          (item.pricingType === 'per-person' || item.pricingType === 'per_person');
+                                      });
+
+                                    if (categoryItems.length === 0) return null;
+
+                                    return (
+                                      <div key={category} className="space-y-1">
+                                        {/* Category Header */}
+                                        <div className="font-semibold text-foreground text-sm mb-1">
+                                          {category}
+                                        </div>
+                                        {/* Items in this category */}
+                                        {categoryItems.map((item) => {
+                                          if (!item) return null;
+                                          const itemId = item.id;
+                                          const quantity = itemQuantities[itemId] || 1;
+
+                                          return (
+                                            <div
+                                              key={itemId}
+                                              className="flex justify-between items-center py-1 pl-3 border-b border-border/50 last:border-0"
+                                            >
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                                  {item.name}
+                                                </span>
+                                                <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                                  ×{quantity}
+                                                </span>
+                                              </div>
+                                              <span className="text-foreground font-medium">
+                                                CHF {(getItemPerPersonPrice(item) * quantity).toFixed(2)}
+                                              </span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })()}
+                          </div>
+
+                          {/* Per-Person Total */}
+                          <div className="bg-primary/5 border border-primary/30 rounded-lg p-4" style={{ borderRadius: 'var(--radius)' }}>
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
+                                  Per Person Total
+                                </p>
+                                <p className="text-muted-foreground text-sm mt-1">
+                                  For {eventDetails.guestCount || '0'} guests
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-primary" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-bold)' }}>
+                                  CHF {getPerPersonSubtotal().toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        // Total + Extras View
+                        <div className="space-y-4">
+                          {/* Food Menu Items Section */}
+                          <div className="bg-card border border-border rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius)' }}>
+                            <div className="bg-primary/5 px-4 py-2 border-b border-border">
+                              <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
+                                🍽️ Food Menu
+                              </p>
+                            </div>
+                            <div className="p-4 space-y-2">
+                              {(() => {
+                                const foodCategories = categories.filter(cat =>
+                                  !['Technology', 'Decoration', 'Furniture', 'Miscellaneous', 'Beverages'].includes(cat)
+                                );
+                                const breakdown = foodCategories
+                                  .map((cat) => {
+                                    const items = selectedItems.filter((itemId) => {
+                                      const item = menuItems.find((i) => i.id === itemId);
+                                      return item?.category === cat;
+                                    });
+                                    const subtotal = items.reduce((sum, itemId) => {
+                                      const item = menuItems.find((i) => i.id === itemId);
+                                      return sum + (item ? getItemTotalPrice(item) : 0);
+                                    }, 0);
+                                    return {
+                                      name: cat,
+                                      count: items.length,
+                                      subtotal,
+                                    };
+                                  })
+                                  .filter((cat) => cat.count > 0);
+
+                                return (
+                                  <div key="food-categories" className="space-y-1">
+                                    {breakdown.map((cat) => (
+                                      <div
+                                        key={cat.name}
+                                        className="flex justify-between items-center py-1.5"
+                                      >
+                                        <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                          {cat.name} ({cat.count})
+                                        </span>
+                                        <span className="text-foreground font-medium">
+                                          CHF {cat.subtotal.toFixed(2)}
+                                        </span>
+                                      </div>
+                                    ))}
+                                    <div className="pt-2 mt-2 border-t-2 border-primary flex justify-between">
+                                      <span className="text-foreground font-semibold">
+                                        Subtotal Food:
+                                      </span>
+                                      <span className="text-foreground font-semibold">
+                                        CHF{' '}
+                                        {selectedItems
+                                          .filter((itemId) => {
+                                            const item = menuItems.find((i) => i.id === itemId);
+                                            return item && foodCategories.includes(item.category);
+                                          })
+                                          .reduce((sum, itemId) => {
+                                            const item = menuItems.find((i) => i.id === itemId);
+                                            return sum + (item ? getItemTotalPrice(item) : 0);
+                                          }, 0)
+                                          .toFixed(2)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Beverages Section */}
+                          {(() => {
+                            const beverageItems = selectedItems.filter((itemId) => {
+                              const item = menuItems.find((i) => i.id === itemId);
+                              return item?.category === 'Beverages';
+                            });
+
+                            if (beverageItems.length === 0) return null;
+
+                            const beverageSubtotal = beverageItems.reduce((sum, itemId) => {
+                              const item = menuItems.find((i) => i.id === itemId);
+                              return sum + (item ? getItemTotalPrice(item) : 0);
+                            }, 0);
+
+                            return (
+                              <div className="bg-card border border-border rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius)' }}>
+                                <div className="bg-primary/5 px-4 py-2 border-b border-border">
+                                  <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
+                                    🍷 Beverages
+                                  </p>
+                                  <p className="text-muted-foreground text-xs mt-0.5">
+                                    Pay by consumption • not included in per-person pricing
+                                  </p>
+                                </div>
+                                <div className="p-4 space-y-1">
+                                  {beverageItems.map((itemId) => {
+                                    const item = menuItems.find((i) => i.id === itemId);
+                                    if (!item) return null;
+                                    const itemTotal = getItemTotalPrice(item);
+                                    return (
+                                      <div key={itemId} className="flex justify-between items-center py-1">
+                                        <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                          {item.name} ({item.pricingType === 'flat-rate' ? `CHF ${item.price.toFixed(2)}/bottle` : 'per person'})
+                                        </span>
+                                        <span className="text-foreground font-medium">
+                                          CHF {itemTotal.toFixed(2)}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                  <div className="pt-2 mt-2 border-t-2 border-primary flex justify-between">
+                                    <span className="text-foreground font-semibold">
+                                      Subtotal Beverages:
+                                    </span>
+                                    <span className="text-foreground font-semibold">
+                                      CHF {beverageSubtotal.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Technology Section */}
+                          {(() => {
+                            const techItems = selectedItems.filter((itemId) => {
+                              const item = menuItems.find((i) => i.id === itemId);
+                              return item?.category === 'Technology';
+                            });
+
+                            if (techItems.length === 0) return null;
+
+                            const techSubtotal = techItems.reduce((sum, itemId) => {
+                              const item = menuItems.find((i) => i.id === itemId);
+                              return sum + (item ? getItemTotalPrice(item) : 0);
+                            }, 0);
+
+                            return (
+                              <div className="bg-card border border-border rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius)' }}>
+                                <div className="bg-primary/5 px-4 py-2 border-b border-border">
+                                  <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
+                                    🔌 Technology
+                                  </p>
+                                  <p className="text-muted-foreground text-xs mt-0.5">
+                                    Equipment and technical services
+                                  </p>
+                                </div>
+                                <div className="p-4 space-y-1">
+                                  {techItems.map((itemId) => {
+                                    const item = menuItems.find((i) => i.id === itemId);
+                                    if (!item) return null;
+                                    const quantity = itemQuantities[itemId] || 1;
+                                    return (
+                                      <div key={itemId} className="flex justify-between items-center py-1">
+                                        <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                          {item.name} {quantity > 1 ? `(×${quantity})` : ''}
+                                        </span>
+                                        <span className="text-foreground font-medium">
+                                          CHF {(getItemTotalPrice(item)).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                  <div className="pt-2 mt-2 border-t-2 border-primary flex justify-between">
+                                    <span className="text-foreground font-semibold">
+                                      Subtotal Technology:
+                                    </span>
+                                    <span className="text-foreground font-semibold">
+                                      CHF {techSubtotal.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Decoration Section */}
+                          {(() => {
+                            const decorationItems = selectedItems.filter((itemId) => {
+                              const item = menuItems.find((i) => i.id === itemId);
+                              return item?.category === 'Decoration';
+                            });
+
+                            if (decorationItems.length === 0) return null;
+
+                            const decorationSubtotal = decorationItems.reduce((sum, itemId) => {
+                              const item = menuItems.find((i) => i.id === itemId);
+                              return sum + (item ? getItemTotalPrice(item) : 0);
+                            }, 0);
+
+                            return (
+                              <div className="bg-card border border-border rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius)' }}>
+                                <div className="bg-primary/5 px-4 py-2 border-b border-border">
+                                  <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
+                                    🎀 Decoration
+                                  </p>
+                                  <p className="text-muted-foreground text-xs mt-0.5">
+                                    Decorative items and accessories
+                                  </p>
+                                </div>
+                                <div className="p-4 space-y-1">
+                                  {decorationItems.map((itemId) => {
+                                    const item = menuItems.find((i) => i.id === itemId);
+                                    if (!item) return null;
+                                    const quantity = itemQuantities[itemId] || 1;
+                                    return (
+                                      <div key={itemId} className="flex justify-between items-center py-1">
+                                        <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                          {item.name} {quantity > 1 ? `(×${quantity})` : ''}
+                                        </span>
+                                        <span className="text-foreground font-medium">
+                                          CHF {(getItemTotalPrice(item)).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                  <div className="pt-2 mt-2 border-t-2 border-primary flex justify-between">
+                                    <span className="text-foreground font-semibold">
+                                      Subtotal Decoration:
+                                    </span>
+                                    <span className="text-foreground font-semibold">
+                                      CHF {decorationSubtotal.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Furniture Section */}
+                          {(() => {
+                            const furnitureItems = selectedItems.filter((itemId) => {
+                              const item = menuItems.find((i) => i.id === itemId);
+                              return item?.category === 'Furniture';
+                            });
+
+                            if (furnitureItems.length === 0) return null;
+
+                            const furnitureSubtotal = furnitureItems.reduce((sum, itemId) => {
+                              const item = menuItems.find((i) => i.id === itemId);
+                              return sum + (item ? getItemTotalPrice(item) : 0);
+                            }, 0);
+
+                            return (
+                              <div className="bg-card border border-border rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius)' }}>
+                                <div className="bg-primary/5 px-4 py-2 border-b border-border">
+                                  <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
+                                    🪑 Furniture
+                                  </p>
+                                  <p className="text-muted-foreground text-xs mt-0.5">
+                                    Rental furniture and fixtures
+                                  </p>
+                                </div>
+                                <div className="p-4 space-y-1">
+                                  {furnitureItems.map((itemId) => {
+                                    const item = menuItems.find((i) => i.id === itemId);
+                                    if (!item) return null;
+                                    const quantity = itemQuantities[itemId] || 1;
+                                    return (
+                                      <div key={itemId} className="flex justify-between items-center py-1">
+                                        <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                          {item.name} {quantity > 1 ? `(×${quantity})` : ''}
+                                        </span>
+                                        <span className="text-foreground font-medium">
+                                          CHF {(getItemTotalPrice(item)).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                  <div className="pt-2 mt-2 border-t-2 border-primary flex justify-between">
+                                    <span className="text-foreground font-semibold">
+                                      Subtotal Furniture:
+                                    </span>
+                                    <span className="text-foreground font-semibold">
+                                      CHF {furnitureSubtotal.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Miscellaneous Section */}
+                          {(() => {
+                            const miscItems = selectedItems.filter((itemId) => {
+                              const item = menuItems.find((i) => i.id === itemId);
+                              return item?.category === 'Miscellaneous';
+                            });
+
+                            if (miscItems.length === 0) return null;
+
+                            const miscSubtotal = miscItems.reduce((sum, itemId) => {
+                              const item = menuItems.find((i) => i.id === itemId);
+                              return sum + (item ? getItemTotalPrice(item) : 0);
+                            }, 0);
+
+                            return (
+                              <div className="bg-card border border-border rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius)' }}>
+                                <div className="bg-primary/5 px-4 py-2 border-b border-border">
+                                  <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
+                                    📦 Miscellaneous
+                                  </p>
+                                  <p className="text-muted-foreground text-xs mt-0.5">
+                                    Other items and services
+                                  </p>
+                                </div>
+                                <div className="p-4 space-y-1">
+                                  {miscItems.map((itemId) => {
+                                    const item = menuItems.find((i) => i.id === itemId);
+                                    if (!item) return null;
+                                    const quantity = itemQuantities[itemId] || 1;
+                                    return (
+                                      <div key={itemId} className="flex justify-between items-center py-1">
+                                        <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                                          {item.name} {quantity > 1 ? `(×${quantity})` : ''}
+                                        </span>
+                                        <span className="text-foreground font-medium">
+                                          CHF {(getItemTotalPrice(item)).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                  <div className="pt-2 mt-2 border-t-2 border-primary flex justify-between">
+                                    <span className="text-foreground font-semibold">
+                                      Subtotal Miscellaneous:
+                                    </span>
+                                    <span className="text-foreground font-semibold">
+                                      CHF {miscSubtotal.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Grand Total */}
+                          <div className="bg-primary/10 border-2 border-primary rounded-lg p-4" style={{ borderRadius: 'var(--radius)' }}>
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="text-foreground font-bold" style={{ fontSize: 'var(--text-h3)' }}>
+                                  Grand Total
+                                </p>
+                                <p className="text-muted-foreground text-sm mt-1">
+                                  {selectedItems.length} items • {eventDetails.guestCount || '0'} guests
+                                </p>
+                              </div>
+                              <p className="text-primary" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-bold)' }}>
+                                CHF {getTotalPriceWithAddOns().toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
+                    </div>
+
+                    {/* Deposit Requirement Alert - Only show if total > 5000 CHF */}
+                    {getTotalPriceWithAddOns() > 5000 && (
+                      <div className="bg-secondary border border-secondary rounded-lg p-5" style={{ borderRadius: 'var(--radius-card)' }}>
+                        <div className="flex gap-4">
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <AlertTriangle className="w-6 h-6 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-white mb-2" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
+                              Deposit Requirement
+                            </h4>
+                            <p className="text-white/80 mb-3" style={{ fontSize: 'var(--text-base)' }}>
+                              A deposit is required for orders above <span className="text-primary font-semibold">CHF 5,000.00</span>. This deposit will be deducted from the final invoice.
+                            </p>
+                            <div className="flex items-start gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                              <p className="text-white/70" style={{ fontSize: 'var(--text-small)' }}>
+                                Our team will connect you once order is locked and confirmed.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Terms and Conditions */}
                     <div className="bg-card border border-border rounded-lg p-5" style={{ borderRadius: 'var(--radius-card)' }}>
