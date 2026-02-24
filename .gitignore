@@ -45,3 +45,7 @@ drizzle/
 *.swp
 *.swo
 *~
+
+adminUI/
+userUI/
+userUINew/
