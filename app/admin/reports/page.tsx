@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/server";
 import { ReportsPage } from "@/components/admin/ReportsPage";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminReportsPage() {
   const session = await getSession();
 

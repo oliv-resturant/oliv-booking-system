@@ -4,6 +4,8 @@ import { KPICard } from "@/components/admin/KPICard";
 import { DashboardCharts } from "@/components/admin/DashboardCharts";
 import { getDashboardStats, getDailyBookingsData, getDailyRevenueData, getBookingStatusDistribution } from "@/lib/actions/stats";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboardPage() {
   const session = await getSession();
 

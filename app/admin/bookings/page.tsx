@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/server";
 import { BookingsPage } from "@/components/admin/BookingsPage";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminBookingsPage() {
   const session = await getSession();
 
