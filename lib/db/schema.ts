@@ -98,12 +98,16 @@ export type ContactType = (typeof contactTypeEnum)[number];
 
 export const emailTypeEnum = [
   "confirmation",
+  "thank_you",
   "reminder",
   "follow_up",
   "cancellation",
   "no_show",
   "declined",
   "custom",
+  "unlock_requested",
+  "unlock_granted",
+  "unlock_declined",
 ] as const;
 export type EmailType = (typeof emailTypeEnum)[number];
 

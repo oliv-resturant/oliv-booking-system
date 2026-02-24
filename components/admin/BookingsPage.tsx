@@ -19,7 +19,7 @@ const statusColors: Record<string, { bg: string; text: string; border: string; d
 const allStatuses = ['All Status', 'New', 'Pending', 'Confirmed', 'Touchbase', 'Declined', 'Completed'];
 
 // Grid Layout
-function GridLayout({ onOpenModal, bookings }: { onOpenModal: (booking: any) => void; bookings: any[] }) {
+function GridLayout({ onOpenModal, bookings }: { onOpenModal: (booking: Booking) => void; bookings: Booking[] }) {
   if (bookings.length === 0) {
     return (
       <div className="text-center py-16">
@@ -130,7 +130,7 @@ function GridLayout({ onOpenModal, bookings }: { onOpenModal: (booking: any) => 
 }
 
 // Booking Detail Page - Embedded Component
-function BookingDetailPage({ booking, onBack, user }: { booking: any | null; onBack: () => void; user?: any }) {
+function BookingDetailPage({ booking, onBack, user }: { booking: Booking | null; onBack: () => void; user?: any }) {
   const userRole = user?.role;
   const canEditBooking = hasPermission(userRole, Permission.EDIT_BOOKING);
   const canUpdateStatus = hasPermission(userRole, Permission.UPDATE_BOOKING_STATUS);
@@ -177,6 +177,7 @@ function BookingDetailPage({ booking, onBack, user }: { booking: any | null; onB
   }, [showAuditHistory, booking?.id]);
 
   const fetchAuditHistory = async () => {
+    if (!booking) return;
     setAuditLoading(true);
     try {
       const response = await fetch(`/api/bookings/${booking.id}/audit`);
@@ -192,6 +193,7 @@ function BookingDetailPage({ booking, onBack, user }: { booking: any | null; onB
   };
 
   const handleToggleLock = async () => {
+    if (!booking) return;
     setLockLoading(true);
     try {
       const action = isLocked ? 'unlock' : 'lock';
@@ -231,6 +233,7 @@ function BookingDetailPage({ booking, onBack, user }: { booking: any | null; onB
   };
 
   const handleCopyEditLink = async () => {
+    if (!booking) return;
     try {
       const response = await fetch(`/api/bookings/${booking.id}`);
       if (response.ok) {
@@ -304,6 +307,7 @@ function BookingDetailPage({ booking, onBack, user }: { booking: any | null; onB
   };
 
   const handleSendReminder = async () => {
+    if (!booking) return;
     setIsSendingReminder(true);
     try {
       // Call API to send reminder
@@ -326,6 +330,7 @@ function BookingDetailPage({ booking, onBack, user }: { booking: any | null; onB
   };
 
   const handleStatusChange = async (value: string) => {
+    if (!booking) return;
     setLocalStatus(value);
     try {
       const response = await fetch('/api/bookings/update-status', {
@@ -345,6 +350,7 @@ function BookingDetailPage({ booking, onBack, user }: { booking: any | null; onB
   };
 
   const handleSaveChanges = async () => {
+    if (!booking) return;
     setIsSaving(true);
     try {
       // Prepare allergy details as array
@@ -921,6 +927,7 @@ interface Booking {
     date: string;
     action: string;
   }>;
+  isLocked: boolean;
 }
 
 export function BookingsPage({ user }: { user?: any }) {
@@ -1067,7 +1074,7 @@ export function BookingsPage({ user }: { user?: any }) {
             {!loading && (
               <div className="flex-1 flex flex-col">
                 <GridLayout
-                  onOpenModal={(booking) => {
+                  onOpenModal={(booking: Booking) => {
                     setSelectedBooking(booking);
                     setCurrentPage('detail');
                   }}

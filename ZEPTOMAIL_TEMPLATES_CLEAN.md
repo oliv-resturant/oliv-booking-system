@@ -622,6 +622,383 @@ This document contains **clean ZeptoMail templates** with **ZERO conditional log
 
 ---
 
+## Template 8: `unlock-requested`
+
+**When to use:** Notifies admin when a guest requests to unlock a booking.
+
+**Subject:** `Anfrage auf Bearbeitung - Booking #{{booking_id}}`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #f39c12; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .details { background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0; }
+    .button { display: inline-block; padding: 12px 24px; background-color: #f39c12; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">🔑 Unlock Request</h1>
+      <p style="margin: 10px 0 0 0;">Booking #{{booking_id}}</p>
+    </div>
+
+    <div class="content">
+      <p>Hallo Admin,</p>
+      <p>Der Kunde <strong>{{customer_name}}</strong> hat eine Anfrage gestellt, seine Buchung für den <strong>{{event_date}}</strong> wieder freizuschalten.</p>
+
+      <div class="details">
+        <h3>📋 Details:</h3>
+        <p><strong>Kunde:</strong> {{customer_name}}</p>
+        <p><strong>Datum:</strong> {{event_date}}</p>
+        <p><strong>Buchungs-ID:</strong> {{booking_id}}</p>
+      </div>
+
+      <p>Klicken Sie auf den untenstehenden Link, um die Buchung im Admin-Dashboard zu prüfen und freizuschalten:</p>
+      <a href="{{admin_url}}" class="button">Zum Admin-Dashboard</a>
+
+      <p>Mit freundlichen Grüßen,<br/>Oliv Booking System</p>
+    </div>
+
+    <div class="footer">
+      <p>Oliv Restaurant System</p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `customer_name`
+- `event_date`
+- `booking_id`
+- `admin_url`
+
+---
+
+## Template 9: `unlock-granted`
+
+**When to use:** Notifies guest that their request to edit has been granted.
+
+**Subject:** `Ihre Buchung wurde freigeschaltet - Oliv Restaurant`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #27ae60; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .info-box { background-color: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0; border-radius: 4px; }
+    .button { display: inline-block; padding: 12px 24px; background-color: #27ae60; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">✅ Freigeschaltet</h1>
+      <p style="margin: 10px 0 0 0;">Oliv Restaurant</p>
+    </div>
+
+    <div class="content">
+      <p>Hallo {{customer_name}},</p>
+      <p>Ihre Anfrage auf Bearbeitung der Buchung für den <strong>{{event_date}}</strong> wurde bestätigt.</p>
+
+      <div class="info-box">
+        <p style="margin: 0; color: #155724;">
+          Sie können Ihre Buchung nun wieder online anpassen. Bitte nutzen Sie den folgenden Link:
+        </p>
+        <div style="margin-top: 15px;">
+          <a href="{{booking_edit_url}}" class="button">Buchung jetzt bearbeiten</a>
+        </div>
+      </div>
+
+      <p>Falls Sie Fragen haben, kontaktieren Sie uns bitte:</p>
+      <p>
+        📧 E-Mail: info@oliv-restaurant.ch<br/>
+      </p>
+
+      <p>Wir freuen uns auf Ihren Besuch!</p>
+      <p>Mit freundlichen Grüßen,<br/>Ihr Oliv-Team</p>
+    </div>
+
+    <div class="footer">
+      <p>Oliv Restaurant | Schweiz</p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `customer_name`
+- `event_date`
+- `booking_edit_url`
+
+---
+
+## Template 10: `unlock-declined`
+
+**When to use:** Notifies guest that their request to edit has been declined.
+
+**Subject:** `Update zu Ihrer Anfrage auf Bearbeitung - Oliv Restaurant`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #7f8c8d; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .info-box { background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; margin: 20px 0; border-radius: 4px; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">ℹ️ Update zur Anfrage</h1>
+      <p style="margin: 10px 0 0 0;">Oliv Restaurant</p>
+    </div>
+
+    <div class="content">
+      <p>Hallo {{customer_name}},</p>
+      <p>vielen Dank für Ihre Anfrage zur Bearbeitung Ihrer Buchung für den <strong>{{event_date}}</strong>.</p>
+
+      <div class="info-box">
+        <h3 style="margin: 0 0 10px 0; color: #721c24;">Status der Anfrage:</h3>
+        <p style="margin: 0; color: #721c24;">{{decline_reason}}</p>
+      </div>
+
+      <p>Leider können wir zum jetzigen Zeitpunkt keine weiteren Online-Änderungen zulassen. Bitte kontaktieren Sie uns direkt für dringende Anliegen:</p>
+      <p>
+        📧 E-Mail: info@oliv-restaurant.ch<br/>
+        📞 Telefon: +41 XX XXX XX XX
+      </p>
+
+      <p>Vielen Dank für Ihr Verständnis.</p>
+      <p>Mit freundlichen Grüßen,<br/>Ihr Oliv-Team</p>
+    </div>
+
+    <div class="footer">
+      <p>Oliv Restaurant | Schweiz</p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `customer_name`
+- `event_date`
+- `decline_reason`
+
+---
+
+---
+
+## Template 11: `booking-thank-you-deposit`
+
+**When to use:** Initial inquiry for bookings ≥ 5000 CHF (Phase 1)
+
+**Subject:** `Vielen Dank für Ihre Anfrage - Oliv Restaurant - {{event_date}}`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #2c3e50; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .details { background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0; }
+    .details h3 { color: #2c3e50; margin-top: 0; }
+    .details p { margin: 10px 0; }
+    .details strong { color: #2c3e50; }
+    .alert-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 20px 0; border-radius: 4px; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">🙏 Vielen Dank</h1>
+      <p style="margin: 10px 0 0 0;">Anfrage erhalten</p>
+    </div>
+
+    <div class="content">
+      <p>Hallo {{customer_name}},</p>
+      <p>Vielen Dank für Ihre Buchungsanfrage! Wir haben Ihre Details erhalten und prüfen diese nun. Wir freuen uns, dass Sie Ihren Anlass im Oliv Restaurant planen.</p>
+
+      <div class="alert-box">
+        <h3 style="margin: 0 0 10px 0; color: #856404;">💰 Mögliche Anzahlung</h3>
+        <p style="margin: 0; color: #856404; line-height: 1.6;">
+          Da Ihre Anfrage CHF {{estimated_total}} überschreitet, wird nach der Bestätigung durch unser Team eine Anzahlung von
+          <strong>CHF {{deposit_amount}} ({{deposit_percentage}}%)</strong> erforderlich sein, um die Reservierung final zu garantieren.
+        </p>
+        <p style="margin: 10px 0 0 0; color: #856404;">
+          <strong>Hinweis:</strong> Sie müssen jetzt noch nichts überweisen. Sobald wir Ihre Anfrage bestätigt haben, senden wir Ihnen die finale Buchungsbestätigung mit den Zahlungsinformationen zu.
+        </p>
+      </div>
+
+      <div class="details">
+        <h3>📋 Details Ihrer Anfrage</h3>
+        <p><strong>Datum:</strong> {{event_date}}</p>
+        <p><strong>Uhrzeit:</strong> {{event_time}}</p>
+        <p><strong>Anzahl Gäste:</strong> {{guest_count}} Personen</p>
+        <p><strong>Geschätzte Gesamtkosten:</strong> CHF {{estimated_total}}</p>
+        <p><strong>Bemerkungen:</strong><br/>{{special_requests}}</p>
+        <p><strong>Allergien/Unverträglichkeiten:</strong><br/>{{allergy_details}}</p>
+      </div>
+
+      <p>Falls Sie Fragen haben oder noch Details ändern möchten, erreichen Sie uns unter:</p>
+      <p>
+        📧 E-Mail: info@oliv-restaurant.ch<br/>
+        📞 Telefon: +41 XX XXX XX XX
+      </p>
+
+      <p>Wir melden uns so bald wie möglich bei Ihnen!</p>
+      <p>Mit freundlichen Grüßen,<br/>Ihr Oliv-Team</p>
+    </div>
+
+    <div class="footer">
+      <p>Oliv Restaurant | Schweiz</p>
+      <p><a href="https://oliv-restaurant.ch" style="color: #2c3e50;">www.oliv-restaurant.ch</a></p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `customer_name`
+- `event_date`
+- `event_time`
+- `guest_count`
+- `estimated_total`
+- `deposit_amount`
+- `deposit_percentage`
+- `booking_id`
+- `special_requests`
+- `allergy_details`
+
+---
+
+## Template 12: `booking-thank-you-no-deposit`
+
+**When to use:** Initial inquiry for bookings < 5000 CHF (Phase 1)
+
+**Subject:** `Vielen Dank für Ihre Anfrage - Oliv Restaurant - {{event_date}}`
+
+**HTML:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #2c3e50; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .details { background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0; }
+    .details h3 { color: #2c3e50; margin-top: 0; }
+    .details p { margin: 10px 0; }
+    .details strong { color: #2c3e50; }
+    .info-box { background-color: #d1ecf1; border-left: 4px solid #17a2b8; padding: 20px; margin: 20px 0; border-radius: 4px; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
+    .button { display: inline-block; background-color: #17a2b8; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">🙏 Vielen Dank</h1>
+      <p style="margin: 10px 0 0 0;">Anfrage erhalten</p>
+    </div>
+
+    <div class="content">
+      <p>Hallo {{customer_name}},</p>
+      <p>Vielen Dank für Ihre Buchungsanfrage! Wir haben Ihre Details erhalten und prüfen diese nun. Wir freuen uns, dass Sie Ihren Anlass im Oliv Restaurant planen.</p>
+
+      <div class="info-box">
+        <h3 style="margin: 0 0 10px 0; color: #0c5460;">🍽️ Menü anpassen</h3>
+        <p style="margin: 0; color: #0c5460; line-height: 1.6;">
+          Sie können Ihre Anfrage oder Ihr Menü weiterhin anpassen, während wir Ihre Reservierung prüfen.
+        </p>
+        <div style="margin-top: 15px;">
+          <a href="{{booking_edit_url}}" class="button">
+            Anfrage bearbeiten
+          </a>
+        </div>
+      </div>
+
+      <div class="details">
+        <h3>📋 Details Ihrer Anfrage</h3>
+        <p><strong>Datum:</strong> {{event_date}}</p>
+        <p><strong>Uhrzeit:</strong> {{event_time}}</p>
+        <p><strong>Anzahl Gäste:</strong> {{guest_count}} Personen</p>
+        <p><strong>Geschätzte Gesamtkosten:</strong> CHF {{estimated_total}}</p>
+        <p><strong>Bemerkungen:</strong><br/>{{special_requests}}</p>
+        <p><strong>Allergien/Unverträglichkeiten:</strong><br/>{{allergy_details}}</p>
+      </div>
+
+      <p>Falls Sie weitere Fragen haben, kontaktieren Sie uns bitte:</p>
+      <p>
+        📧 E-Mail: info@oliv-restaurant.ch<br/>
+        📞 Telefon: +41 XX XXX XX XX
+      </p>
+
+      <p>Wir melden uns so bald wie möglich bei Ihnen!</p>
+      <p>Mit freundlichen Grüßen,<br/>Ihr Oliv-Team</p>
+    </div>
+
+    <div class="footer">
+      <p>Oliv Restaurant | Schweiz</p>
+      <p><a href="https://oliv-restaurant.ch" style="color: #2c3e50;">www.oliv-restaurant.ch</a></p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**Variables:**
+- `customer_name`
+- `event_date`
+- `event_time`
+- `guest_count`
+- `estimated_total`
+- `booking_edit_url`
+- `special_requests`
+- `allergy_details`
+
+---
+
 ## IMPORTANT: Backend Logic Handles ALL Conditionals
 
 The backend code decides:
@@ -635,7 +1012,7 @@ All variables are **always sent** - empty strings if not applicable. No `{{#if}}
 
 ## Summary
 
-✅ **7 templates total**
+✅ **12 templates total**
 ✅ **ZERO conditionals** in templates
 ✅ **Only simple variable substitution** like `{{customer_name}}`
 ✅ **All logic in backend code**

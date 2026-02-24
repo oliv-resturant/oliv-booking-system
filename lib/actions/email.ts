@@ -187,6 +187,26 @@ export async function sendBookingReminder(params: {
 }
 
 /**
+ * Send "Thank You" email (after initial booking/inquiry)
+ */
+export async function sendThankYouEmail(params: {
+  bookingId: string;
+  recipientEmail: string;
+  bookingData: Booking & { lead?: Lead | null };
+  estimatedTotal?: number;
+  bookingEditUrl?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  return sendBookingEmail({
+    bookingId: params.bookingId,
+    emailType: "thank_you",
+    recipientEmail: params.recipientEmail,
+    bookingData: params.bookingData,
+    estimatedTotal: params.estimatedTotal,
+    bookingEditUrl: params.bookingEditUrl,
+  });
+}
+
+/**
  * Send confirmation email
  */
 export async function sendBookingConfirmation(params: {
@@ -272,6 +292,58 @@ export async function sendBookingDeclined(params: {
   return sendBookingEmail({
     bookingId: params.bookingId,
     emailType: "declined" as any,
+    recipientEmail: params.recipientEmail,
+    bookingData: params.bookingData,
+    reason: params.reason,
+  });
+}
+
+/**
+ * Send notification to admin that an unlock was requested
+ */
+export async function sendUnlockRequestedNotification(params: {
+  bookingId: string;
+  adminEmail: string;
+  bookingData: Booking & { lead?: Lead | null };
+}): Promise<{ success: boolean; error?: string }> {
+  return sendBookingEmail({
+    bookingId: params.bookingId,
+    emailType: "unlock_requested",
+    recipientEmail: params.adminEmail,
+    bookingData: params.bookingData,
+  });
+}
+
+/**
+ * Send email to guest informing them their booking was unlocked
+ */
+export async function sendUnlockGrantedEmail(params: {
+  bookingId: string;
+  recipientEmail: string;
+  bookingData: Booking & { lead?: Lead | null };
+  bookingEditUrl: string;
+}): Promise<{ success: boolean; error?: string }> {
+  return sendBookingEmail({
+    bookingId: params.bookingId,
+    emailType: "unlock_granted",
+    recipientEmail: params.recipientEmail,
+    bookingData: params.bookingData,
+    bookingEditUrl: params.bookingEditUrl,
+  });
+}
+
+/**
+ * Send email to guest informing them their unlock request was declined
+ */
+export async function sendUnlockDeclinedEmail(params: {
+  bookingId: string;
+  recipientEmail: string;
+  bookingData: Booking & { lead?: Lead | null };
+  reason?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  return sendBookingEmail({
+    bookingId: params.bookingId,
+    emailType: "unlock_declined",
     recipientEmail: params.recipientEmail,
     bookingData: params.bookingData,
     reason: params.reason,

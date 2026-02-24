@@ -91,6 +91,57 @@ export function getBookingConfirmedNoDepositTemplateData(
 }
 
 /**
+ * Prepare template data for "Thank You" email (with deposit inquiry)
+ */
+export function getThankYouDepositTemplateData(
+  booking: Booking & { lead?: Lead | null },
+  estimatedTotal: number
+): TemplateData {
+  const lead = booking.lead;
+  const customerName = lead?.contactName || "Gast";
+
+  return {
+    customer_name: customerName,
+    event_date: formatGermanDate(booking.eventDate),
+    event_time: booking.eventTime,
+    guest_count: booking.guestCount,
+    estimated_total: formatCHF(estimatedTotal),
+    deposit_amount: formatCHF(estimatedTotal * 0.3),
+    deposit_percentage: "30",
+    booking_id: generateShortBookingId(booking.id),
+    special_requests: booking.specialRequests || "Keine",
+    allergy_details: Array.isArray(booking.allergyDetails)
+      ? booking.allergyDetails.join(", ") || "Keine"
+      : booking.allergyDetails || "Keine",
+  };
+}
+
+/**
+ * Prepare template data for "Thank You" email (no deposit - menu edit)
+ */
+export function getThankYouNoDepositTemplateData(
+  booking: Booking & { lead?: Lead | null },
+  estimatedTotal: number,
+  bookingEditUrl?: string
+): TemplateData {
+  const lead = booking.lead;
+  const customerName = lead?.contactName || "Gast";
+
+  return {
+    customer_name: customerName,
+    event_date: formatGermanDate(booking.eventDate),
+    event_time: booking.eventTime,
+    guest_count: booking.guestCount,
+    estimated_total: formatCHF(estimatedTotal),
+    booking_edit_url: bookingEditUrl || "https://oliv-restaurant.ch",
+    special_requests: booking.specialRequests || "Keine",
+    allergy_details: Array.isArray(booking.allergyDetails)
+      ? booking.allergyDetails.join(", ") || "Keine"
+      : booking.allergyDetails || "Keine",
+  };
+}
+
+/**
  * Prepare template data for booking cancelled email
  */
 export function getBookingCancelledTemplateData(
@@ -196,6 +247,57 @@ export function getBookingDeclinedTemplateData(
 }
 
 /**
+ * Prepare template data for unlock request notification (to admin)
+ */
+export function getUnlockRequestedTemplateData(
+  booking: Booking & { lead?: Lead | null }
+): TemplateData {
+  const lead = booking.lead;
+  const customerName = lead?.contactName || "Gast";
+
+  return {
+    customer_name: customerName,
+    event_date: formatGermanDate(booking.eventDate),
+    booking_id: generateShortBookingId(booking.id),
+    admin_url: `${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings/${booking.id}`,
+  };
+}
+
+/**
+ * Prepare template data for unlock granted email (to guest)
+ */
+export function getUnlockGrantedTemplateData(
+  booking: Booking & { lead?: Lead | null },
+  bookingEditUrl?: string
+): TemplateData {
+  const lead = booking.lead;
+  const customerName = lead?.contactName || "Gast";
+
+  return {
+    customer_name: customerName,
+    event_date: formatGermanDate(booking.eventDate),
+    booking_edit_url: bookingEditUrl || "https://oliv-restaurant.ch",
+  };
+}
+
+/**
+ * Prepare template data for unlock declined email (to guest)
+ */
+export function getUnlockDeclinedTemplateData(
+  booking: Booking & { lead?: Lead | null },
+  reason?: string
+): TemplateData {
+  const lead = booking.lead;
+  const customerName = lead?.contactName || "Gast";
+
+  return {
+    customer_name: customerName,
+    event_date: formatGermanDate(booking.eventDate),
+    decline_reason: reason || "Ihre Anfrage auf Freischaltung wurde abgelehnt.",
+  };
+}
+
+/**
  * Get template data for any email type
  *
  * This is the main function to get template data based on email type
@@ -227,6 +329,18 @@ export function getTemplateData(
         );
       }
 
+    case "thank_you":
+      // Return different data based on whether deposit is required
+      if (params.estimatedTotal && params.estimatedTotal >= DEPOSIT_THRESHOLD) {
+        return getThankYouDepositTemplateData(booking, params.estimatedTotal);
+      } else {
+        return getThankYouNoDepositTemplateData(
+          booking,
+          params.estimatedTotal || 0,
+          params.bookingEditUrl
+        );
+      }
+
     case "cancellation":
       return getBookingCancelledTemplateData(booking, params.reason);
 
@@ -245,6 +359,15 @@ export function getTemplateData(
 
     case "declined" as any:
       return getBookingDeclinedTemplateData(booking, params.reason);
+
+    case "unlock_requested":
+      return getUnlockRequestedTemplateData(booking);
+
+    case "unlock_granted":
+      return getUnlockGrantedTemplateData(booking, params.bookingEditUrl);
+
+    case "unlock_declined":
+      return getUnlockDeclinedTemplateData(booking, params.reason);
 
     case "custom":
       // For custom emails, return basic data
@@ -272,12 +395,19 @@ export function getTemplateName(emailType: EmailType, estimatedTotal?: number): 
     confirmation_deposit: process.env.ZEPTOMAIL_TEMPLATE_CONFIRMED_DEPOSIT || "booking-confirmed-deposit",
     confirmation_no_deposit: process.env.ZEPTOMAIL_TEMPLATE_CONFIRMED_NO_DEPOSIT || "booking-confirmed-no-deposit",
 
+    // Thank You has TWO templates based on amount
+    thank_you_deposit: process.env.ZEPTOMAIL_TEMPLATE_THANK_YOU_DEPOSIT || "booking-thank-you-deposit",
+    thank_you_no_deposit: process.env.ZEPTOMAIL_TEMPLATE_THANK_YOU_NO_DEPOSIT || "booking-thank-you-no-deposit",
+
     // Other email types
     cancellation: process.env.ZEPTOMAIL_TEMPLATE_CANCELLED || "booking-cancelled",
     follow_up: process.env.ZEPTOMAIL_TEMPLATE_COMPLETED || "booking-completed",
     reminder: process.env.ZEPTOMAIL_TEMPLATE_REMINDER || "booking-reminder",
     no_show: process.env.ZEPTOMAIL_TEMPLATE_NO_SHOW || "booking-no-show",
     declined: process.env.ZEPTOMAIL_TEMPLATE_DECLINED || "booking-declined",
+    unlock_requested: process.env.ZEPTOMAIL_TEMPLATE_UNLOCK_REQUESTED || "unlock-requested",
+    unlock_granted: process.env.ZEPTOMAIL_TEMPLATE_UNLOCK_GRANTED || "unlock-granted",
+    unlock_declined: process.env.ZEPTOMAIL_TEMPLATE_UNLOCK_DECLINED || "unlock-declined",
     custom: "custom-email",
   };
 
@@ -288,6 +418,15 @@ export function getTemplateName(emailType: EmailType, estimatedTotal?: number): 
       return templateNames.confirmation_deposit;
     }
     return templateNames.confirmation_no_deposit;
+  }
+
+  // For thank you, decide based on estimated total
+  if (emailType === "thank_you") {
+    const DEPOSIT_THRESHOLD = 5000;
+    if (estimatedTotal && estimatedTotal >= DEPOSIT_THRESHOLD) {
+      return templateNames.thank_you_deposit;
+    }
+    return templateNames.thank_you_no_deposit;
   }
 
   return templateNames[emailType] || "custom-email";
@@ -304,11 +443,15 @@ export function getEmailSubject(
 
   const subjects: Record<string, string> = {
     confirmation: `Buchungsbestätigung - Oliv Restaurant - ${formattedDate}`,
+    thank_you: `Vielen Dank für Ihre Anfrage - Oliv Restaurant - ${formattedDate}`,
     cancellation: `Stornierung Ihrer Buchung - Oliv Restaurant - ${formattedDate}`,
     follow_up: `Vielen Dank für Ihren Besuch - Oliv Restaurant`,
     reminder: `Erinnerung an Ihre Buchung morgen - Oliv Restaurant`,
     no_show: `Nicht erschienen - Oliv Restaurant - ${formattedDate}`,
     declined: `Ihre Buchungsanfrage - Oliv Restaurant`,
+    unlock_requested: `Anfrage auf Bearbeitung - Booking #${generateShortBookingId(booking.id).toUpperCase()}`,
+    unlock_granted: `Ihre Buchung wurde freigeschaltet - Oliv Restaurant`,
+    unlock_declined: `Update zu Ihrer Anfrage auf Bearbeitung - Oliv Restaurant`,
     custom: `Nachricht von Oliv Restaurant`,
   };
 

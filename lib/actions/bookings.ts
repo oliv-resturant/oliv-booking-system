@@ -1,17 +1,20 @@
 'use server';
 
 import { db } from "@/lib/db";
-import { bookings, bookingItems, bookingContactHistory, emailLogs, leads } from "@/lib/db/schema";
+import { bookings, bookingItems, bookingContactHistory, emailLogs, leads, menuItems } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import {
+  sendThankYouEmail,
   sendBookingConfirmation,
   sendBookingCancellation,
   sendBookingCompletion,
   sendBookingDeclined,
   sendBookingNoShow,
   sendBookingReminder,
+  sendUnlockGrantedEmail,
+  sendUnlockDeclinedEmail,
 } from "@/lib/actions/email";
 import {
   calculateBookingChanges,
@@ -52,7 +55,7 @@ export async function createBooking(input: CreateBookingInput & { leadEmail?: st
       requiresDeposit: input.requiresDeposit || false,
       status: "pending",
       internalNotes: input.internalNotes,
-      isLocked: true, // Bookings are locked by default - admin must unlock to allow client edits
+      isLocked: false, // Bookings are unlocked by default - admin can lock to prevent client edits
     })
       .returning();
 
@@ -67,16 +70,16 @@ export async function createBooking(input: CreateBookingInput & { leadEmail?: st
     console.log('========================================');
     console.log(`To: ${input.leadEmail || 'No email provided'}`);
     console.log(`Booking ID: ${booking.id}`);
-    console.log(`Status: LOCKED (by default)`);
+    console.log(`Status: UNLOCKED (by default)`);
     console.log(`Edit Link: ${bookingEditUrl}`);
-    console.log(`Note: Client cannot edit until admin unlocks the booking`);
+    console.log(`Note: Client can edit until admin locks the booking`);
     console.log('========================================\n');
 
     // Send confirmation email if lead email is provided
     if (input.leadEmail && !(input as any).skipEmail) {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oliv-restaurant.ch";
 
-      await sendBookingConfirmation({
+      await sendThankYouEmail({
         bookingId: booking.id,
         recipientEmail: input.leadEmail,
         bookingData: {
@@ -332,12 +335,6 @@ export async function updateBooking(
       updateData.internalNotes = updates.internalNotes;
       console.log('  → Updating internalNotes');
     }
-    if ((updates as any).menuItems !== undefined) {
-      // menuItems is an array of objects with { id, name, quantity, unitPrice }
-      // We'll store it as a JSON string to preserve the structure
-      (updateData as any).menuItems = JSON.stringify((updates as any).menuItems);
-      console.log('  → Updating menuItems');
-    }
 
     console.log('\n🔧 Executing UPDATE query...');
     console.log('   WHERE id =', id);
@@ -348,6 +345,48 @@ export async function updateBooking(
       .set(updateData)
       .where(eq(bookings.id, id))
       .returning();
+
+    // Handle relational updates: Lead contact info
+    if (booking.leadId && (updates as any).customer) {
+      const customer = (updates as any).customer;
+      console.log('  → Updating associated lead:', booking.leadId);
+
+      const leadUpdate: any = { updatedAt: new Date() };
+      if (customer.name) leadUpdate.contactName = customer.name;
+      if (customer.email) leadUpdate.contactEmail = customer.email;
+      if (customer.phone) leadUpdate.contactPhone = customer.phone;
+
+      await db.update(leads).set(leadUpdate).where(eq(leads.id, booking.leadId));
+    }
+
+    // Handle relational updates: Booking Items
+    if ((updates as any).selectedItems && (updates as any).itemQuantities) {
+      console.log('  → Syncing booking items...');
+
+      // Delete existing items
+      await db.delete(bookingItems).where(eq(bookingItems.bookingId, id));
+
+      // Fetch menu items to get unit prices
+      const selectedItemIds = (updates as any).selectedItems;
+      const itemQuantities = (updates as any).itemQuantities;
+
+      const dbMenuItems = await db.select().from(menuItems);
+      const menuItemMap = new Map(dbMenuItems.map(m => [m.id, m]));
+
+      for (const itemId of selectedItemIds) {
+        const menuItem = menuItemMap.get(itemId);
+        if (menuItem) {
+          await db.insert(bookingItems).values({
+            id: randomUUID(),
+            bookingId: id,
+            itemType: "menu_item",
+            itemId: itemId,
+            quantity: itemQuantities[itemId] || 1,
+            unitPrice: menuItem.pricePerPerson,
+          });
+        }
+      }
+    }
 
     console.log('\n✅ SUCCESS: Booking updated in database');
     console.log('   Updated booking ID:', booking.id);
@@ -687,6 +726,27 @@ export async function unlockBooking(
       action: "unlock",
     });
 
+    // Notify guest
+    const [bookingWithLead] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .leftJoin(leads, eq(bookings.leadId, leads.id))
+      .limit(1);
+
+    if (bookingWithLead && bookingWithLead.leads?.contactEmail) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oliv-restaurant.ch";
+      const editSecret = await ensureBookingSecret(bookingId);
+      const bookingEditUrl = `${baseUrl}/booking/${bookingId}/edit/${editSecret}`;
+
+      await sendUnlockGrantedEmail({
+        bookingId,
+        recipientEmail: bookingWithLead.leads.contactEmail,
+        bookingData: { ...bookingWithLead.bookings, lead: bookingWithLead.leads },
+        bookingEditUrl,
+      });
+    }
+
     revalidatePath("/admin/bookings");
     revalidatePath(`/admin/bookings/${bookingId}`);
 
@@ -694,6 +754,67 @@ export async function unlockBooking(
   } catch (error) {
     console.error("Error unlocking booking:", error);
     return { success: false, error: "Failed to unlock booking" };
+  }
+}
+
+/**
+ * Decline a request to unlock a booking
+ *
+ * @param bookingId - The booking ID
+ * @param adminUserId - The admin user ID performing the decline
+ * @param adminUserName - The admin user name for audit log
+ * @param reason - Optional reason for decline
+ * @returns Success status
+ */
+export async function declineUnlockRequest(
+  bookingId: string,
+  adminUserId: string,
+  adminUserName: string,
+  reason?: string
+) {
+  try {
+    // Require EDIT_BOOKING permission
+    await requirePermissionWrapper(Permission.EDIT_BOOKING);
+
+    // Log the action
+    await logBookingChange({
+      bookingId,
+      adminUserId,
+      actorType: "admin",
+      actorLabel: adminUserName,
+      changes: [
+        {
+          field: "unlock_request_status",
+          from: "pending",
+          to: "declined",
+        }
+      ]
+    });
+
+    // Notify guest
+    const [bookingWithLead] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .leftJoin(leads, eq(bookings.leadId, leads.id))
+      .limit(1);
+
+    if (bookingWithLead && bookingWithLead.leads?.contactEmail) {
+      await sendUnlockDeclinedEmail({
+        bookingId,
+        recipientEmail: bookingWithLead.leads.contactEmail,
+        bookingData: { ...bookingWithLead.bookings, lead: bookingWithLead.leads },
+        reason: reason,
+      });
+    }
+
+    revalidatePath("/admin/bookings");
+    revalidatePath(`/admin/bookings/${bookingId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error declining unlock request:", error);
+    return { success: false, error: "Failed to decline unlock request" };
   }
 }
 
