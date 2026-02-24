@@ -33,6 +33,7 @@ async function createUserWithBetterAuth() {
         email: "admin@oliv-restaurant.ch",
         password: "admin123",
         name: "Super Admin",
+        role: "super_admin",
       },
       headers: headers as any,
     });

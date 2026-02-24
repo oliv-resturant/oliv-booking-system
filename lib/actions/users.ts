@@ -39,6 +39,7 @@ export async function createAdminUser(input: CreateAdminUserInput) {
         email: input.email,
         password: input.password,
         name: input.name,
+        role: input.role,
       },
     });
 

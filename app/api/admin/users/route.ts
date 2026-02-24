@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
         email,
         password: password || "defaultPassword123",
         name,
+        role: role || "read_only",
       },
     });
 
@@ -73,9 +74,9 @@ export async function POST(request: NextRequest) {
     // Update the role and ensure email is marked as verified
     const [updatedUser] = await db
       .update(adminUser)
-      .set({ 
+      .set({
         role: role || "read_only",
-        emailVerified: true 
+        emailVerified: true
       })
       .where(eq(adminUser.id, result.user.id))
       .returning();
@@ -90,10 +91,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error creating user:", error);
-    
+
     // Check if error is from Better Auth
     const errorMessage = error instanceof Error ? error.message : "Failed to create user";
-    
+
     return NextResponse.json(
       { error: errorMessage },
       { status: 500 }
