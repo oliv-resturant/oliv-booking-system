@@ -1247,7 +1247,7 @@ export function CustomMenuWizard() {
                               className="text-muted-foreground text-sm"
                               style={{ fontSize: "var(--text-small)" }}
                             >
-                              Wo sollen wir liefern?
+                              Wo wohnst du
                             </p>
                           </div>
                         </div>
