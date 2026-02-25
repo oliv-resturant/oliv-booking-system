@@ -99,6 +99,7 @@ export function CustomMenuWizard() {
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [isUnlockRequested, setIsUnlockRequested] = useState(false);
   const [isRequestingUnlock, setIsRequestingUnlock] = useState(false);
+  const [includeBeveragePrices, setIncludeBeveragePrices] = useState(false);
 
   // Check for edit mode from sessionStorage
   useEffect(() => {
@@ -355,12 +356,21 @@ export function CustomMenuWizard() {
 
     if (!eventDetails.eventDate) {
       newErrors.eventDate = 'Event date is required';
+    } else {
+      const selectedDateTime = new Date(`${eventDetails.eventDate}T${eventDetails.eventTime || '00:00'}`);
+      const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      if (selectedDateTime < twentyFourHoursFromNow) {
+        newErrors.eventDate = 'Booking must be at least 24 hours in advance';
+      }
     }
 
     if (!eventDetails.guestCount) {
       newErrors.guestCount = 'Number of guests is required';
     } else if (parseInt(eventDetails.guestCount) < 1) {
       newErrors.guestCount = 'Must have at least 1 guest';
+    } else if (parseInt(eventDetails.guestCount) > 10000) {
+      newErrors.guestCount = 'Number of guests cannot exceed 10,000';
     }
 
     setErrors(newErrors);
@@ -378,24 +388,32 @@ export function CustomMenuWizard() {
   }, [eventDetails.name, eventDetails.email, eventDetails.telephone]);
 
   const isEventTabValid = useMemo(() => {
+    const isDateValid = eventDetails.eventDate !== '' &&
+      (new Date(`${eventDetails.eventDate}T${eventDetails.eventTime || '00:00'}`) >= new Date(Date.now() + 24 * 60 * 60 * 1000));
+
     return (
-      eventDetails.eventDate !== '' &&
+      isDateValid &&
       eventDetails.guestCount !== '' &&
-      parseInt(eventDetails.guestCount) >= 1
+      parseInt(eventDetails.guestCount) >= 1 &&
+      parseInt(eventDetails.guestCount) <= 10000
     );
-  }, [eventDetails.eventDate, eventDetails.guestCount]);
+  }, [eventDetails.eventDate, eventDetails.eventTime, eventDetails.guestCount]);
 
   const isStep1Valid = useMemo(() => {
+    const isDateValid = eventDetails.eventDate !== '' &&
+      (new Date(`${eventDetails.eventDate}T${eventDetails.eventTime || '00:00'}`) >= new Date(Date.now() + 24 * 60 * 60 * 1000));
+
     return (
       eventDetails.name.trim() !== '' &&
       eventDetails.email.trim() !== '' &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eventDetails.email) &&
       eventDetails.telephone.trim() !== '' &&
-      eventDetails.eventDate !== '' &&
+      isDateValid &&
       eventDetails.guestCount !== '' &&
-      parseInt(eventDetails.guestCount) >= 1
+      parseInt(eventDetails.guestCount) >= 1 &&
+      parseInt(eventDetails.guestCount) <= 10000
     );
-  }, [eventDetails.name, eventDetails.email, eventDetails.telephone, eventDetails.eventDate, eventDetails.guestCount]);
+  }, [eventDetails.name, eventDetails.email, eventDetails.telephone, eventDetails.eventDate, eventDetails.eventTime, eventDetails.guestCount]);
 
   const isCurrentTabValid = useMemo(() => {
     switch (activeTab) {
@@ -756,6 +774,12 @@ export function CustomMenuWizard() {
     return selectedItems.reduce((total, itemId) => {
       const item = menuItems.find(i => i.id === itemId);
       if (!item) return total;
+
+      // Exclude consumption based prices if the user opted out
+      if (isConsumption(item) && !includeBeveragePrices) {
+        return total;
+      }
+
       return total + getItemTotalPrice(item);
     }, 0);
   };
@@ -1165,7 +1189,7 @@ export function CustomMenuWizard() {
                               onChange={(e) => setEventDetails({ ...eventDetails, eventDate: e.target.value })}
                               className={`w-full px-4 py-2.5 bg-background border rounded-lg transition-colors ${errors.eventDate ? 'border-destructive' : 'border-border focus:border-primary'
                                 }`}
-                              min={new Date().toISOString().split('T')[0]}
+                              min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                               style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                             />
                             {errors.eventDate && (
@@ -1200,6 +1224,7 @@ export function CustomMenuWizard() {
                                 }`}
                               placeholder="10"
                               min="1"
+                              max="10000"
                               style={{ borderRadius: 'var(--radius)', fontSize: 'var(--text-base)' }}
                             />
                             {errors.guestCount && (
@@ -1527,9 +1552,9 @@ export function CustomMenuWizard() {
                                               <h5 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
                                                 {item.name}
                                               </h5>
-                                              {/* Amber "Pay by consumption" badge for consumption-based items */}
+                                              {/* Pay by consumption badge for consumption-based items */}
                                               {isConsumption(item) && (
-                                                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded text-xs font-medium">
+                                                <span className="px-2 py-0.5 bg-[#FFF4E5] text-[#D97706] dark:bg-orange-900/30 dark:text-orange-400 rounded text-xs font-medium">
                                                   Pay by consumption
                                                 </span>
                                               )}
@@ -1686,7 +1711,7 @@ export function CustomMenuWizard() {
                                                         {item.name}
                                                       </p>
                                                       {isConsumption(item) && (
-                                                        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded text-xs font-medium">
+                                                        <span className="px-2 py-0.5 bg-[#FFF4E5] text-[#D97706] dark:bg-orange-900/30 dark:text-orange-400 rounded text-xs font-medium ml-2">
                                                           Pay by consumption
                                                         </span>
                                                       )}
@@ -1727,17 +1752,25 @@ export function CustomMenuWizard() {
 
                                                 {/* Footer Row */}
                                                 {isConsumption(item) ? (
-                                                  <div className="pt-1.5 border-t border-border">
-                                                    <div className="flex flex-col gap-1">
-                                                      <div className="flex items-center gap-1.5">
-                                                        <span className="px-1.5 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
-                                                          Available
-                                                        </span>
-                                                        <span className="text-muted-foreground text-xs">for your event</span>
-                                                      </div>
+                                                  <div className="pt-2 border-t border-border mt-2">
+                                                    <div className="flex flex-col gap-1.5">
                                                       <div className="flex items-center justify-between">
-                                                        <span className="text-muted-foreground text-xs">Pricing: CHF {item.price.toFixed(2)}/{item.category === 'Beverages' ? 'bottle' : 'unit'}</span>
-                                                        <span className="text-amber-600 dark:text-amber-400 text-xs">(billed by consumption)</span>
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                          <span className="px-1.5 py-0.5 bg-green-100/80 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
+                                                            Available
+                                                          </span>
+                                                          <span className="text-muted-foreground text-xs mr-1">for your event</span>
+                                                          <span className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-medium">
+                                                            {quantity}x
+                                                          </span>
+                                                        </div>
+                                                        <span className="text-[#D97706] dark:text-orange-400 text-xs font-medium">(billed by consumption)</span>
+                                                      </div>
+                                                      <div className="flex items-center justify-between mt-0.5">
+                                                        <span className="text-muted-foreground text-xs">
+                                                          Size: {itemVariants[itemId] && item.variants ? item.variants.find(v => v.id === itemVariants[itemId])?.name || (item.category === 'Beverages' ? 'Bottle' : 'Unit') : (item.category === 'Beverages' ? 'Bottle' : 'Unit')}
+                                                        </span>
+                                                        <span className="text-foreground text-xs font-medium">Price on consumption</span>
                                                       </div>
                                                     </div>
                                                   </div>
@@ -2203,9 +2236,9 @@ export function CustomMenuWizard() {
                                                   <h6 className="text-foreground font-medium text-sm">
                                                     {item.name}
                                                   </h6>
-                                                  {/* Amber "Pay by consumption" badge for consumption-based items */}
+                                                  {/* Pay by consumption badge for consumption-based items */}
                                                   {isConsumption(item) && (
-                                                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded text-xs font-medium">
+                                                    <span className="px-2 py-0.5 bg-[#FFF4E5] text-[#D97706] dark:bg-orange-900/30 dark:text-orange-400 rounded text-[10px] font-medium mt-1 inline-block">
                                                       Pay by consumption
                                                     </span>
                                                   )}
@@ -2363,35 +2396,35 @@ export function CustomMenuWizard() {
                         </div>
 
                         {/* Order Summary Card with Toggle View */}
-                        <div className="bg-muted/30 border border-border rounded-lg p-5" style={{ borderRadius: 'var(--radius-card)' }}>
-                          <div className="flex items-center justify-between mb-4">
+                        <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm" style={{ borderRadius: 'var(--radius-card)' }}>
+                          <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0" style={{ borderRadius: 'var(--radius)' }}>
-                                <ShoppingCart className="w-4 h-4 text-primary" />
+                              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0" style={{ borderRadius: 'var(--radius)' }}>
+                                <ShoppingCart className="w-4 h-4 text-gray-500" />
                               </div>
-                              <h4 className="text-foreground" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                Order Summary
+                              <h4 className="text-gray-800" style={{ fontSize: 'var(--text-h4)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                Order overview
                               </h4>
                             </div>
                             {/* View Toggle */}
-                            <div className="flex items-center gap-1 bg-card rounded-lg p-1 border border-border">
+                            <div className="flex items-center gap-1 bg-white p-1 rounded-md border border-gray-200 shadow-sm">
                               <button
                                 onClick={() => setSummaryViewMode('per-person')}
-                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${summaryViewMode === 'per-person'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'text-muted-foreground hover:text-foreground'
+                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${summaryViewMode === 'per-person'
+                                  ? 'bg-[#8da78d] text-white'
+                                  : 'text-gray-500 hover:text-gray-700 bg-transparent'
                                   }`}
                               >
-                                Per Person
+                                Pro Person
                               </button>
                               <button
                                 onClick={() => setSummaryViewMode('total')}
-                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${summaryViewMode === 'total'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'text-muted-foreground hover:text-foreground'
+                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${summaryViewMode === 'total'
+                                  ? 'bg-[#8da78d] text-white'
+                                  : 'text-gray-500 hover:text-gray-700 bg-transparent'
                                   }`}
                               >
-                                Total + Extras
+                                Total + extras
                               </button>
                             </div>
                           </div>
@@ -2485,22 +2518,22 @@ export function CustomMenuWizard() {
                             // Total + Extras View
                             <div className="space-y-4">
                               {/* Food Menu Items Section */}
-                              <div className="bg-card border border-border rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius)' }}>
-                                <div className="bg-primary/5 px-4 py-2 border-b border-border">
-                                  <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
-                                    🍽️ Food Menu
+                              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4 shadow-sm" style={{ borderRadius: 'var(--radius)' }}>
+                                <div className="bg-gray-50/50 px-4 py-3 border-b border-gray-200">
+                                  <p className="text-[#374151] font-semibold" style={{ fontSize: 'var(--text-base)' }}>
+                                    🍽️ Menu
                                   </p>
                                 </div>
                                 <div className="p-4 space-y-2">
                                   {(() => {
                                     const foodCategories = categories.filter(cat =>
-                                      !['Technology', 'Decoration', 'Furniture', 'Miscellaneous', 'Beverages'].includes(cat)
+                                      !['Technology', 'Decoration', 'Furniture', 'Miscellaneous'].includes(cat)
                                     );
                                     const breakdown = foodCategories
                                       .map((cat) => {
                                         const items = selectedItems.filter((itemId) => {
                                           const item = menuItems.find((i) => i.id === itemId);
-                                          return item?.category === cat;
+                                          return item?.category === cat && !isConsumption(item);
                                         });
                                         const subtotal = items.reduce((sum, itemId) => {
                                           const item = menuItems.find((i) => i.id === itemId);
@@ -2529,11 +2562,11 @@ export function CustomMenuWizard() {
                                             </span>
                                           </div>
                                         ))}
-                                        <div className="pt-2 mt-2 border-t-2 border-primary flex justify-between">
-                                          <span className="text-foreground font-semibold">
-                                            Subtotal Food:
+                                        <div className="pt-3 mt-3 border-t border-[#8da78d] flex justify-between">
+                                          <span className="text-[#374151] font-bold">
+                                            Subtotal for meals:
                                           </span>
-                                          <span className="text-foreground font-semibold">
+                                          <span className="text-[#374151] font-bold">
                                             CHF{' '}
                                             {selectedItems
                                               .filter((itemId) => {
@@ -2553,56 +2586,79 @@ export function CustomMenuWizard() {
                                 </div>
                               </div>
 
-                              {/* Beverages Section */}
+                              {/* Billed by Consumption Section */}
                               {(() => {
-                                const beverageItems = selectedItems.filter((itemId) => {
+                                const consumptionItems = selectedItems.filter((itemId) => {
                                   const item = menuItems.find((i) => i.id === itemId);
-                                  return item?.category === 'Beverages';
+                                  return item && isConsumption(item);
                                 });
 
-                                if (beverageItems.length === 0) return null;
+                                if (consumptionItems.length === 0) return null;
 
-                                const beverageSubtotal = beverageItems.reduce((sum, itemId) => {
+                                const consumptionSubtotal = consumptionItems.reduce((sum, itemId) => {
                                   const item = menuItems.find((i) => i.id === itemId);
                                   return sum + (item ? getItemTotalPrice(item) : 0);
                                 }, 0);
 
                                 return (
-                                  <div className="bg-card border border-border rounded-lg overflow-hidden" style={{ borderRadius: 'var(--radius)' }}>
-                                    <div className="bg-primary/5 px-4 py-2 border-b border-border">
-                                      <p className="text-foreground font-semibold" style={{ fontSize: 'var(--text-base)' }}>
-                                        🍷 Beverages
-                                      </p>
-                                      <p className="text-muted-foreground text-xs mt-0.5">
-                                        Pay by consumption • not included in per-person pricing
-                                      </p>
-                                    </div>
-                                    <div className="p-4 space-y-1">
-                                      {beverageItems.map((itemId) => {
-                                        const item = menuItems.find((i) => i.id === itemId);
-                                        if (!item) return null;
-                                        const itemTotal = getItemTotalPrice(item);
-                                        return (
-                                          <div key={itemId} className="flex justify-between items-center py-1">
-                                            <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                                              {item.name} ({isConsumption(item) ? `CHF ${item.price.toFixed(2)}/unit` : 'per person'})
-                                            </span>
-                                            <span className="text-foreground font-medium">
-                                              CHF {itemTotal.toFixed(2)}
-                                            </span>
-                                          </div>
-                                        );
-                                      })}
-                                      <div className="pt-2 mt-2 border-t-2 border-primary flex justify-between">
-                                        <span className="text-foreground font-semibold">
-                                          Subtotal Beverages:
-                                        </span>
-                                        <span className="text-foreground font-semibold">
-                                          CHF {beverageSubtotal.toFixed(2)}
-                                        </span>
+                                  <>
+                                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4 shadow-sm" style={{ borderRadius: 'var(--radius)' }}>
+                                      <div className="bg-gray-50/50 px-4 py-3 border-b border-gray-200">
+                                        <p className="text-[#374151] font-semibold" style={{ fontSize: 'var(--text-base)' }}>
+                                          🍷 Billed by Consumption
+                                        </p>
+                                        {!includeBeveragePrices && (
+                                          <p className="text-gray-500 text-xs mt-1">
+                                            Prices are displayed, but not included in the total price.
+                                          </p>
+                                        )}
+                                      </div>
+                                      <div className="p-4 space-y-2">
+                                        {consumptionItems.map((itemId) => {
+                                          const item = menuItems.find((i) => i.id === itemId);
+                                          if (!item) return null;
+                                          const itemTotal = getItemTotalPrice(item);
+                                          return (
+                                            <div key={itemId} className="flex justify-between items-center py-1.5">
+                                              <div className="flex items-center gap-2 flex-wrap min-w-0 pr-4">
+                                                <span className="text-gray-500 truncate" style={{ fontSize: 'var(--text-small)' }}>
+                                                  {item.name}
+                                                </span>
+                                              </div>
+                                              <span className={`font-medium flex-shrink-0 ${!includeBeveragePrices ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+                                                CHF {itemTotal.toFixed(2)}
+                                              </span>
+                                            </div>
+                                          );
+                                        })}
+                                        <div className="pt-3 mt-3 border-t border-gray-100 flex justify-between">
+                                          <span className="text-[#374151] font-bold">
+                                            Subtotal (consumption):
+                                          </span>
+                                          <span className="text-[#374151] font-bold">
+                                            CHF {includeBeveragePrices ? consumptionSubtotal.toFixed(2) : '0.00'}
+                                          </span>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
+
+                                    {/* Drink Inclusion Checkbox Card */}
+                                    <div className="bg-[#FFFBEA] border border-amber-200 rounded-lg p-4 mb-6 shadow-sm flex items-start gap-3">
+                                      <input
+                                        type="checkbox"
+                                        id="include-drinks"
+                                        checked={includeBeveragePrices}
+                                        onChange={(e) => setIncludeBeveragePrices(e.target.checked)}
+                                        className="mt-1 w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500/20 flex-shrink-0 cursor-pointer"
+                                      />
+                                      <label htmlFor="include-drinks" className="cursor-pointer">
+                                        <span className="block text-gray-800 font-medium mb-1">Include consumption-based prices in the estimate</span>
+                                        {!includeBeveragePrices && (
+                                          <span className="block text-[#D97706] text-sm">⚠️ Consumption-based prices are currently excluded from the overall estimate.</span>
+                                        )}
+                                      </label>
+                                    </div>
+                                  </>
                                 );
                               })()}
 
@@ -2610,7 +2666,7 @@ export function CustomMenuWizard() {
                               {(() => {
                                 const techItems = selectedItems.filter((itemId) => {
                                   const item = menuItems.find((i) => i.id === itemId);
-                                  return item?.category === 'Technology';
+                                  return item?.category === 'Technology' && !isConsumption(item);
                                 });
 
                                 if (techItems.length === 0) return null;
@@ -2663,7 +2719,7 @@ export function CustomMenuWizard() {
                               {(() => {
                                 const decorationItems = selectedItems.filter((itemId) => {
                                   const item = menuItems.find((i) => i.id === itemId);
-                                  return item?.category === 'Decoration';
+                                  return item?.category === 'Decoration' && !isConsumption(item);
                                 });
 
                                 if (decorationItems.length === 0) return null;
@@ -2716,7 +2772,7 @@ export function CustomMenuWizard() {
                               {(() => {
                                 const furnitureItems = selectedItems.filter((itemId) => {
                                   const item = menuItems.find((i) => i.id === itemId);
-                                  return item?.category === 'Furniture';
+                                  return item?.category === 'Furniture' && !isConsumption(item);
                                 });
 
                                 if (furnitureItems.length === 0) return null;
@@ -2769,7 +2825,7 @@ export function CustomMenuWizard() {
                               {(() => {
                                 const miscItems = selectedItems.filter((itemId) => {
                                   const item = menuItems.find((i) => i.id === itemId);
-                                  return item?.category === 'Miscellaneous';
+                                  return item?.category === 'Miscellaneous' && !isConsumption(item);
                                 });
 
                                 if (miscItems.length === 0) return null;
@@ -2819,17 +2875,17 @@ export function CustomMenuWizard() {
                               })()}
 
                               {/* Grand Total */}
-                              <div className="bg-primary/10 border-2 border-primary rounded-lg p-4" style={{ borderRadius: 'var(--radius)' }}>
+                              <div className="bg-[#EAECEF] border-[3px] border-[#374151] rounded-lg p-5 shadow-sm" style={{ borderRadius: 'var(--radius)' }}>
                                 <div className="flex justify-between items-center">
                                   <div>
-                                    <p className="text-foreground font-bold" style={{ fontSize: 'var(--text-h3)' }}>
-                                      Grand Total
+                                    <p className="text-[#374151] font-bold uppercase tracking-wide" style={{ fontSize: 'var(--text-h4)' }}>
+                                      TOTAL ESTIMATE
                                     </p>
-                                    <p className="text-muted-foreground text-sm mt-1">
-                                      {selectedItems.length} items • {eventDetails.guestCount || '0'} guests
+                                    <p className="text-gray-500 text-sm mt-1">
+                                      For {eventDetails.guestCount || '0'} guests
                                     </p>
                                   </div>
-                                  <p className="text-primary" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-bold)' }}>
+                                  <p className="text-[#8da78d]" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-bold)' }}>
                                     CHF {getTotalPriceWithAddOns().toFixed(2)}
                                   </p>
                                 </div>
@@ -3338,8 +3394,8 @@ export function CustomMenuWizard() {
                                 <p className="text-foreground truncate" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                                   {item.name}
                                 </p>
-                                {isBeverage && (
-                                  <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded text-xs">Pay by consumption</span>
+                                {isConsumption(item) && (
+                                  <span className="px-1.5 py-0.5 bg-[#FFF4E5] text-[#D97706] dark:bg-orange-900/30 dark:text-orange-400 rounded text-xs font-medium ml-2">Pay by consumption</span>
                                 )}
                               </div>
                               <p className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>
@@ -3359,18 +3415,26 @@ export function CustomMenuWizard() {
                               </button>
                             </div>
                           </div>
-                          {isBeverage ? (
-                            <div className="pt-1.5 border-t border-border">
-                              <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
-                                    Available
-                                  </span>
-                                  <span className="text-muted-foreground text-xs">for your event</span>
-                                </div>
+                          {isConsumption(item) ? (
+                            <div className="pt-2 border-t border-border mt-2">
+                              <div className="flex flex-col gap-1.5">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-muted-foreground text-xs">Pricing: CHF {item.price.toFixed(2)}/bottle</span>
-                                  <span className="text-amber-600 dark:text-amber-400 text-xs">(billed by consumption)</span>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="px-1.5 py-0.5 bg-green-100/80 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
+                                      Available
+                                    </span>
+                                    <span className="text-muted-foreground text-xs mr-1">for your event</span>
+                                    <span className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-medium">
+                                      {quantity}x
+                                    </span>
+                                  </div>
+                                  <span className="text-[#D97706] dark:text-orange-400 text-xs font-medium">(billed by consumption)</span>
+                                </div>
+                                <div className="flex items-center justify-between mt-0.5">
+                                  <span className="text-muted-foreground text-xs">
+                                    Size: {itemVariants[itemId] && item.variants ? item.variants.find(v => v.id === itemVariants[itemId])?.name || (item.category === 'Beverages' ? 'Bottle' : 'Unit') : (item.category === 'Beverages' ? 'Bottle' : 'Unit')}
+                                  </span>
+                                  <span className="text-foreground text-xs font-medium">Price on consumption</span>
                                 </div>
                               </div>
                             </div>

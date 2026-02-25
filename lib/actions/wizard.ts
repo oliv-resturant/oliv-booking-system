@@ -104,6 +104,17 @@ export async function submitWizardForm(data: WizardFormData) {
     if (data.bookingId) {
       console.log('🔄 UPDATING EXISTING BOOKING');
 
+      // Get the booking to verify lock status and get lead ID
+      const [booking] = await db.select().from(bookings).where(eq(bookings.id, data.bookingId)).limit(1);
+
+      if (booking?.isLocked) {
+        console.error("Attempted to edit a locked booking:", data.bookingId);
+        return {
+          success: false,
+          error: "This booking has been locked by an administrator and can no longer be edited."
+        };
+      }
+
       // Update booking details
       const updateData: any = {
         eventDate: data.eventDate,
@@ -119,9 +130,6 @@ export async function submitWizardForm(data: WizardFormData) {
       await db.update(bookings)
         .set(updateData)
         .where(eq(bookings.id, data.bookingId));
-
-      // Get the booking to get lead ID
-      const [booking] = await db.select().from(bookings).where(eq(bookings.id, data.bookingId)).limit(1);
 
       // Update lead info if leadId exists
       if (booking.leadId) {

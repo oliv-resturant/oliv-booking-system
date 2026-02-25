@@ -13,12 +13,12 @@ interface ModalProps {
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 }
 
-export function Modal({ 
-  isOpen, 
-  onClose, 
-  icon: Icon, 
-  title, 
-  children, 
+export function Modal({
+  isOpen,
+  onClose,
+  icon: Icon,
+  title,
+  children,
   footer,
   maxWidth = '2xl'
 }: ModalProps) {
@@ -34,7 +34,7 @@ export function Modal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className={`bg-card border border-border rounded-xl shadow-xl w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] flex flex-col`}>
           {/* Header */}

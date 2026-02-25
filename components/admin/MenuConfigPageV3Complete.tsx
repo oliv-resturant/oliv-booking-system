@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import { GripVertical, Edit2, MoreVertical, Plus, ChevronDown, ChevronRight, Trash2, Eye, EyeOff, Search, UtensilsCrossed, ListPlus, Upload, X, Copy, Settings, Check, Users } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
-import { Modal } from './Modal';
-import { ConfirmationModal } from './ConfirmationModal';
-import { ItemSettingsModal } from './ItemSettingsModal';
+import { Modal } from '../user/Modal';
+import { ConfirmationModal } from '../user/ConfirmationModal';
+import { ItemSettingsModal } from '../user/ItemSettingsModal';
 import { Button } from '../user/Button';
-import { Tooltip } from './Tooltip';
+import { Tooltip } from '../user/Tooltip';
 import { NativeRadio } from '../ui/NativeRadio';
 import {
   DndContext,
@@ -109,147 +109,7 @@ interface AddonGroup {
   isActive?: boolean;
 }
 
-const mockCategories: Category[] = [
-  {
-    id: '1',
-    name: 'Bom Wraps',
-    description: '32cm All dishes are served with homemade wheat tortillas.',
-    image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=400&fit=crop',
-    isActive: true,
-    isExpanded: false,
-    guestCount: false,
-    items: [
-      {
-        id: '1-1',
-        name: 'Chicken Wrap',
-        description: 'Grilled chicken with fresh vegetables',
-        image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=400&fit=crop',
-        price: 12.50,
-        isActive: true,
-        variants: [
-          { id: 'v1', name: 'Regular', price: 12.50 },
-          { id: 'v2', name: 'Large', price: 15.00 },
-        ],
-      },
-      {
-        id: '1-2',
-        name: 'Beef Wrap',
-        description: 'Tender beef strips with special sauce',
-        image: 'https://images.unsplash.com/photo-1624726175512-19b9baf9fbd1?w=400&h=400&fit=crop',
-        price: 14.00,
-        isActive: true,
-        variants: [],
-      },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Pizzas',
-    description: 'Authentic Italian pizzas',
-    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop',
-    isActive: true,
-    isExpanded: false,
-    guestCount: false,
-    items: [
-      {
-        id: '2-1',
-        name: 'Margherita Pizza',
-        description: 'Classic pizza with tomato sauce and mozzarella',
-        image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop',
-        price: 15.00,
-        isActive: true,
-        variants: [
-          { id: 'v3', name: 'Small', price: 12.00 },
-          { id: 'v4', name: 'Medium', price: 15.00 },
-          { id: 'v5', name: 'Large', price: 18.00 },
-        ],
-      },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Starters',
-    description: 'Perfect to begin your meal',
-    image: 'https://images.unsplash.com/photo-1758384077555-36242d3f2b4d?w=400&h=400&fit=crop',
-    isActive: true,
-    isExpanded: false,
-    guestCount: false,
-    items: [],
-  },
-  {
-    id: '4',
-    name: 'Desserts',
-    description: 'Sweet endings',
-    image: 'https://images.unsplash.com/photo-1705948731485-6e4c6c180d0d?w=400&h=400&fit=crop',
-    isActive: false,
-    isExpanded: false,
-    guestCount: false,
-    items: [
-      {
-        id: '4-1',
-        name: 'Tiramisu',
-        description: 'Classic Italian dessert',
-        image: 'https://images.unsplash.com/photo-1705948731485-6e4c6c180d0d?w=400&h=400&fit=crop',
-        price: 6.50,
-        isActive: true,
-        variants: [],
-      },
-    ],
-  },
-];
 
-const mockAddonGroups: AddonGroup[] = [
-  {
-    id: '1',
-    name: 'Deine Toppings',
-    minSelect: 0,
-    maxSelect: 3,
-    items: [],
-    isExpanded: false,
-    isRequired: false,
-  },
-  {
-    id: '2',
-    name: 'Deine Extras',
-    subtitle: 'Popular sides',
-    minSelect: 1,
-    maxSelect: 2,
-    items: [
-      { id: 'e1', name: 'French Fries', price: 3.50, isActive: true, dietaryType: 'veg' as const },
-      { id: 'e2', name: 'Sweet Potato Fries', price: 4.20, isActive: true, dietaryType: 'veg' as const },
-      { id: 'e3', name: 'Side Salad', price: 3.00, isActive: true, dietaryType: 'veg' as const },
-      { id: 'e4', name: 'Coleslaw', price: 2.80, isActive: true, dietaryType: 'veg' as const },
-    ],
-    isExpanded: false,
-    isRequired: true,
-  },
-  {
-    id: '3',
-    name: 'Dein 2. Topping',
-    minSelect: 0,
-    maxSelect: 1,
-    items: [
-      { id: 't1', name: 'Grilled Onions', price: 1.20, isActive: true, dietaryType: 'veg' as const },
-      { id: 't2', name: 'Mushrooms', price: 1.50, isActive: true, dietaryType: 'veg' as const },
-      { id: 't3', name: 'Pickles', price: 0.80, isActive: true, dietaryType: 'veg' as const },
-    ],
-    isExpanded: false,
-    isRequired: false,
-  },
-  {
-    id: '4',
-    name: 'Deine Beilage',
-    minSelect: 0,
-    maxSelect: 1,
-    items: [
-      { id: 'b1', name: 'Rice', price: 2.50, isActive: true, dietaryType: 'veg' as const },
-      { id: 'b2', name: 'Pasta', price: 3.00, isActive: true, dietaryType: 'veg' as const },
-      { id: 'b3', name: 'Roasted Vegetables', price: 3.50, isActive: true, dietaryType: 'veg' as const },
-    ],
-    isExpanded: false,
-    isRequired: false,
-  },
-];
 
 function SortableCategory({
   id,
@@ -422,15 +282,15 @@ export function MenuConfigPage({ user }: { user?: any }) {
           setCategories(mappedCategories);
           setAddonGroups(mappedAddons);
         } else {
-          // If API fails, use mock data
-          setCategories(mockCategories);
-          setAddonGroups(mockAddonGroups);
+          // Empty arrays on fetch failure
+          setCategories([]);
+          setAddonGroups([]);
         }
       } catch (error) {
         console.error('Error fetching menu data:', error);
-        // Fallback to mock data on error
-        setCategories(mockCategories);
-        setAddonGroups(mockAddonGroups);
+        // Empty arrays on error
+        setCategories([]);
+        setAddonGroups([]);
       } finally {
         setLoading(false);
       }
@@ -741,7 +601,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
 
             {/* Menu Items Tab */}
             {activeTab === 'items' && (
-              <div className="bg-card border border-border rounded-xl overflow-hidden">
+              <div className="bg-card border border-border rounded-xl">
                 {/* Search Bar with Add Button */}
                 <div className="p-4 border-b border-border">
                   <div className="flex items-center gap-3">
@@ -1629,7 +1489,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         }
                       }
                     }}
-                    disabled={!newCategory.name}
+                    disabled={!newCategory.name || newCategory.name.trim() === '' || newCategory.name.length > 100 || newCategory.description.length > 500}
                   >
                     {editingCategoryId ? 'Save Changes' : 'Add Category'}
                   </Button>
@@ -1643,6 +1503,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   </label>
                   <input
                     type="text"
+                    maxLength={100}
                     value={newCategory.name}
                     onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
                     placeholder="e.g., Appetizers, Main Courses"
@@ -1657,6 +1518,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   </label>
                   <textarea
                     value={newCategory.description}
+                    maxLength={500}
                     onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
                     placeholder="Brief description of this category"
                     rows={3}
@@ -1849,7 +1711,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                         }
                       }
                     }}
-                    disabled={!activeCategoryId || !newMenuItem.name || !newMenuItem.price}
+                    disabled={!activeCategoryId || !newMenuItem.name || !newMenuItem.price || newMenuItem.name.trim() === '' || newMenuItem.name.length > 100 || newMenuItem.description.length > 500}
                   >
                     {editingMenuItemId ? 'Save Changes' : 'Add Item'}
                   </Button>
@@ -1882,6 +1744,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   </label>
                   <input
                     type="text"
+                    maxLength={100}
                     value={newMenuItem.name}
                     onChange={(e) => setNewMenuItem({ ...newMenuItem, name: e.target.value })}
                     placeholder="e.g., Margherita Pizza"
@@ -1896,6 +1759,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   </label>
                   <textarea
                     value={newMenuItem.description}
+                    maxLength={500}
                     onChange={(e) => setNewMenuItem({ ...newMenuItem, description: e.target.value })}
                     placeholder="Describe this menu item"
                     rows={3}
@@ -2156,7 +2020,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       setEditingGroupId(null);
                       setNewGroup({ name: '', subtitle: '', type: 'optional', minSelect: 0, maxSelect: 1 });
                     }}
-                    disabled={!newGroup.name}
+                    disabled={!newGroup.name || newGroup.name.trim() === '' || newGroup.name.length > 100}
                   >
                     {editingGroupId ? 'Save Changes' : 'Add Group'}
                   </Button>
@@ -2171,6 +2035,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   </label>
                   <input
                     type="text"
+                    maxLength={100}
                     value={newGroup.name}
                     onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
                     placeholder="e.g., Size, Toppings, Extras"
@@ -2370,7 +2235,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                       setCurrentGroupId(null);
                       setNewAddonItem({ name: '', price: '', dietaryType: 'veg', isActive: true });
                     }}
-                    disabled={!newAddonItem.name || !newAddonItem.price}
+                    disabled={!newAddonItem.name || !newAddonItem.price || newAddonItem.name.trim() === '' || newAddonItem.name.length > 100}
                   >
                     {editingAddonItemId ? 'Save Changes' : 'Add Item'}
                   </Button>
@@ -2385,6 +2250,7 @@ export function MenuConfigPage({ user }: { user?: any }) {
                   </label>
                   <input
                     type="text"
+                    maxLength={100}
                     value={newAddonItem.name}
                     onChange={(e) => setNewAddonItem({ ...newAddonItem, name: e.target.value })}
                     placeholder="e.g., Extra Cheese"

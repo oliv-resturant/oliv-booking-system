@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { User, Mail, Phone, Shield, Camera, Lock, Check, X, Eye, EyeOff } from 'lucide-react';
-import { Modal } from './Modal';
+import { Modal } from '../user/Modal';
 import { Button } from '../user/Button';
 import { changePassword } from '@/lib/actions/auth';
 import type { Session } from '@/lib/auth';

@@ -32,7 +32,7 @@ export function ConfirmationModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-md relative">
           {/* Close button */}

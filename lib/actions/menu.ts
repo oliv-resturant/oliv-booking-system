@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { menuCategories, menuItems, menuItemDependencies, addons, addonGroups, addonItems, categoryAddonGroups } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { requireAuth, requirePermissionWrapper } from "@/lib/auth/rbac-middleware";
@@ -188,16 +188,17 @@ export async function deleteMenuItem(id: string) {
 
 export async function getMenuItems(categoryId?: string) {
   try {
-    let query = db
-      .select()
-      .from(menuItems)
-      .where(eq(menuItems.isActive, true));
+    const conditions = [eq(menuItems.isActive, true)];
 
     if (categoryId) {
-      query = query.where(eq(menuItems.categoryId, categoryId));
+      conditions.push(eq(menuItems.categoryId, categoryId));
     }
 
-    const items = await query.orderBy(asc(menuItems.sortOrder));
+    const items = await db
+      .select()
+      .from(menuItems)
+      .where(and(...conditions))
+      .orderBy(asc(menuItems.sortOrder));
 
     return { success: true, data: items };
   } catch (error) {
@@ -212,15 +213,11 @@ export async function getAllMenuItems(categoryId?: string) {
     // Require VIEW_MENU permission
     await requirePermissionWrapper(Permission.VIEW_MENU);
 
-    let query = db
+    const items = await db
       .select()
-      .from(menuItems);
-
-    if (categoryId) {
-      query = query.where(eq(menuItems.categoryId, categoryId));
-    }
-
-    const items = await query.orderBy(asc(menuItems.sortOrder));
+      .from(menuItems)
+      .where(categoryId ? eq(menuItems.categoryId, categoryId) : undefined)
+      .orderBy(asc(menuItems.sortOrder));
 
     return { success: true, data: items };
   } catch (error) {

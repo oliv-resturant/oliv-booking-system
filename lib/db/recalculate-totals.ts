@@ -15,12 +15,12 @@ async function recalculateBookingTotals() {
       FROM bookings
     `);
 
-    const bookingsData = 'rows' in allBookings ? allBookings.rows : allBookings;
+    const bookingsData = ('rows' in allBookings ? allBookings.rows : allBookings) as any[];
 
     let updatedCount = 0;
     let totalRevenue = 0;
 
-    for (const booking of bookingsData as any[]) {
+    for (const booking of bookingsData) {
       // Get booking items for this booking
       const itemsResult = await db.execute(sql`
         SELECT
