@@ -1241,7 +1241,7 @@ export function CustomMenuWizard() {
                               className="text-foreground font-semibold"
                               style={{ fontSize: "var(--text-h4)" }}
                             >
-                              Veranstaltungsort
+                              Adresse
                             </h4>
                             <p
                               className="text-muted-foreground text-sm"
