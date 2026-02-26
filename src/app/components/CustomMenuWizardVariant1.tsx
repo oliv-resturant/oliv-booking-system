@@ -1246,7 +1246,6 @@ export function CustomMenuWizard() {
                               style={{ fontSize: "var(--text-small)" }}
                             >
                               Wo wohnst du
-                              Wo wohnst du
                             </p>
                           </div>
                         </div>
