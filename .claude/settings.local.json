@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(npm install react-day-picker)",
+      "Bash(npm install @radix-ui/react-toggle-group)",
+      "Bash(npm install clsx)",
+      "Bash(npm install class-variance-authority)",
+      "Bash(npm install tailwind-merge)"
+    ]
+  }
+}
