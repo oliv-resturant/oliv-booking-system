@@ -1966,7 +1966,7 @@ export function CustomMenuWizard() {
                                   className={`px-2 py-0.5 rounded-full text-xs ${
                                     isActive
                                       ? "bg-secondary-foreground/20 text-secondary-foreground"
-                                      : "bg-primary/10 text-primary"
+                                      : "bg-green-100 text-green-700"
                                   }`}
                                 >
                                   {categoryItemCount}
@@ -2593,23 +2593,19 @@ Hinzufügen
                                               <div className="pt-1.5 border-t border-border">
                                                 <div className="flex flex-col gap-1">
                                                   <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-1.5">
-                                                      <span className="px-1.5 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
+                                                    {/* <div className="flex items-center gap-1.5"> */}
+                                                      {/* <span className="px-1.5 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
                                                         Verfügbar
-                                                      </span>
-                                                      <span className="text-muted-foreground text-xs">
+                                                      </span> */}
+                                                      {/* <span className="text-muted-foreground text-xs">
                                                         für Ihr Event
-                                                      </span>
-                                                      {quantity > 0 && (
-                                                        <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
-                                                          {quantity}×
-                                                        </span>
-                                                      )}
+                                                      </span> */}
+                                                      
                                                     </div>
-                                                    <span className="text-amber-600 dark:text-amber-400 text-xs">
+                                                    {/* <span className="text-amber-600 dark:text-amber-400 text-xs">
                                                       (nach Verbrauch berechnet)
-                                                    </span>
-                                                  </div>
+                                                    </span> */}
+                                                  {/* </div> */}
                                                   {itemVariants[itemId] &&
                                                     item.variants &&
                                                     (() => {
@@ -2644,7 +2640,7 @@ Hinzufügen
                                                       "Main Courses Veggie",
                                                     ].includes(item.category) ? (
                                                     <span
-                                                      className="px-1 py-0.5 bg-primary/10 text-primary rounded text-xs"
+                                                      className="px-1 py-0.5 bg-green-100 text-green-700 rounded text-xs"
                                                       style={{
                                                         fontSize:
                                                           "10px",
@@ -2660,7 +2656,7 @@ Hinzufügen
                                                   ) : item.pricingType ===
                                                     "per-person" ? (
                                                     <span
-                                                      className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs"
+                                                      className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs"
                                                       style={{
                                                         fontSize:
                                                           "var(--text-small)",
@@ -3143,9 +3139,12 @@ Hinzufügen
                                                   <span className="text-muted-foreground text-xs">
                                                     für Ihr Event
                                                   </span>
-                                                  {quantity > 0 && (
-                                                    <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
-                                                      {quantity}×
+                                                  {parseInt(eventDetails.guestCount) > 0 && (
+                                                    <span
+                                                      className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium"
+                                                      aria-label={`Anzahl Gäste: ${eventDetails.guestCount}`}
+                                                    >
+                                                      {eventDetails.guestCount}×
                                                     </span>
                                                   )}
                                                 </div>
@@ -3167,6 +3166,14 @@ Hinzufügen
                                                       <span className="text-muted-foreground text-xs">
                                                         Größe: {variant.name}
                                                       </span>
+                                                      {parseInt(eventDetails.guestCount) > 0 && (
+                                                        <span
+                                                          className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium"
+                                                          aria-label={`Anzahl Gäste: ${eventDetails.guestCount}`}
+                                                        >
+                                                          {eventDetails.guestCount}×
+                                                        </span>
+                                                      )}
                                                       <span className="text-foreground text-xs font-medium">
                                                         {includeBeveragePrices
                                                           ? `CHF ${variant.price.toFixed(2)}/Flasche`
@@ -3188,7 +3195,7 @@ Hinzufügen
                                                   "Main Courses Vegan",
                                                 ].includes(item.category) ? (
                                                 <span
-                                                  className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs"
+                                                  className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs"
                                                   style={{
                                                     fontSize:
                                                       "var(--text-small)",
@@ -3204,7 +3211,7 @@ Hinzufügen
                                               ) : item.pricingType ===
                                                 "per-person" ? (
                                                 <span
-                                                  className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs"
+                                                  className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs"
                                                   style={{
                                                     fontSize:
                                                       "var(--text-small)",
@@ -3463,7 +3470,6 @@ Hinzufügen
                             <button
                               onClick={() => {
                                 setCurrentStep(1);
-                                setActiveTab("contact");
                               }}
                               className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-lg hover:bg-muted transition-colors"
                               style={{
@@ -3574,7 +3580,6 @@ Hinzufügen
                             <button
                               onClick={() => {
                                 setCurrentStep(1);
-                                setActiveTab("address");
                               }}
                               className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-lg hover:bg-muted transition-colors"
                               style={{
@@ -3668,7 +3673,6 @@ Hinzufügen
                             <button
                               onClick={() => {
                                 setCurrentStep(1);
-                                setActiveTab("event");
                               }}
                               className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-lg hover:bg-muted transition-colors"
                               style={{
@@ -3801,7 +3805,6 @@ Hinzufügen
                             <button
                               onClick={() => {
                                 setCurrentStep(1);
-                                setActiveTab("requests");
                               }}
                               className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-lg hover:bg-muted transition-colors"
                               style={{
@@ -4053,7 +4056,7 @@ Hinzufügen
                                                   )}
                                                   {item.category === "Beverages" &&
                                                     item.pricingType === "flat-rate" && (
-                                                      <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
+                                                      <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
                                                         Menge: {quantity}
                                                       </span>
                                                     )}
