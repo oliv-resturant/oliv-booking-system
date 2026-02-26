@@ -3193,7 +3193,7 @@ export function CustomMenuWizard() {
                                                       "var(--font-weight-medium)",
                                                   }}
                                                 >
-                                                  {mainCourseGuests[item.category] || 0}g
+                                                  {mainCourseGuests[item.category] || 0} guest
                                                 </span>
                                               ) : item.pricingType ===
                                                 "per-person" ? (
