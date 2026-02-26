@@ -202,26 +202,20 @@ export function CustomMenuWizard() {
     }
   }, [mainCourseGuests]);
 
-  // Auto-fill main course guest distribution when guest count changes
+  // Initialize main course guest distribution when guest count changes
   useEffect(() => {
     const totalGuests = parseInt(eventDetails.guestCount) || 0;
 
+    // Initialize all counts to 0 (user can manually adjust)
+    setMainCourseGuests({
+      "Main Courses Meat/Fish": 0,
+      "Main Courses Veggie": 0,
+      "Main Courses Vegan": 0,
+    });
+
     if (totalGuests > 0) {
-      // Assign all guests to Meat/Fish by default
-      setMainCourseGuests({
-        "Main Courses Meat/Fish": totalGuests,
-        "Main Courses Veggie": 0,
-        "Main Courses Vegan": 0,
-      });
-      // Clear any errors
+      // Clear any errors when guest count is set
       setGuestCountErrors({});
-    } else {
-      // Reset to 0 if guest count is cleared
-      setMainCourseGuests({
-        "Main Courses Meat/Fish": 0,
-        "Main Courses Veggie": 0,
-        "Main Courses Vegan": 0,
-      });
     }
   }, [eventDetails.guestCount]);
 
