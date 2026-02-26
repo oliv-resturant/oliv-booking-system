@@ -15,6 +15,7 @@ export interface MenuItem {
   allergens?: string[];
   addOns?: { id: string; name: string; price: number }[];
   variants?: MenuItemVariant[];
+  includes?: { name: string; portion: string; price: number }[];
   dietaryType: 'vegetarian' | 'non-vegetarian' | 'vegan';
   pricingType: 'per-person' | 'flat-rate';
 }
@@ -345,6 +346,65 @@ export const menuItems: MenuItem[] = [
     pricingType: 'per-person'
   },
 
+  // Main Courses Meat/Fish - Combo Packs
+  {
+    id: 'mf_combo1',
+    name: 'Fleisch Combo Premium',
+    description: 'Premium Fleischselection mit verschiedenen Beilagen',
+    category: 'Main Courses Meat/Fish',
+    price: 42,
+    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+    allergens: ['Fish', 'Dairy', 'Gluten'],
+    includes: [
+      { name: 'Rindsfilet', portion: '200g', price: 12 },
+      { name: 'Gegrillter Lachs', portion: '180g', price: 10 },
+      { name: 'Hühnchenbrust', portion: '150g', price: 8 },
+      { name: 'Bratkartoffeln', portion: '200g', price: 4 },
+      { name: 'Gemüsebeilagen', portion: '150g', price: 3 },
+      { name: 'Saucen', portion: '3 Varianten', price: 2 }
+    ],
+    dietaryType: 'non-vegetarian',
+    pricingType: 'per-person'
+  },
+  {
+    id: 'mf_combo2',
+    name: 'Fisch Combo Deluxe',
+    description: 'Luxuriöse Meeresfrüchte-Platte',
+    category: 'Main Courses Meat/Fish',
+    price: 45,
+    image: 'https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+    allergens: ['Fish', 'Shellfish'],
+    includes: [
+      { name: 'Seebarsch', portion: '250g', price: 14 },
+      { name: 'Riesengarnelen', portion: '6 Stück', price: 10 },
+      { name: 'Lachslachs', portion: '200g', price: 8 },
+      { name: 'Meeresfrüchte-Mix', portion: '150g', price: 6 },
+      { name: 'Zitronen-Butter', portion: '50g', price: 2 },
+      { name: 'Kräuter-Kartoffeln', portion: '200g', price: 4 }
+    ],
+    dietaryType: 'non-vegetarian',
+    pricingType: 'per-person'
+  },
+  {
+    id: 'mf_combo3',
+    name: 'Grill Combo Feast',
+    description: 'Klassische Grill-Platte für Fleischliebhaber',
+    category: 'Main Courses Meat/Fish',
+    price: 38,
+    image: 'https://images.unsplash.com/photo-1558030006-450675393462?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+    allergens: ['Gluten', 'Dairy'],
+    includes: [
+      { name: 'Rippchen', portion: '300g', price: 10 },
+      { name: 'Gourmet Burger', portion: '1 Stück', price: 8 },
+      { name: 'Hähnchenflügel', portion: '4 Stück', price: 6 },
+      { name: 'Pommes Frites', portion: '200g', price: 3 },
+      { name: 'Coleslaw', portion: '100g', price: 2 },
+      { name: 'BBQ-Saucen', portion: '2 Varianten', price: 1 }
+    ],
+    dietaryType: 'non-vegetarian',
+    pricingType: 'per-person'
+  },
+
   // Main Courses Veggie
   { 
     id: '16', 
@@ -386,44 +446,65 @@ export const menuItems: MenuItem[] = [
     pricingType: 'per-person'
   },
 
-  // Main Courses Vegan
-  { 
-    id: 'vg1', 
-    name: 'Buddha Bowl', 
-    description: 'Quinoa, roasted vegetables, tahini dressing', 
-    category: 'Main Courses Vegan', 
-    price: 17,
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
-    allergens: ['Sesame'],
-    addOns: [
-      { id: 'ao33', name: 'Avocado', price: 3 }
+  // Main Courses Veggie - Combo Packs
+  {
+    id: 'veg_combo1',
+    name: 'Veggie Combo Deluxe',
+    description: 'Hochwertige vegetarische Auswahl',
+    category: 'Main Courses Veggie',
+    price: 38,
+    image: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+    allergens: ['Dairy', 'Gluten'],
+    includes: [
+      { name: 'Gemüse-Risotto', portion: '200g', price: 8 },
+      { name: 'Pilz-Wellington', portion: '180g', price: 9 },
+      { name: 'Auberginen-Parmesan', portion: '150g', price: 7 },
+      { name: 'Grünes Salat', portion: '100g', price: 3 },
+      { name: 'Gegrilltes Gemüse', portion: '150g', price: 4 },
+      { name: 'Pesto-Dressing', portion: '2 Varianten', price: 2 }
     ],
-    dietaryType: 'vegan',
+    dietaryType: 'vegetarian',
     pricingType: 'per-person'
   },
-  { 
-    id: 'vg2', 
-    name: 'Stuffed Bell Peppers', 
-    description: 'Peppers filled with rice, vegetables and herbs', 
-    category: 'Main Courses Vegan', 
-    price: 16,
-    image: 'https://images.unsplash.com/photo-1609501676725-7186f017a4b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
-    allergens: [],
-    dietaryType: 'vegan',
+  {
+    id: 'veg_combo2',
+    name: 'Pilz-Gemüse Combo',
+    description: 'Pilz- und Gemüse-Vielfalt',
+    category: 'Main Courses Veggie',
+    price: 35,
+    image: 'https://images.unsplash.com/photo-1511690656952-34342bb9b94c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+    allergens: ['Gluten'],
+    includes: [
+      { name: 'Champignon-Pfanne', portion: '200g', price: 7 },
+      { name: 'Gegrilltes Gemüse', portion: '180g', price: 5 },
+      { name: 'Ofengemüse', portion: '150g', price: 4 },
+      { name: 'Gemüse-Salat', portion: '120g', price: 3 },
+      { name: 'Kräuter-Dip', portion: '80g', price: 2 },
+      { name: 'Knoblauch-Brot', portion: '2 Scheiben', price: 2 }
+    ],
+    dietaryType: 'vegetarian',
     pricingType: 'per-person'
   },
-  { 
-    id: 'vg3', 
-    name: 'Cauliflower Steak', 
-    description: 'Roasted cauliflower with chimichurri sauce', 
-    category: 'Main Courses Vegan', 
-    price: 18,
-    image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
-    allergens: [],
-    dietaryType: 'vegan',
+  {
+    id: 'veg_combo3',
+    name: 'Vegetarische Grillplatte',
+    description: 'Gegrillte vegetarische Köstlichkeiten',
+    category: 'Main Courses Veggie',
+    price: 32,
+    image: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+    allergens: ['Dairy', 'Gluten'],
+    includes: [
+      { name: 'Gegrilltes Gemüse', portion: '200g', price: 5 },
+      { name: 'Halloumi', portion: '120g', price: 6 },
+      { name: 'Veggie-Burger', portion: '2 Stück', price: 8 },
+      { name: 'Gebratene Kartoffeln', portion: '180g', price: 4 },
+      { name: 'Hummus', portion: '80g', price: 2 },
+      { name: 'Guacamole', portion: '60g', price: 2 }
+    ],
+    dietaryType: 'vegetarian',
     pricingType: 'per-person'
   },
-  
+
   // Desserts
   { 
     id: '21', 
@@ -765,7 +846,6 @@ export const categories = [
   'Intermediate Course',
   'Main Courses Meat/Fish',
   'Main Courses Veggie',
-  'Main Courses Vegan',
   'Desserts',
   'Beverages',
   'Technology',

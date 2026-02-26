@@ -114,13 +114,15 @@ export function CustomMenuWizard() {
   >("total"); // Step 3 summary view mode - default to "total+extra"
   const [includeBeveragePrices, setIncludeBeveragePrices] = useState(false); // Toggle to include/exclude beverage prices from total
 
+  // Track active tab for main courses (combo pack vs single items)
+  const [mainCourseTab, setMainCourseTab] = useState<"combo" | "single">("combo");
+
   // Track guest distribution per main course category
   const [mainCourseGuests, setMainCourseGuests] = useState<
     Record<string, number>
   >({
     "Main Courses Meat/Fish": 0,
     "Main Courses Veggie": 0,
-    "Main Courses Vegan": 0,
   });
   const [guestCountErrors, setGuestCountErrors] = useState<
     Record<string, string>
@@ -137,7 +139,6 @@ export function CustomMenuWizard() {
       "Intermediate Course",
       "Main Courses Meat/Fish",
       "Main Courses Veggie",
-      "Main Courses Vegan",
       "Desserts",
       "Beverages",
       "Technology",
@@ -536,7 +537,6 @@ export function CustomMenuWizard() {
     if ([
       "Main Courses Meat/Fish",
       "Main Courses Veggie",
-      "Main Courses Vegan",
     ].includes(item.category)) {
       setTempGuestCount(String(mainCourseGuests[item.category] || 0));
     } else {
@@ -651,7 +651,6 @@ export function CustomMenuWizard() {
     if ([
       "Main Courses Meat/Fish",
       "Main Courses Veggie",
-      "Main Courses Vegan",
     ].includes(item.category)) {
       const categoryGuestCount = mainCourseGuests[item.category] || 0;
       return itemTotal * categoryGuestCount;
@@ -1241,13 +1240,12 @@ export function CustomMenuWizard() {
                               className="text-foreground font-semibold"
                               style={{ fontSize: "var(--text-h4)" }}
                             >
-                              Veranstaltungsort
-                            </h4>
+                              Adresse                            </h4>
                             <p
                               className="text-muted-foreground text-sm"
                               style={{ fontSize: "var(--text-small)" }}
                             >
-                              Wo sollen wir liefern?
+                              Wo wohnst du
                             </p>
                           </div>
                         </div>
@@ -2079,140 +2077,120 @@ export function CustomMenuWizard() {
                         {[
                           "Main Courses Meat/Fish",
                           "Main Courses Veggie",
-                          "Main Courses Vegan",
                         ].includes(selectedCategory) && (
-                          <div className="mb-5 bg-secondary border-l-4 border-primary rounded-lg px-4 py-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <Users className="w-4 h-4 text-primary flex-shrink-0" />
+                          <div className="mb-3 bg-secondary border-l-4 border-primary rounded-lg px-3 py-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <Users className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                                 <p
                                   className="text-secondary-foreground"
                                   style={{
-                                    fontSize: "var(--text-base)",
-                                    fontWeight:
-                                      "var(--font-weight-semibold)",
+                                    fontSize: "var(--text-small)",
+                                    fontWeight: "var(--font-weight-semibold)",
                                   }}
                                 >
-                                  Main Courses - Guest Distribution
+                                  Distribution
                                 </p>
+                              </div>
+                              <div className="flex items-center gap-3 flex-1 justify-end">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-secondary-foreground/70 text-xs">🥩</span>
+                                  <span
+                                    className="text-secondary-foreground text-xs"
+                                  >
+                                    Meat/Fish:
+                                  </span>
+                                  <span
+                                    className="text-primary font-semibold"
+                                    style={{ fontSize: "var(--text-base)" }}
+                                  >
+                                    {mainCourseGuests["Main Courses Meat/Fish"] || 0}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-secondary-foreground/70 text-xs">🥬</span>
+                                  <span
+                                    className="text-secondary-foreground text-xs"
+                                  >
+                                    Veggie:
+                                  </span>
+                                  <span
+                                    className="text-primary font-semibold"
+                                    style={{ fontSize: "var(--text-base)" }}
+                                  >
+                                    {mainCourseGuests["Main Courses Veggie"] || 0}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs">
+                                  <span className="text-secondary-foreground/70">
+                                    {Object.values(mainCourseGuests).reduce((a, b) => a + b, 0)}/{eventDetails.guestCount || 0}
+                                  </span>
+                                </div>
+                                {Object.values(mainCourseGuests).reduce((a, b) => a + b, 0) !== parseInt(eventDetails.guestCount || "0") && (
+                                  <div className="flex items-center gap-1 text-amber-400">
+                                    <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                                    <span className="text-xs">Alle Gäste zuweisen</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-3 mt-3">
-                              <div className="text-center">
-                                <p
-                                  className="text-secondary-foreground/70 mb-1"
-                                  style={{
-                                    fontSize: "var(--text-small)",
-                                  }}
-                                >
-                                  🥩 Meat/Fish
-                                </p>
-                                <p
-                                  className="text-primary"
-                                  style={{
-                                    fontSize: "var(--text-h4)",
-                                    fontWeight:
-                                      "var(--font-weight-semibold)",
-                                  }}
-                                >
-                                  {mainCourseGuests["Main Courses Meat/Fish"] ||
-                                    0}
-                                </p>
-                              </div>
-                              <div className="text-center">
-                                <p
-                                  className="text-secondary-foreground/70 mb-1"
-                                  style={{
-                                    fontSize: "var(--text-small)",
-                                  }}
-                                >
-                                  🥬 Vegetarian
-                                </p>
-                                <p
-                                  className="text-primary"
-                                  style={{
-                                    fontSize: "var(--text-h4)",
-                                    fontWeight:
-                                      "var(--font-weight-semibold)",
-                                  }}
-                                >
-                                  {mainCourseGuests["Main Courses Veggie"] ||
-                                    0}
-                                </p>
-                              </div>
-                              <div className="text-center">
-                                <p
-                                  className="text-secondary-foreground/70 mb-1"
-                                  style={{
-                                    fontSize: "var(--text-small)",
-                                  }}
-                                >
-                                  🥕 Vegan
-                                </p>
-                                <p
-                                  className="text-primary"
-                                  style={{
-                                    fontSize: "var(--text-h4)",
-                                    fontWeight:
-                                      "var(--font-weight-semibold)",
-                                  }}
-                                >
-                                  {mainCourseGuests["Main Courses Vegan"] ||
-                                    0}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="mt-3 pt-3 border-t border-secondary-foreground/20 flex items-center justify-between">
-                              <span
-                                className="text-secondary-foreground/70"
-                                style={{ fontSize: "var(--text-small)" }}
+                          </div>
+                        )}
+
+                        {/* Main Course Tabs - Combo Pack / Single Items */}
+                        {[
+                          "Main Courses Meat/Fish",
+                          "Main Courses Veggie",
+                        ].includes(selectedCategory) && (
+                          <div className="mb-4">
+                            <div className="flex items-center gap-2 bg-card rounded-lg p-1 border border-border">
+                              <button
+                                onClick={() => setMainCourseTab("combo")}
+                                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                  mainCourseTab === "combo"
+                                    ? "bg-primary text-primary-foreground"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                }`}
                               >
-                                Total Assigned:{" "}
-                                <span
-                                  className="text-secondary-foreground font-semibold"
-                                >
-                                  {Object.values(mainCourseGuests).reduce(
-                                    (a, b) => a + b,
-                                    0,
-                                  )}
-                                </span>
-                              </span>
-                              <span
-                                className="text-secondary-foreground/70"
-                                style={{ fontSize: "var(--text-small)" }}
+                                Combo Pack
+                              </button>
+                              <button
+                                onClick={() => setMainCourseTab("single")}
+                                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                  mainCourseTab === "single"
+                                    ? "bg-primary text-primary-foreground"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                }`}
                               >
-                                Total Guests:{" "}
-                                <span
-                                  className="text-secondary-foreground font-semibold"
-                                >
-                                  {eventDetails.guestCount || 0}
-                                </span>
-                              </span>
+                                Einzelne Artikel
+                              </button>
                             </div>
-                            {Object.values(mainCourseGuests).reduce(
-                              (a, b) => a + b,
-                              0,
-                            ) !==
-                              parseInt(eventDetails.guestCount || "0") && (
-                              <div className="mt-2 flex items-center gap-1.5 text-amber-400">
-                                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                                <span
-                                  style={{ fontSize: "var(--text-small)" }}
-                                >
-                                  Bitte alle{" "}
-                                  {eventDetails.guestCount || 0} Gäste zuweisen
-                                </span>
-                              </div>
-                            )}
                           </div>
                         )}
 
                         {/* Menu Items Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {menuItems
-                            .filter(
-                              (item) => item.category === selectedCategory,
-                            )
+                            .filter((item) => {
+                              // Filter by category
+                              if (item.category !== selectedCategory) return false;
+
+                              // Filter by tab for main courses
+                              if ([
+                                "Main Courses Meat/Fish",
+                                "Main Courses Veggie",
+                              ].includes(selectedCategory)) {
+                                if (mainCourseTab === "combo") {
+                                  // Combo packs: items priced above 30 CHF
+                                  return item.price > 30;
+                                } else if (mainCourseTab === "single") {
+                                  // Single items: items priced 30 CHF or below
+                                  return item.price <= 30;
+                                }
+                                // "all" shows everything
+                              }
+                              return true;
+                            })
                             .map((item) => {
                               const isSelected = selectedItems.includes(
                                 item.id,
@@ -2278,11 +2256,13 @@ export function CustomMenuWizard() {
                                       </div>
                                     </div>
                                     <p
-                                      className="text-muted-foreground mb-3 flex-1"
+                                      className="text-muted-foreground mb-2 flex-1"
                                       style={{ fontSize: "var(--text-small)" }}
                                     >
                                       {item.description}
                                     </p>
+
+
                                     <div className="flex items-center justify-between mb-3">
                                       <div className="flex flex-col gap-0.5">
                                         <p
@@ -2662,13 +2642,12 @@ export function CustomMenuWizard() {
                                                     "per-person" && [
                                                       "Main Courses Meat/Fish",
                                                       "Main Courses Veggie",
-                                                      "Main Courses Vegan",
                                                     ].includes(item.category) ? (
                                                     <span
-                                                      className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs"
+                                                      className="px-1 py-0.5 bg-primary/10 text-primary rounded text-xs"
                                                       style={{
                                                         fontSize:
-                                                          "var(--text-small)",
+                                                          "10px",
                                                         fontWeight:
                                                           "var(--font-weight-medium)",
                                                       }}
@@ -3959,7 +3938,7 @@ export function CustomMenuWizard() {
                                         >
                                           {category}
                                         </h5>
-                                        <span className="px-2 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">
+                                        <span className="px-1.5 py-0.5 bg-muted rounded-full text-xs text-muted-foreground text-[10px]">
                                           {categoryItems.length}
                                         </span>
                                       </div>
@@ -5152,6 +5131,69 @@ export function CustomMenuWizard() {
                   </p>
                 </div>
 
+                {/* Combo Pack - Show Included Items */}
+                {detailsModalItem.includes && detailsModalItem.includes.length > 0 && (
+                  <div className="mb-6">
+                    <h4
+                      className="text-foreground mb-3"
+                      style={{
+                        fontSize: "var(--text-base)",
+                        fontWeight: "var(--font-weight-semibold)",
+                      }}
+                    >
+                      Combo enthält {detailsModalItem.includes.length} Artikel
+                    </h4>
+                    <div className="space-y-3">
+                      {detailsModalItem.includes.map((includedItem, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 rounded-lg border-2 border-primary bg-primary/5"
+                          style={{ borderRadius: "var(--radius)" }}
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="relative flex items-center justify-center">
+                              <svg
+                                className="w-5 h-5 text-primary"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={3}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            </div>
+                            <div className="flex-1">
+                              <span
+                                className="text-foreground"
+                                style={{
+                                  fontSize: "var(--text-base)",
+                                  fontWeight: "var(--font-weight-medium)",
+                                }}
+                              >
+                                {includedItem.name}
+                              </span>
+                            </div>
+                          </div>
+                          <span
+                            className="text-primary ml-3"
+                            style={{
+                              fontSize: "var(--text-base)",
+                              fontWeight: "var(--font-weight-semibold)",
+                            }}
+                          >
+                            CHF {includedItem.price.toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Pricing Information - For consumption-based beverages */}
                 {detailsModalItem.category === "Beverages" &&
                   detailsModalItem.pricingType === "flat-rate" && (
@@ -5423,7 +5465,6 @@ export function CustomMenuWizard() {
                     {[
                       "Main Courses Meat/Fish",
                       "Main Courses Veggie",
-                      "Main Courses Vegan",
                     ].includes(detailsModalItem.category) && (
                       <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                         <span className="text-muted-foreground text-xs sm:text-sm whitespace-nowrap">Gäste:</span>
