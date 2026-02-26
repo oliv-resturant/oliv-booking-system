@@ -849,7 +849,7 @@ export function CustomMenuWizard() {
                   fontWeight: "var(--font-weight-medium)",
                 }}
               >
-                Step {currentStep}/3
+                Schritt {currentStep}/3
               </p>
               <h2
                 className="text-primary-foreground text-right"
@@ -2054,19 +2054,19 @@ export function CustomMenuWizard() {
                                     fontWeight: "var(--font-weight-semibold)",
                                   }}
                                 >
-                                  Smart Selection Enabled
+                                  Intelligente Auswahl aktiviert
                                 </p>
                                 <p
                                   className="text-muted-foreground mt-1"
                                   style={{ fontSize: "var(--text-small)" }}
                                 >
-                                  Selecting{" "}
+                                  Die Auswahl von{" "}
                                   {selectedCategory === "Main Courses Veggie"
-                                    ? "vegetarian"
-                                    : "vegan"}{" "}
-                                  mains will automatically reduce your Meat/Fish
-                                  selections to maintain the correct guest
-                                  count.
+                                    ? "vegetarischen"
+                                    : "veganen"}{" "}
+                                  Hauptgerichten reduziert automatisch Ihre Fleisch/Fisch-
+                                  Auswahlen, um die korrekte Gäste-
+                                  anzahl zu erhalten.
                                 </p>
                               </div>
                             </div>
@@ -2244,12 +2244,12 @@ export function CustomMenuWizard() {
                                           >
                                             {item.name}
                                           </h5>
-                                          {/* Pay by consumption badge for flat-rate beverages */}
+                                          {/* Nach Verbrauch bezahlen badge for flat-rate beverages */}
                                           {item.category === "Beverages" &&
                                             item.pricingType ===
                                               "flat-rate" && (
                                               <span className="px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded text-xs font-medium">
-                                                Pay by consumption
+                                                Nach Verbrauch bezahlen
                                               </span>
                                             )}
                                         </div>
@@ -2275,7 +2275,7 @@ export function CustomMenuWizard() {
                                         >
                                           {item.category === "Beverages" &&
                                           item.pricingType === "flat-rate"
-                                            ? `CHF ${item.price.toFixed(2)}/bottle`
+                                            ? `CHF ${item.price.toFixed(2)}/Flasche`
                                             : (item.variants &&
                                               item.variants.length > 0
                                                 ? "From "
@@ -2290,7 +2290,7 @@ export function CustomMenuWizard() {
                                         >
                                           {item.category === "Beverages" &&
                                           item.pricingType === "flat-rate"
-                                            ? "billed by consumption"
+                                            ? "nach Verbrauch berechnet"
                                             : item.pricingType === "per-person"
                                               ? "pro Person"
                                               : ""}
@@ -2310,7 +2310,7 @@ export function CustomMenuWizard() {
                                         }}
                                       >
                                         <Plus className="w-4 h-4" />
-                                        Add
+Hinzufügen
                                       </button>
                                     ) : (
                                       <div className="flex items-center gap-2">
@@ -2369,7 +2369,7 @@ export function CustomMenuWizard() {
                                     fontWeight: "var(--font-weight-semibold)",
                                   }}
                                 >
-                                  Your Menu
+                                  Ihr Menü
                                 </h4>
                                 {selectedItems.length > 0 && (
                                   <span
@@ -2448,11 +2448,11 @@ export function CustomMenuWizard() {
                                     className="text-muted-foreground"
                                     style={{ fontSize: "var(--text-small)" }}
                                   >
-                                    Per-person items calculated for{" "}
+                                    Pro Person berechnete Artikel für{" "}
                                     {eventDetails.guestCount || "0"}{" "}
                                     {parseInt(eventDetails.guestCount) === 1
-                                      ? "guest"
-                                      : "guests"}
+                                      ? "Gast"
+                                      : "Gäste"}
                                   </p>
                                 </div>
 
@@ -2469,7 +2469,7 @@ export function CustomMenuWizard() {
                                       className="text-muted-foreground mt-1"
                                       style={{ fontSize: "var(--text-small)" }}
                                     >
-                                      Browse categories and add dishes
+                                      Durchsuchen Sie Kategorien und fügen Sie Gerichte hinzu
                                     </p>
                                   </div>
                                 ) : (
@@ -2507,11 +2507,11 @@ export function CustomMenuWizard() {
                                                   >
                                                     {item.name}
                                                   </p>
-                                                  {/* Pay by consumption badge for beverages */}
+                                                  {/* Nach Verbrauch bezahlen badge for beverages */}
                                                   {item.category ===
                                                     "Beverages" && (
                                                     <span className="px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded text-xs font-medium">
-                                                      Pay by consumption
+                                                      Nach Verbrauch bezahlen
                                                     </span>
                                                   )}
                                                 </div>
@@ -2595,10 +2595,10 @@ export function CustomMenuWizard() {
                                                   <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-1.5">
                                                       <span className="px-1.5 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
-                                                        Available
+                                                        Verfügbar
                                                       </span>
                                                       <span className="text-muted-foreground text-xs">
-                                                        for your event
+                                                        für Ihr Event
                                                       </span>
                                                       {quantity > 0 && (
                                                         <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
@@ -2607,7 +2607,7 @@ export function CustomMenuWizard() {
                                                       )}
                                                     </div>
                                                     <span className="text-amber-600 dark:text-amber-400 text-xs">
-                                                      (billed by consumption)
+                                                      (nach Verbrauch berechnet)
                                                     </span>
                                                   </div>
                                                   {itemVariants[itemId] &&
@@ -2622,12 +2622,12 @@ export function CustomMenuWizard() {
                                                       return variant ? (
                                                         <div className="flex items-center justify-between">
                                                           <span className="text-muted-foreground text-xs">
-                                                            Size: {variant.name}
+                                                            Größe: {variant.name}
                                                           </span>
                                                           <span className="text-foreground text-xs font-medium">
                                                             {includeBeveragePrices
-                                                              ? `CHF ${variant.price.toFixed(2)}/bottle`
-                                                              : "Price on consumption"}
+                                                              ? `CHF ${variant.price.toFixed(2)}/Flasche`
+                                                              : "Preis nach Verbrauch"}
                                                           </span>
                                                         </div>
                                                       ) : null;
@@ -2652,7 +2652,10 @@ export function CustomMenuWizard() {
                                                           "var(--font-weight-medium)",
                                                       }}
                                                     >
-                                                      {mainCourseGuests[item.category] || 0}g
+                                                      {mainCourseGuests[item.category] || 0}{" "}
+                                                      {mainCourseGuests[item.category] === 1
+                                                        ? "Gast"
+                                                        : "Gäste"}
                                                     </span>
                                                   ) : item.pricingType ===
                                                     "per-person" ? (
@@ -2665,7 +2668,7 @@ export function CustomMenuWizard() {
                                                           "var(--font-weight-medium)",
                                                       }}
                                                     >
-                                                      {quantity}× pp
+                                                      {quantity}× p.P.
                                                     </span>
                                                   ) : null}
                                                   {item.pricingType ===
@@ -2758,7 +2761,7 @@ export function CustomMenuWizard() {
                                             fontSize: "var(--text-small)",
                                           }}
                                         >
-                                          Additional items
+  Zusätzliche Artikel
                                         </p>
                                         <p
                                           className="text-foreground"
@@ -2831,8 +2834,8 @@ export function CustomMenuWizard() {
                                                 fontSize: "var(--text-small)",
                                               }}
                                             >
-                                              Continue to next step to see your
-                                              full order breakdown
+                                              Weiter zum nächsten Schritt um Ihre vollständige
+                                              Bestellaufstellung zu sehen
                                             </p>
                                           </div>
                                         </div>
@@ -2965,7 +2968,7 @@ export function CustomMenuWizard() {
                                   fontWeight: "var(--font-weight-semibold)",
                                 }}
                               >
-                                Your Menu
+                                Ihr Menü
                               </h4>
                               {selectedItems.length > 0 && (
                                 <span
@@ -2995,11 +2998,11 @@ export function CustomMenuWizard() {
                                 className="text-muted-foreground"
                                 style={{ fontSize: "var(--text-small)" }}
                               >
-                                Per-person items calculated for{" "}
+                                Pro Person berechnete Artikel für{" "}
                                 {eventDetails.guestCount || "0"}{" "}
                                 {parseInt(eventDetails.guestCount) === 1
-                                  ? "guest"
-                                  : "guests"}
+                                  ? "Gast"
+                                  : "Gäste"}
                               </p>
                             </div>
 
@@ -3010,13 +3013,13 @@ export function CustomMenuWizard() {
                                   className="text-muted-foreground"
                                   style={{ fontSize: "var(--text-small)" }}
                                 >
-                                  No items selected yet
+                                  Noch keine Artikel ausgewählt
                                 </p>
                                 <p
                                   className="text-muted-foreground mt-1"
                                   style={{ fontSize: "var(--text-small)" }}
                                 >
-                                  Browse categories and add dishes
+                                  Durchsuchen Sie Kategorien und fügen Sie Gerichte hinzu
                                 </p>
                               </div>
                             ) : (
@@ -3053,11 +3056,11 @@ export function CustomMenuWizard() {
                                               >
                                                 {item.name}
                                               </p>
-                                              {/* Pay by consumption badge for beverages */}
+                                              {/* Nach Verbrauch bezahlen badge for beverages */}
                                               {item.category ===
                                                 "Beverages" && (
                                                 <span className="px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded text-xs font-medium">
-                                                  Pay by consumption
+                                                  Nach Verbrauch bezahlen
                                                 </span>
                                               )}
                                             </div>
@@ -3135,10 +3138,10 @@ export function CustomMenuWizard() {
                                               <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-1.5">
                                                   <span className="px-1.5 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded text-xs font-medium">
-                                                    Available
+                                                    Verfügbar
                                                   </span>
                                                   <span className="text-muted-foreground text-xs">
-                                                    for your event
+                                                    für Ihr Event
                                                   </span>
                                                   {quantity > 0 && (
                                                     <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
@@ -3147,7 +3150,7 @@ export function CustomMenuWizard() {
                                                   )}
                                                 </div>
                                                 <span className="text-amber-600 dark:text-amber-400 text-xs">
-                                                  (billed by consumption)
+                                                  (nach Verbrauch berechnet)
                                                 </span>
                                               </div>
                                               {itemVariants[itemId] &&
@@ -3162,12 +3165,12 @@ export function CustomMenuWizard() {
                                                   return variant ? (
                                                     <div className="flex items-center justify-between">
                                                       <span className="text-muted-foreground text-xs">
-                                                        Size: {variant.name}
+                                                        Größe: {variant.name}
                                                       </span>
                                                       <span className="text-foreground text-xs font-medium">
                                                         {includeBeveragePrices
-                                                          ? `CHF ${variant.price.toFixed(2)}/bottle`
-                                                          : "Price on consumption"}
+                                                          ? `CHF ${variant.price.toFixed(2)}/Flasche`
+                                                          : "Preis nach Verbrauch"}
                                                       </span>
                                                     </div>
                                                   ) : null;
@@ -3193,7 +3196,10 @@ export function CustomMenuWizard() {
                                                       "var(--font-weight-medium)",
                                                   }}
                                                 >
-                                                  {mainCourseGuests[item.category] || 0} guest
+                                                  {mainCourseGuests[item.category] || 0}{" "}
+                                                  {mainCourseGuests[item.category] === 1
+                                                    ? "Gast"
+                                                    : "Gäste"}
                                                 </span>
                                               ) : item.pricingType ===
                                                 "per-person" ? (
@@ -3206,7 +3212,7 @@ export function CustomMenuWizard() {
                                                       "var(--font-weight-medium)",
                                                   }}
                                                 >
-                                                  {quantity}× pp
+                                                  {quantity}× p.P.
                                                 </span>
                                               ) : null}
                                               {item.pricingType ===
@@ -3384,8 +3390,8 @@ export function CustomMenuWizard() {
                                             fontSize: "var(--text-small)",
                                           }}
                                         >
-                                          Continue to next step to see your full
-                                          order breakdown
+                                          Weiter zum nächsten Schritt um Ihre vollständige
+                                          Bestellaufstellung zu sehen
                                         </p>
                                       </div>
                                     </div>
@@ -3562,7 +3568,7 @@ export function CustomMenuWizard() {
                                   fontWeight: "var(--font-weight-semibold)",
                                 }}
                               >
-                                Address
+                                Adresse
                               </h4>
                             </div>
                             <button
@@ -3859,7 +3865,7 @@ export function CustomMenuWizard() {
                             }}
                           >
                             <Edit2 className="w-3.5 h-3.5" />
-                            Edit
+                            Bearbeiten
                           </button>
                         </div>
 
@@ -3986,13 +3992,13 @@ export function CustomMenuWizard() {
                                                   <h6 className="text-foreground font-medium text-sm">
                                                     {item.name}
                                                   </h6>
-                                                  {/* Pay by consumption badge for beverages */}
+                                                  {/* Nach Verbrauch bezahlen badge for beverages */}
                                                   {item.category ===
                                                     "Beverages" &&
                                                     item.pricingType ===
                                                       "flat-rate" && (
                                                       <span className="px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded text-xs font-medium">
-                                                        Pay by consumption
+                                                        Nach Verbrauch bezahlen
                                                       </span>
                                                     )}
                                                 </div>
@@ -4022,7 +4028,7 @@ export function CustomMenuWizard() {
                                                     itemAddOns[itemId].length >
                                                       0 && (
                                                       <span>
-                                                        Add-ons:{" "}
+                Hinzufügen-ons:{" "}
                                                         {itemAddOns[itemId]
                                                           .map((addOnId) => {
                                                             const addOn =
@@ -4068,7 +4074,7 @@ export function CustomMenuWizard() {
                                                         const price = variant ? variant.price : item.price;
                                                         return includeBeveragePrices
                                                           ? `CHF ${price.toFixed(2)}/unit`
-                                                          : "Price on consumption";
+                                                          : "Preis nach Verbrauch";
                                                       })()
                                                     : `CHF ${getItemPerPersonPrice(item).toFixed(2)}${item.pricingType === "per-person" ? "" : ""}`}
                                                   {item.pricingType ===
@@ -4085,7 +4091,7 @@ export function CustomMenuWizard() {
                                                     "Beverages" &&
                                                   item.pricingType ===
                                                     "flat-rate"
-                                                    ? `billed by consumption • ${quantity}×`
+                                                    ? `nach Verbrauch berechnet • ${quantity}×`
                                                     : item.pricingType ===
                                                         "per-person"
                                                       ? [
@@ -4188,7 +4194,7 @@ export function CustomMenuWizard() {
                                 className="text-muted-foreground mb-2"
                                 style={{ fontSize: "var(--text-small)" }}
                               >
-                                🍖 Meat/Fish Selections
+                                🍖 Fleisch/Fisch Auswahlen
                               </p>
                               <p
                                 className="text-primary mb-1"
@@ -4245,7 +4251,7 @@ export function CustomMenuWizard() {
                                 className="text-muted-foreground mb-2"
                                 style={{ fontSize: "var(--text-small)" }}
                               >
-                                🥗 Veggie/Vegan Selections
+                                🥗 Vegetarisch/Vegan Auswahlen
                               </p>
                               <p
                                 className="text-primary mb-1"
@@ -4665,7 +4671,7 @@ export function CustomMenuWizard() {
                                       <p className="text-muted-foreground text-xs mt-0.5">
                                         {!includeBeveragePrices
                                           ? "Preise werden angezeigt, aber nicht in der Gesamtsumme enthalten"
-                                          : "Pay by consumption • not included in per-person pricing"}
+                                          : "Nach Verbrauch bezahlen • nicht in der Preisberechnung pro Person enthalten"}
                                       </p>
                                     </div>
                                     <div className="p-4 space-y-1">
