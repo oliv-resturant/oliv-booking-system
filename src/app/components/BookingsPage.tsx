@@ -2,7 +2,6 @@ import { useState, useRef } from 'react';
 import { Mail, MapPin, MessageSquare, Download, Search, X, User, CalendarDays, Edit, UtensilsCrossed, Send } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { Button } from './Button';
-import { ListView } from './ListView';
 import { GridView } from './GridView';
 import { CalendarView } from './CalendarView';
 import { ViewSwitcher, ViewMode } from './ViewSwitcher';
@@ -337,6 +336,25 @@ function BookingDetailModal({
         </div>
 
         <div className="px-6 py-6 space-y-6">
+          {/* Status Dropdown at the Top */}
+          <div className="bg-card border border-border rounded-xl p-6">
+            <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
+              Booking Status
+            </h3>
+            <div className="w-full max-w-xs">
+              <StatusDropdown
+                options={[
+                  { value: 'New', label: 'New' },
+                  { value: 'Touchbase', label: 'Touchbase' },
+                  { value: 'Confirmed', label: 'Confirmed' },
+                  { value: 'Declined', label: 'Declined' },
+                ]}
+                value={localBooking.status}
+                onChange={(newStatus) => setLocalBooking({ ...localBooking, status: newStatus })}
+              />
+            </div>
+          </div>
+
           {/* Customer Information */}
           <div className="bg-card border border-border rounded-xl p-6">
             <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -496,18 +514,6 @@ function BookingDetailModal({
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                  Status
-                </label>
-                <input
-                  type="text"
-                  value={booking.status}
-                  readOnly
-                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
-                  style={{ fontSize: 'var(--text-base)' }}
-                />
-              </div>
             </div>
           </div>
 
@@ -636,10 +642,10 @@ function BookingDetailModal({
 
           {/* Save Button */}
           <div className="h-20"></div>
-        </div>
+        </div >
 
         {/* Fixed Save Button Footer */}
-        <div className="fixed bottom-0 right-0 w-full max-w-2xl bg-background border-t border-border px-6 py-4 z-10">
+        < div className="fixed bottom-0 right-0 w-full max-w-2xl bg-background border-t border-border px-6 py-4 z-10" >
           <button
             onClick={handleSave}
             className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
@@ -647,8 +653,8 @@ function BookingDetailModal({
           >
             Save Changes
           </button>
-        </div>
-      </div>
+        </div >
+      </div >
     </>
   );
 }
@@ -749,9 +755,6 @@ export function BookingsPage({ onViewDetails }: { onViewDetails?: (booking: type
         </div>
 
         {/* Conditional View Rendering */}
-        {currentView === 'list' && (
-          <ListView onOpenModal={handleOpenModal} bookings={filteredBookings} />
-        )}
         {currentView === 'grid' && (
           <GridView onOpenModal={handleOpenModal} bookings={filteredBookings} />
         )}

@@ -135,20 +135,18 @@ export function ItemSettingsModal({
                 <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                   Dietary Type <span className="text-destructive">*</span>
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'veg' })}
-                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${
-                      itemSettings.dietaryType === 'veg'
+                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${itemSettings.dietaryType === 'veg'
                         ? 'border-primary bg-primary/5'
                         : 'border-border bg-background hover:border-border hover:bg-accent'
-                    }`}
+                      }`}
                   >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                      itemSettings.dietaryType === 'veg'
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${itemSettings.dietaryType === 'veg'
                         ? 'border-primary'
                         : 'border-border'
-                    }`}>
+                      }`}>
                       {itemSettings.dietaryType === 'veg' && (
                         <div className="w-3 h-3 rounded-full bg-primary" />
                       )}
@@ -164,17 +162,15 @@ export function ItemSettingsModal({
                   </button>
                   <button
                     onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'non-veg' })}
-                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${
-                      itemSettings.dietaryType === 'non-veg'
+                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${itemSettings.dietaryType === 'non-veg'
                         ? 'border-primary bg-primary/5'
                         : 'border-border bg-background hover:border-border hover:bg-accent'
-                    }`}
+                      }`}
                   >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                      itemSettings.dietaryType === 'non-veg'
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${itemSettings.dietaryType === 'non-veg'
                         ? 'border-primary'
                         : 'border-border'
-                    }`}>
+                      }`}>
                       {itemSettings.dietaryType === 'non-veg' && (
                         <div className="w-3 h-3 rounded-full bg-primary" />
                       )}
@@ -185,32 +181,6 @@ export function ItemSettingsModal({
                       </div>
                       <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                         Contains meat or fish
-                      </div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setItemSettings({ ...itemSettings, dietaryType: 'vegan' })}
-                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${
-                      itemSettings.dietaryType === 'vegan'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border bg-background hover:border-border hover:bg-accent'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                      itemSettings.dietaryType === 'vegan'
-                        ? 'border-primary'
-                        : 'border-border'
-                    }`}>
-                      {itemSettings.dietaryType === 'vegan' && (
-                        <div className="w-3 h-3 rounded-full bg-primary" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                        Vegan
-                      </div>
-                      <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                        No animal products
                       </div>
                     </div>
                   </button>
@@ -227,17 +197,15 @@ export function ItemSettingsModal({
                     <button
                       key={tag}
                       onClick={() => handleToggleTag(tag, 'dietaryTags')}
-                      className={`relative flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-left ${
-                        itemSettings.dietaryTags.includes(tag)
+                      className={`relative flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-left ${itemSettings.dietaryTags.includes(tag)
                           ? 'border-primary bg-primary/5'
                           : 'border-border bg-background hover:border-border hover:bg-accent'
-                      }`}
+                        }`}
                     >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                        itemSettings.dietaryTags.includes(tag)
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${itemSettings.dietaryTags.includes(tag)
                           ? 'border-primary bg-primary'
                           : 'border-border bg-background'
-                      }`}>
+                        }`}>
                         {itemSettings.dietaryTags.includes(tag) && (
                           <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -279,17 +247,15 @@ export function ItemSettingsModal({
                     <button
                       key={allergen}
                       onClick={() => handleToggleTag(allergen, 'allergens')}
-                      className={`relative flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-left ${
-                        itemSettings.allergens.includes(allergen)
+                      className={`relative flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-left ${itemSettings.allergens.includes(allergen)
                           ? 'border-destructive bg-destructive/5'
                           : 'border-border bg-background hover:border-border hover:bg-accent'
-                      }`}
+                        }`}
                     >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                        itemSettings.allergens.includes(allergen)
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${itemSettings.allergens.includes(allergen)
                           ? 'border-destructive bg-destructive'
                           : 'border-border bg-background'
-                      }`}>
+                        }`}>
                         {itemSettings.allergens.includes(allergen) && (
                           <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -304,7 +270,7 @@ export function ItemSettingsModal({
                     </button>
                   ))}
                 </div>
-                
+
                 {/* Custom Allergens */}
                 <div className="mt-4">
                   <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}>
@@ -371,17 +337,15 @@ export function ItemSettingsModal({
                     <button
                       key={additive}
                       onClick={() => handleToggleTag(additive, 'additives')}
-                      className={`relative flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-left ${
-                        itemSettings.additives.includes(additive)
+                      className={`relative flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-left ${itemSettings.additives.includes(additive)
                           ? 'border-primary bg-primary/5'
                           : 'border-border bg-background hover:border-border hover:bg-accent'
-                      }`}
+                        }`}
                     >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                        itemSettings.additives.includes(additive)
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${itemSettings.additives.includes(additive)
                           ? 'border-primary bg-primary'
                           : 'border-border bg-background'
-                      }`}>
+                        }`}>
                         {itemSettings.additives.includes(additive) && (
                           <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
