@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GripVertical, Edit2, MoreVertical, Plus, ChevronDown, ChevronRight, Trash2, Eye, EyeOff, Search, UtensilsCrossed, ListPlus, Upload, X, Copy, Settings, Check, Circle } from 'lucide-react';
+import { GripVertical, Edit2, MoreVertical, Plus, ChevronDown, ChevronRight, Trash2, Eye, EyeOff, Search, UtensilsCrossed, ListPlus, Upload, X, Copy, Settings, Check, Circle, Package } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Modal } from './Modal';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -32,7 +32,9 @@ interface MenuItemData {
   price: number;
   isActive: boolean;
   variants: VariantOption[];
-  pricingType?: 'per-person' | 'flat-rate';
+  pricingType?: 'per-person' | 'flat-rate' | 'consumption';
+  itemType?: 'regular' | 'combo';
+  comboItemIds?: string[];
   dietaryType?: 'veg' | 'non-veg' | 'vegan';
   dietaryTags?: string[];
   ingredients?: string;
@@ -66,6 +68,7 @@ interface Category {
   isActive: boolean;
   isExpanded: boolean;
   items: MenuItemData[];
+  type: 'regular' | 'main-course';
   assignedAddonGroups?: string[]; // IDs of assigned addon groups
 }
 
@@ -97,6 +100,7 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
+    type: 'main-course',
     items: [
       {
         id: '1-1',
@@ -106,6 +110,7 @@ const mockCategories: Category[] = [
         price: 12.50,
         isActive: true,
         pricingType: 'per-person' as const,
+        itemType: 'regular' as const,
         variants: [
           { id: 'v1', name: 'Regular', price: 12.50, description: 'Standard portion' },
           { id: 'v2', name: 'Large', price: 15.00, description: 'Extra filling' },
@@ -118,7 +123,7 @@ const mockCategories: Category[] = [
         image: 'https://images.unsplash.com/photo-1624726175512-19b9baf9fbd1?w=400&h=400&fit=crop',
         price: 14.00,
         isActive: true,
-        pricingType: 'per-person' as const,
+        itemType: 'regular' as const,
         variants: [],
       },
     ],
@@ -130,6 +135,7 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
+    type: 'main-course',
     items: [
       {
         id: '2-1',
@@ -139,6 +145,7 @@ const mockCategories: Category[] = [
         price: 15.00,
         isActive: true,
         pricingType: 'flat-rate' as const,
+        itemType: 'regular' as const,
         variants: [
           { id: 'v3', name: 'Small', price: 12.00, description: '8 inch' },
           { id: 'v4', name: 'Medium', price: 15.00, description: '12 inch' },
@@ -149,20 +156,45 @@ const mockCategories: Category[] = [
   },
   {
     id: '3',
+    name: 'Main Courses',
+    description: 'Our signature main courses and specials.',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop',
+    isActive: true,
+    isExpanded: false,
+    type: 'main-course',
+    items: [
+      {
+        id: '1-3',
+        name: 'Bom Wraps Combo Deal',
+        description: 'Choose any wrap and get a drink',
+        image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=400&fit=crop',
+        price: 18.00,
+        isActive: true,
+        pricingType: 'per-person' as const,
+        itemType: 'combo' as const,
+        comboItemIds: ['combo-3', 'combo-4'],
+        variants: [],
+      },
+    ],
+  },
+  {
+    id: '4',
     name: 'Starters',
     description: 'Perfect to begin your meal',
     image: 'https://images.unsplash.com/photo-1758384077555-36242d3f2b4d?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
+    type: 'regular',
     items: [],
   },
   {
-    id: '4',
+    id: '5',
     name: 'Desserts',
     description: 'Sweet endings',
     image: 'https://images.unsplash.com/photo-1705948731485-6e4c6c180d0d?w=400&h=400&fit=crop',
     isActive: false,
     isExpanded: false,
+    type: 'regular',
     items: [
       {
         id: '4-1',
@@ -171,10 +203,12 @@ const mockCategories: Category[] = [
         image: 'https://images.unsplash.com/photo-1705948731485-6e4c6c180d0d?w=400&h=400&fit=crop',
         price: 6.50,
         isActive: true,
+        itemType: 'regular' as const,
         variants: [],
       },
     ],
   },
+
 ];
 
 const mockAddonGroups: AddonGroup[] = [
@@ -227,6 +261,49 @@ const mockAddonGroups: AddonGroup[] = [
     ],
     isExpanded: false,
     isRequired: false,
+  },
+];
+
+const mockComboItems: MenuItemData[] = [
+  {
+    id: 'combo-1',
+    name: 'Burger & Fries Combo',
+    description: 'Juicy burger served with crispy french fries and a drink.',
+    image: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400&h=400&fit=crop',
+    price: 18.50,
+    isActive: true,
+    itemType: 'combo' as const,
+    variants: [],
+  },
+  {
+    id: 'combo-2',
+    name: 'Pasta & Wine Delight',
+    description: 'Choice of pasta served with a glass of house wine and garlic bread.',
+    image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&h=400&fit=crop',
+    price: 24.90,
+    isActive: true,
+    itemType: 'combo' as const,
+    variants: [],
+  },
+  {
+    id: 'combo-3',
+    name: 'Sushi Platter Duo',
+    description: '12 pieces of assorted sushi and sashimi with miso soup.',
+    image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=400&fit=crop',
+    price: 32.00,
+    isActive: true,
+    itemType: 'combo' as const,
+    variants: [],
+  },
+  {
+    id: 'combo-4',
+    name: 'Taco Family Pack',
+    description: '10 assorted tacos with large nachos and salsa.',
+    image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=400&fit=crop',
+    price: 45.00,
+    isActive: true,
+    itemType: 'combo' as const,
+    variants: [],
   },
 ];
 
@@ -379,8 +456,9 @@ function SortableVariant({ variant, index, updateVariant, removeVariant }: any) 
 export function MenuConfigPage() {
   const [categories, setCategories] = useState(mockCategories);
   const [addonGroups, setAddonGroups] = useState(mockAddonGroups);
+  const [comboItems, setComboItems] = useState(mockComboItems);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'items' | 'addons'>('items');
+  const [activeTab, setActiveTab] = useState<'items' | 'addons' | 'combos'>('items');
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
   const [isAddMenuItemModalOpen, setIsAddMenuItemModalOpen] = useState(false);
   const [isAddGroupModalOpen, setIsAddGroupModalOpen] = useState(false);
@@ -403,11 +481,13 @@ export function MenuConfigPage() {
   const [choiceMenuItemId, setChoiceMenuItemId] = useState<string | null>(null);
   const [choiceCategoryId, setChoiceCategoryId] = useState<string | null>(null);
   const [selectedAddonGroups, setSelectedAddonGroups] = useState<string[]>([]);
+  const [selectedComboItems, setSelectedComboItems] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState({
     name: '',
     description: '',
     image: null as File | null,
     imageUrl: '' as string,
+    type: 'regular' as 'regular' | 'main-course',
   });
   const [newMenuItem, setNewMenuItem] = useState({
     name: '',
@@ -416,7 +496,8 @@ export function MenuConfigPage() {
     image: null as File | null,
     imageUrl: '' as string,
     isActive: true,
-    pricingType: 'per-person' as 'per-person' | 'flat-rate',
+    pricingType: 'per-person' as 'per-person' | 'flat-rate' | 'consumption',
+    itemType: 'regular' as 'regular' | 'combo',
     variants: [] as VariantOption[],
   });
   const [newGroup, setNewGroup] = useState({
@@ -503,29 +584,51 @@ export function MenuConfigPage() {
     ));
   };
 
-  const handleSaveItemSettings = () => {
-    if (!settingsMenuItemId || !activeCategoryId) return;
-
-    setCategories(categories.map(cat =>
-      cat.id === activeCategoryId
-        ? {
-          ...cat,
-          items: cat.items.map(item =>
-            item.id === settingsMenuItemId
-              ? {
-                ...item,
-                dietaryType: itemSettings.dietaryType,
-                dietaryTags: itemSettings.dietaryTags,
-                ingredients: itemSettings.ingredients,
-                allergens: itemSettings.allergens,
-                additives: itemSettings.additives,
-                nutritionalInfo: itemSettings.nutritionalInfo,
-              }
-              : item
-          ),
-        }
-        : cat
+  const toggleComboItemActive = (itemId: string) => {
+    setComboItems(comboItems.map(item =>
+      item.id === itemId ? { ...item, isActive: !item.isActive } : item
     ));
+  };
+
+  const handleSaveItemSettings = () => {
+    if (!settingsMenuItemId) return;
+
+    if (activeCategoryId) {
+      setCategories(categories.map(cat =>
+        cat.id === activeCategoryId
+          ? {
+            ...cat,
+            items: cat.items.map(item =>
+              item.id === settingsMenuItemId
+                ? {
+                  ...item,
+                  dietaryType: itemSettings.dietaryType,
+                  dietaryTags: itemSettings.dietaryTags,
+                  ingredients: itemSettings.ingredients,
+                  allergens: itemSettings.allergens,
+                  additives: itemSettings.additives,
+                  nutritionalInfo: itemSettings.nutritionalInfo,
+                }
+                : item
+            ),
+          }
+          : cat
+      ));
+    } else {
+      setComboItems(comboItems.map(item =>
+        item.id === settingsMenuItemId
+          ? {
+            ...item,
+            dietaryType: itemSettings.dietaryType,
+            dietaryTags: itemSettings.dietaryTags,
+            ingredients: itemSettings.ingredients,
+            allergens: itemSettings.allergens,
+            additives: itemSettings.additives,
+            nutritionalInfo: itemSettings.nutritionalInfo,
+          }
+          : item
+      ));
+    }
 
     setIsItemSettingsModalOpen(false);
     setSettingsMenuItemId(null);
@@ -646,6 +749,15 @@ export function MenuConfigPage() {
     }
   };
 
+  const handleComboDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = comboItems.findIndex((item) => item.id === active.id);
+      const newIndex = comboItems.findIndex((item) => item.id === over.id);
+      setComboItems(arrayMove(comboItems, oldIndex, newIndex));
+    }
+  };
+
   const filteredCategories = categories.filter(cat =>
     cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     cat.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -685,6 +797,18 @@ export function MenuConfigPage() {
               <span className="hidden sm:inline">Choices & Addons</span>
               <span className="sm:hidden">Addons</span>
             </button>
+            <button
+              onClick={() => setActiveTab('combos')}
+              className={`px-3 md:px-4 py-2 rounded-md flex items-center gap-2 transition-colors min-h-[44px] ${activeTab === 'combos'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                }`}
+              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+            >
+              <Package className="w-4 h-4" />
+              <span className="hidden sm:inline">Combo items</span>
+              <span className="sm:hidden">Combos</span>
+            </button>
           </div>
         </div>
 
@@ -710,7 +834,7 @@ export function MenuConfigPage() {
                   icon={Plus}
                   onClick={() => {
                     setEditingCategoryId(null);
-                    setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
+                    setNewCategory({ name: '', description: '', image: null, imageUrl: '', type: 'regular' });
                     setIsAddCategoryModalOpen(true);
                   }}
                   className="w-full sm:w-auto min-h-[44px]"
@@ -780,6 +904,9 @@ export function MenuConfigPage() {
                                   {category.items.length} {category.items.length === 1 ? 'item' : 'items'}
                                 </span>
                               )}
+                              <span className="px-2 py-0.5 bg-secondary/50 text-secondary-foreground rounded-full text-xs">
+                                {category.type === 'main-course' ? 'Main Course' : 'Regular Category'}
+                              </span>
                             </div>
                             <p className="text-muted-foreground line-clamp-1 hidden sm:block" style={{ fontSize: 'var(--text-small)' }}>
                               {category.description}
@@ -797,6 +924,7 @@ export function MenuConfigPage() {
                                     description: category.description,
                                     image: null,
                                     imageUrl: category.image,
+                                    type: category.type || 'regular',
                                   });
                                   setIsAddCategoryModalOpen(true);
                                 }}
@@ -819,6 +947,7 @@ export function MenuConfigPage() {
                                     imageUrl: '',
                                     isActive: true,
                                     pricingType: 'per-person',
+                                    itemType: 'regular',
                                     variants: [],
                                   });
                                   setIsAddMenuItemModalOpen(true);
@@ -950,7 +1079,7 @@ export function MenuConfigPage() {
 
                                         {/* Content */}
                                         <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2 mb-0.5">
+                                          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                             {/* Dietary Icon */}
                                             <div className={`w-4 h-4 flex-shrink-0 flex items-center justify-center border-2 rounded ${item.dietaryType === 'non-veg'
                                               ? 'border-red-600'
@@ -967,9 +1096,19 @@ export function MenuConfigPage() {
                                                   }`}
                                               />
                                             </div>
-                                            <h5 className="text-foreground truncate flex-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                            <h5 className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                                               {item.name}
                                             </h5>
+                                            {item.itemType === 'combo' && item.comboItemIds && item.comboItemIds.length > 0 && (
+                                              <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full flex-shrink-0" style={{ fontSize: 'var(--text-small)' }}>
+                                                {item.comboItemIds.length} {item.comboItemIds.length === 1 ? 'item' : 'items'}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="flex gap-2 mb-1">
+                                            <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
+                                              {item.itemType === 'combo' ? 'Combo Pack' : 'Regular Item'}
+                                            </span>
                                           </div>
                                           <p className="text-muted-foreground line-clamp-1 hidden sm:block" style={{ fontSize: 'var(--text-small)' }}>
                                             {item.description}
@@ -1017,6 +1156,7 @@ export function MenuConfigPage() {
                                                   imageUrl: item.image,
                                                   isActive: item.isActive,
                                                   pricingType: item.pricingType || 'per-person',
+                                                  itemType: item.itemType || 'regular',
                                                   variants: item.variants,
                                                 });
                                                 setIsAddMenuItemModalOpen(true);
@@ -1055,17 +1195,26 @@ export function MenuConfigPage() {
                                               <Settings className="w-4 h-4" />
                                             </button>
                                           </Tooltip>
-                                          <Tooltip title="Add choice" position="top">
+                                          <Tooltip title={item.itemType === 'combo' ? "Add combo items" : "Add choice"} position="top">
                                             <button
                                               onClick={() => {
                                                 setChoiceCategoryId(category.id);
                                                 setChoiceMenuItemId(item.id);
-                                                setSelectedAddonGroups(item.assignedAddonGroups || []);
+                                                if (item.itemType === 'combo') {
+                                                  // For combos, we select other menu items
+                                                  setSelectedComboItems(item.comboItemIds || []);
+                                                } else {
+                                                  setSelectedAddonGroups(item.assignedAddonGroups || []);
+                                                }
                                                 setIsAddChoiceModalOpen(true);
                                               }}
                                               className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
                                             >
-                                              <ListPlus className="w-4 h-4" />
+                                              {item.itemType === 'combo' ? (
+                                                <Package className="w-4 h-4" />
+                                              ) : (
+                                                <ListPlus className="w-4 h-4" />
+                                              )}
                                             </button>
                                           </Tooltip>
                                           <Tooltip title={item.isActive ? "Hide item" : "Show item"} position="top">
@@ -1119,6 +1268,7 @@ export function MenuConfigPage() {
                                   imageUrl: '',
                                   isActive: true,
                                   pricingType: 'per-person',
+                                  itemType: 'regular',
                                   variants: [],
                                 });
                                 setIsAddMenuItemModalOpen(true);
@@ -1495,6 +1645,218 @@ export function MenuConfigPage() {
           </div>
         )}
 
+        {/* Combo Items Tab */}
+        {activeTab === 'combos' && (
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            {/* Search Bar with Add Button */}
+            <div className="p-3 md:p-4 border-b border-border">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search combo items..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 md:py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                    style={{ fontSize: 'var(--text-base)', minHeight: '44px' }}
+                  />
+                </div>
+                <Button
+                  variant="primary"
+                  icon={Plus}
+                  onClick={() => {
+                    setActiveCategoryId(null);
+                    setEditingMenuItemId(null);
+                    setNewMenuItem({
+                      name: '',
+                      description: '',
+                      price: '',
+                      image: null,
+                      imageUrl: '',
+                      isActive: true,
+                      pricingType: 'per-person',
+                      itemType: 'combo',
+                      variants: [],
+                    });
+                    setIsAddMenuItemModalOpen(true);
+                  }}
+                  className="w-full sm:w-auto min-h-[44px]"
+                >
+                  Add Item
+                </Button>
+              </div>
+            </div>
+
+            {/* List View for Combos */}
+            <div className="bg-muted/30">
+              {comboItems.length === 0 ? (
+                <div className="px-6 py-12 text-center text-muted-foreground bg-card">
+                  <div className="flex flex-col items-center gap-3">
+                    <Package className="w-12 h-12 opacity-20" />
+                    <p style={{ fontSize: 'var(--text-base)' }}>No combo items found</p>
+                  </div>
+                </div>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleComboDragEnd}
+                >
+                  <SortableContext
+                    items={comboItems.map(item => item.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div>
+                      {comboItems
+                        .filter(item =>
+                          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          item.description.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                        .map((item, index, array) => (
+                          <SortableMenuItemWrapper key={item.id} id={item.id}>
+                            {({ ref, style, attributes, listeners }) => (
+                              <div
+                                ref={ref}
+                                style={style}
+                                className={`px-4 sm:px-6 py-4 flex items-center gap-2 md:gap-4 hover:bg-accent/30 transition-colors group bg-card ${index !== array.length - 1 ? 'border-b border-border/50' : ''
+                                  }`}
+                              >
+                                {/* Drag Handle */}
+                                <button
+                                  {...attributes}
+                                  {...listeners}
+                                  className="hidden sm:block text-muted-foreground hover:text-foreground transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
+                                >
+                                  <GripVertical className="w-4 h-4" />
+                                </button>
+
+                                {/* Image */}
+                                <div className="w-12 h-10 sm:w-16 sm:h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
+                                  <ImageWithFallback
+                                    src={item.image}
+                                    alt={item.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  {!item.isActive && (
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                      <EyeOff className="w-4 h-4 text-white" />
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                                    <div className={`w-4 h-4 flex-shrink-0 flex items-center justify-center border-2 rounded ${item.dietaryType === 'non-veg' ? 'border-red-600' : 'border-green-600'}`}>
+                                      <Circle className={`w-2 h-2 ${item.dietaryType === 'non-veg' ? 'text-red-600 fill-red-600' : 'text-green-600 fill-green-600'}`} />
+                                    </div>
+                                    <h5 className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                                      {item.name}
+                                    </h5>
+                                    {item.comboItemIds && item.comboItemIds.length > 0 && (
+                                      <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full flex-shrink-0" style={{ fontSize: 'var(--text-small)' }}>
+                                        {item.comboItemIds.length} {item.comboItemIds.length === 1 ? 'item' : 'items'}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-muted-foreground line-clamp-1 hidden sm:block" style={{ fontSize: 'var(--text-small)' }}>
+                                    {item.description}
+                                  </p>
+                                </div>
+
+                                {/* Price */}
+                                <div className="text-right flex-shrink-0">
+                                  <p className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+                                    €{item.price.toFixed(2)}
+                                  </p>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <Tooltip title="Edit item" position="top">
+                                    <button
+                                      onClick={() => {
+                                        setActiveCategoryId(null);
+                                        setEditingMenuItemId(item.id);
+                                        setNewMenuItem({
+                                          name: item.name,
+                                          description: item.description,
+                                          price: item.price.toString(),
+                                          image: null,
+                                          imageUrl: item.image,
+                                          isActive: item.isActive,
+                                          pricingType: item.pricingType || 'per-person',
+                                          itemType: item.itemType || 'combo',
+                                          variants: item.variants,
+                                        });
+                                        setIsAddMenuItemModalOpen(true);
+                                      }}
+                                      className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                    >
+                                      <Edit2 className="w-4 h-4" />
+                                    </button>
+                                  </Tooltip>
+                                  <Tooltip title="Item settings" position="top">
+                                    <button
+                                      onClick={() => {
+                                        setActiveCategoryId(null);
+                                        setSettingsMenuItemId(item.id);
+                                        setItemSettings({
+                                          dietaryType: item.dietaryType || 'veg',
+                                          dietaryTags: item.dietaryTags || [],
+                                          ingredients: item.ingredients || '',
+                                          allergens: item.allergens || [],
+                                          additives: item.additives || [],
+                                          nutritionalInfo: {
+                                            servingSize: item.nutritionalInfo?.servingSize ?? '',
+                                            calories: item.nutritionalInfo?.calories ?? '',
+                                            protein: item.nutritionalInfo?.protein ?? '',
+                                            carbs: item.nutritionalInfo?.carbs ?? '',
+                                            fat: item.nutritionalInfo?.fat ?? '',
+                                            fiber: item.nutritionalInfo?.fiber ?? '',
+                                            sugar: item.nutritionalInfo?.sugar ?? '',
+                                            sodium: item.nutritionalInfo?.sodium ?? '',
+                                          },
+                                        });
+                                        setIsItemSettingsModalOpen(true);
+                                      }}
+                                      className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                    >
+                                      <Settings className="w-4 h-4" />
+                                    </button>
+                                  </Tooltip>
+                                  <Tooltip title={item.isActive ? "Hide item" : "Show item"} position="top">
+                                    <button
+                                      onClick={() => toggleComboItemActive(item.id)}
+                                      className="p-1.5 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                                    >
+                                      {item.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4 text-destructive" />}
+                                    </button>
+                                  </Tooltip>
+                                  <Tooltip title="Delete combo" position="top">
+                                    <button
+                                      onClick={() => {
+                                        setComboItems(comboItems.filter(i => i.id !== item.id));
+                                      }}
+                                      className="p-1.5 hover:bg-accent rounded-lg text-destructive transition-colors cursor-pointer"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </Tooltip>
+                                </div>
+                              </div>
+                            )}
+                          </SortableMenuItemWrapper>
+                        ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* Copyright Footer */}
@@ -1507,7 +1869,11 @@ export function MenuConfigPage() {
       {/* Add/Edit Category Modal */}
       <Modal
         isOpen={isAddCategoryModalOpen}
-        onClose={() => setIsAddCategoryModalOpen(false)}
+        onClose={() => {
+          setIsAddCategoryModalOpen(false);
+          setNewCategory({ name: '', description: '', image: null, imageUrl: '', type: 'regular' });
+          setEditingCategoryId(null);
+        }}
         icon={UtensilsCrossed}
         title={editingCategoryId ? 'Edit Category' : 'Add New Category'}
         footer={
@@ -1517,7 +1883,7 @@ export function MenuConfigPage() {
               icon={X}
               onClick={() => {
                 setIsAddCategoryModalOpen(false);
-                setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
+                setNewCategory({ name: '', description: '', image: null, imageUrl: '', type: 'regular' });
                 setEditingCategoryId(null);
               }}
             >
@@ -1530,7 +1896,7 @@ export function MenuConfigPage() {
                 if (editingCategoryId) {
                   setCategories(categories.map(cat =>
                     cat.id === editingCategoryId
-                      ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl }
+                      ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl, type: newCategory.type }
                       : cat
                   ));
                 } else {
@@ -1541,12 +1907,13 @@ export function MenuConfigPage() {
                     image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl,
                     isActive: true,
                     isExpanded: false,
+                    type: newCategory.type,
                     items: [],
                   };
                   setCategories([...categories, newCat]);
                 }
                 setIsAddCategoryModalOpen(false);
-                setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
+                setNewCategory({ name: '', description: '', image: null, imageUrl: '', type: 'regular' });
                 setEditingCategoryId(null);
               }}
               disabled={!newCategory.name}
@@ -1569,6 +1936,22 @@ export function MenuConfigPage() {
               className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               style={{ fontSize: 'var(--text-base)' }}
             />
+          </div>
+
+          {/* Category Type Dropdown */}
+          <div>
+            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+              Category Type *
+            </label>
+            <select
+              value={newCategory.type}
+              onChange={(e) => setNewCategory({ ...newCategory, type: e.target.value as 'regular' | 'main-course' })}
+              className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              style={{ fontSize: 'var(--text-base)' }}
+            >
+              <option value="regular">Regular</option>
+              <option value="main-course">Main course</option>
+            </select>
           </div>
 
           <div>
@@ -1668,49 +2051,82 @@ export function MenuConfigPage() {
               variant="primary"
               icon={editingMenuItemId ? Check : Plus}
               onClick={() => {
-                if (!activeCategoryId || !newMenuItem.name || !newMenuItem.price) return;
-
-                if (editingMenuItemId) {
-                  // Edit existing item
-                  setCategories(categories.map(cat =>
-                    cat.id === activeCategoryId
-                      ? {
-                        ...cat,
-                        items: cat.items.map(item =>
-                          item.id === editingMenuItemId
-                            ? {
-                              ...item,
-                              name: newMenuItem.name,
-                              description: newMenuItem.description,
-                              price: parseFloat(newMenuItem.price),
-                              image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
-                              isActive: newMenuItem.isActive,
-                              pricingType: newMenuItem.pricingType,
-                              variants: newMenuItem.variants,
-                            }
-                            : item
-                        ),
-                      }
-                      : cat
-                  ));
+                if (activeTab === 'combos') {
+                  if (editingMenuItemId) {
+                    setComboItems(comboItems.map(item =>
+                      item.id === editingMenuItemId
+                        ? {
+                          ...item,
+                          name: newMenuItem.name,
+                          description: newMenuItem.description,
+                          price: parseFloat(newMenuItem.price),
+                          image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
+                          isActive: newMenuItem.isActive,
+                          pricingType: newMenuItem.pricingType,
+                          itemType: newMenuItem.itemType,
+                          variants: newMenuItem.variants,
+                        }
+                        : item
+                    ));
+                  } else {
+                    const newItem: MenuItemData = {
+                      id: `combo-${Date.now()}`,
+                      name: newMenuItem.name,
+                      description: newMenuItem.description,
+                      price: parseFloat(newMenuItem.price),
+                      image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
+                      isActive: newMenuItem.isActive,
+                      pricingType: newMenuItem.pricingType,
+                      itemType: newMenuItem.itemType,
+                      variants: newMenuItem.variants,
+                    };
+                    setComboItems([...comboItems, newItem]);
+                  }
                 } else {
-                  // Add new item
-                  const newItem: MenuItemData = {
-                    id: `item-${Date.now()}`,
-                    name: newMenuItem.name,
-                    description: newMenuItem.description,
-                    price: parseFloat(newMenuItem.price),
-                    image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
-                    isActive: newMenuItem.isActive,
-                    pricingType: newMenuItem.pricingType,
-                    variants: newMenuItem.variants,
-                  };
+                  if (editingMenuItemId) {
+                    // Edit existing item
+                    setCategories(categories.map(cat =>
+                      cat.id === activeCategoryId
+                        ? {
+                          ...cat,
+                          items: cat.items.map(item =>
+                            item.id === editingMenuItemId
+                              ? {
+                                ...item,
+                                name: newMenuItem.name,
+                                description: newMenuItem.description,
+                                price: parseFloat(newMenuItem.price),
+                                image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
+                                isActive: newMenuItem.isActive,
+                                pricingType: newMenuItem.pricingType,
+                                itemType: newMenuItem.itemType,
+                                variants: newMenuItem.variants,
+                              }
+                              : item
+                          ),
+                        }
+                        : cat
+                    ));
+                  } else {
+                    // Add new item
+                    const newItem: MenuItemData = {
+                      id: `item-${Date.now()}`,
+                      name: newMenuItem.name,
+                      description: newMenuItem.description,
+                      price: parseFloat(newMenuItem.price),
+                      image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
+                      isActive: newMenuItem.isActive,
+                      pricingType: newMenuItem.pricingType,
+                      itemType: newMenuItem.itemType,
+                      variants: newMenuItem.variants,
+                    };
 
-                  setCategories(categories.map(cat =>
-                    cat.id === activeCategoryId
-                      ? { ...cat, items: [...cat.items, newItem] }
-                      : cat
-                  ));
+                    setCategories(categories.map(cat =>
+                      cat.id === activeCategoryId
+                        ? { ...cat, items: [...cat.items, newItem] }
+                        : cat
+                    ));
+                  }
                 }
 
                 setIsAddMenuItemModalOpen(false);
@@ -1722,12 +2138,13 @@ export function MenuConfigPage() {
                   imageUrl: '',
                   isActive: true,
                   pricingType: 'per-person',
+                  itemType: 'regular',
                   variants: [],
                 });
                 setActiveCategoryId(null);
                 setEditingMenuItemId(null);
               }}
-              disabled={!activeCategoryId || !newMenuItem.name || !newMenuItem.price}
+              disabled={(activeTab !== 'combos' && !activeCategoryId) || !newMenuItem.name || !newMenuItem.price}
             >
               {editingMenuItemId ? 'Save Changes' : 'Add Item'}
             </Button>
@@ -1735,7 +2152,7 @@ export function MenuConfigPage() {
         }
       >
         <div className="space-y-4">
-          {!activeCategoryId && (
+          {activeTab !== 'combos' && !activeCategoryId && (
             <div>
               <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
                 Select Category *
@@ -1800,12 +2217,27 @@ export function MenuConfigPage() {
             </div>
           </div>
 
-          {/* Pricing Type */}
+          {/* Item Type & Pricing Type */}
+          <div>
+            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+              Item Type *
+            </label>
+            <select
+              value={newMenuItem.itemType}
+              onChange={(e) => setNewMenuItem({ ...newMenuItem, itemType: e.target.value as 'regular' | 'combo' })}
+              className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              style={{ fontSize: 'var(--text-base)' }}
+            >
+              <option value="regular">Regular Item</option>
+              <option value="combo">Combo Pack Item</option>
+            </select>
+          </div>
+
           <div>
             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
               Pricing Type
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'per-person' })}
@@ -1853,6 +2285,31 @@ export function MenuConfigPage() {
                   </div>
                   <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                     Fixed price regardless of guests
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'consumption' })}
+                className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${newMenuItem.pricingType === 'consumption'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-background hover:border-border hover:bg-accent'
+                  }`}
+              >
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.pricingType === 'consumption'
+                  ? 'border-primary'
+                  : 'border-border'
+                  }`}>
+                  {newMenuItem.pricingType === 'consumption' && (
+                    <div className="w-3 h-3 rounded-full bg-primary" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                    Billed by Consumption
+                  </div>
+                  <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                    Based on actual usage
                   </div>
                 </div>
               </button>
@@ -2473,9 +2930,24 @@ export function MenuConfigPage() {
           setChoiceCategoryId(null);
           setChoiceMenuItemId(null);
           setSelectedAddonGroups([]);
+          setSelectedComboItems([]);
         }}
-        icon={ListPlus}
-        title="Add Choice"
+        icon={
+          (() => {
+            const item = choiceCategoryId
+              ? categories.find(c => c.id === choiceCategoryId)?.items.find(i => i.id === choiceMenuItemId)
+              : comboItems.find(i => i.id === choiceMenuItemId);
+            return item?.itemType === 'combo' ? Package : ListPlus;
+          })()
+        }
+        title={
+          (() => {
+            const item = choiceCategoryId
+              ? categories.find(c => c.id === choiceCategoryId)?.items.find(i => i.id === choiceMenuItemId)
+              : comboItems.find(i => i.id === choiceMenuItemId);
+            return item?.itemType === 'combo' ? "Add Combo Items" : "Add Choice";
+          })()
+        }
         footer={
           <>
             <Button
@@ -2486,6 +2958,7 @@ export function MenuConfigPage() {
                 setChoiceCategoryId(null);
                 setChoiceMenuItemId(null);
                 setSelectedAddonGroups([]);
+                setSelectedComboItems([]);
               }}
             >
               Cancel
@@ -2494,24 +2967,38 @@ export function MenuConfigPage() {
               variant="primary"
               icon={Check}
               onClick={() => {
-                if (choiceCategoryId && choiceMenuItemId) {
-                  setCategories(categories.map(cat =>
-                    cat.id === choiceCategoryId
-                      ? {
-                        ...cat,
-                        items: cat.items.map(item =>
-                          item.id === choiceMenuItemId
-                            ? { ...item, assignedAddonGroups: selectedAddonGroups }
-                            : item
-                        )
-                      }
-                      : cat
-                  ));
+                if (choiceMenuItemId) {
+                  if (choiceCategoryId) {
+                    const targetItem = categories.find(c => c.id === choiceCategoryId)?.items.find(i => i.id === choiceMenuItemId);
+                    const isCombo = targetItem?.itemType === 'combo';
+
+                    setCategories(categories.map(cat =>
+                      cat.id === choiceCategoryId
+                        ? {
+                          ...cat,
+                          items: cat.items.map(item =>
+                            item.id === choiceMenuItemId
+                              ? isCombo
+                                ? { ...item, comboItemIds: selectedComboItems }
+                                : { ...item, assignedAddonGroups: selectedAddonGroups }
+                              : item
+                          )
+                        }
+                        : cat
+                    ));
+                  } else {
+                    setComboItems(comboItems.map(item =>
+                      item.id === choiceMenuItemId
+                        ? { ...item, comboItemIds: selectedComboItems }
+                        : item
+                    ));
+                  }
                 }
                 setIsAddChoiceModalOpen(false);
                 setChoiceCategoryId(null);
                 setChoiceMenuItemId(null);
                 setSelectedAddonGroups([]);
+                setSelectedComboItems([]);
               }}
             >
               Save Changes
@@ -2520,66 +3007,109 @@ export function MenuConfigPage() {
         }
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-              Select Addon Groups
-            </label>
-            <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-small)' }}>
-              Choose which addon groups should be available for this category
-            </p>
+          {(() => {
+            const currentItem = choiceCategoryId
+              ? categories.find(c => c.id === choiceCategoryId)?.items.find(i => i.id === choiceMenuItemId)
+              : comboItems.find(i => i.id === choiceMenuItemId);
+            const isCombo = currentItem?.itemType === 'combo';
 
-            {/* Addon Groups Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {addonGroups.map((group) => {
-                const isSelected = selectedAddonGroups.includes(group.id);
-                return (
-                  <label
-                    key={group.id}
-                    className="cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedAddonGroups([...selectedAddonGroups, group.id]);
-                        } else {
-                          setSelectedAddonGroups(selectedAddonGroups.filter(id => id !== group.id));
-                        }
-                      }}
-                      className="sr-only peer"
-                    />
-                    <div
-                      className="px-4 py-3 bg-card border border-border rounded-lg transition-all hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${isSelected
-                          ? 'bg-primary border-primary'
-                          : 'bg-background border-border'
-                          }`}>
-                          {isSelected && (
-                            <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />
-                          )}
-                        </div>
-                        <span
-                          className="text-foreground"
-                          style={{ fontSize: 'var(--text-base)' }}
-                        >
-                          {group.name}
-                        </span>
-                      </div>
-                    </div>
+            if (isCombo) {
+              const currentCategory = choiceCategoryId ? categories.find(c => c.id === choiceCategoryId) : null;
+              const isMainCourse = currentCategory?.type === 'main-course';
+
+              const allMenuItems = isMainCourse
+                ? comboItems.map(item => ({ ...item, categoryName: 'Combo Packs' }))
+                : categories.flatMap(cat => cat.items.map(item => ({ ...item, categoryName: cat.name })));
+
+              const filteredItems = allMenuItems.filter(i => i.id !== choiceMenuItemId);
+
+              return (
+                <div>
+                  <label className="block text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                    Select Items for Combo
                   </label>
-                );
-              })}
-            </div>
+                  <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-small)' }}>
+                    Choose which items are included in this combo pack
+                  </p>
 
-            {selectedAddonGroups.length > 0 && (
-              <p className="text-muted-foreground mt-3" style={{ fontSize: 'var(--text-small)' }}>
-                {selectedAddonGroups.length} addon group{selectedAddonGroups.length !== 1 ? 's' : ''} selected
-              </p>
-            )}
-          </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
+                    {filteredItems.map((item) => {
+                      const isSelected = selectedComboItems.includes(item.id);
+                      return (
+                        <label key={item.id} className="cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedComboItems([...selectedComboItems, item.id]);
+                              } else {
+                                setSelectedComboItems(selectedComboItems.filter(id => id !== item.id));
+                              }
+                            }}
+                            className="sr-only peer"
+                          />
+                          <div className="px-4 py-3 bg-card border border-border rounded-lg transition-all hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${isSelected ? 'bg-primary border-primary' : 'bg-background border-border'}`}>
+                                {isSelected && <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-foreground truncate" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>{item.name}</p>
+                                <p className="text-muted-foreground truncate" style={{ fontSize: 'var(--text-small)' }}>{item.categoryName}</p>
+                              </div>
+                              <span className="text-foreground font-semibold" style={{ fontSize: 'var(--text-small)' }}>€{item.price.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div>
+                <label className="block text-foreground mb-3" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                  Select Addon Groups
+                </label>
+                <p className="text-muted-foreground mb-4" style={{ fontSize: 'var(--text-small)' }}>
+                  Choose which addon groups should be available for this item
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {addonGroups.map((group) => {
+                    const isSelected = selectedAddonGroups.includes(group.id);
+                    return (
+                      <label key={group.id} className="cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedAddonGroups([...selectedAddonGroups, group.id]);
+                            } else {
+                              setSelectedAddonGroups(selectedAddonGroups.filter(id => id !== group.id));
+                            }
+                          }}
+                          className="sr-only peer"
+                        />
+                        <div className="px-4 py-3 bg-card border border-border rounded-lg transition-all hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${isSelected ? 'bg-primary border-primary' : 'bg-background border-border'}`}>
+                              {isSelected && <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />}
+                            </div>
+                            <span className="text-foreground" style={{ fontSize: 'var(--text-base)' }}>{group.name}</span>
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </Modal>
     </div>
