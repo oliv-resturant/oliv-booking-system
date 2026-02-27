@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Mail, MapPin, MessageSquare, Download, Search, X, User, CalendarDays, Edit, UtensilsCrossed, Send } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { Button } from './Button';
+import { ListView } from './ListView';
 import { GridView } from './GridView';
 import { CalendarView } from './CalendarView';
 import { ViewSwitcher, ViewMode } from './ViewSwitcher';
@@ -662,8 +663,12 @@ export function BookingsPage({ onViewDetails }: { onViewDetails?: (booking: type
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleOpenModal = (booking: typeof bookingsData[0]) => {
-    setSelectedBooking(booking);
-    setIsModalOpen(true);
+    if (onViewDetails) {
+      onViewDetails(booking);
+    } else {
+      setSelectedBooking(booking);
+      setIsModalOpen(true);
+    }
   };
 
   const handleCloseModal = () => {
@@ -744,6 +749,9 @@ export function BookingsPage({ onViewDetails }: { onViewDetails?: (booking: type
         </div>
 
         {/* Conditional View Rendering */}
+        {currentView === 'list' && (
+          <ListView onOpenModal={handleOpenModal} bookings={filteredBookings} />
+        )}
         {currentView === 'grid' && (
           <GridView onOpenModal={handleOpenModal} bookings={filteredBookings} />
         )}
