@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Send, User, CalendarDays, Edit, UtensilsCrossed, MessageSquare, Mail, FileText } from 'lucide-react';
+import { ArrowLeft, Send, User, CalendarDays, Edit, UtensilsCrossed, MessageSquare, Mail, FileText, Lock, Unlock, History } from 'lucide-react';
 import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
 import { KitchenPdfActionModal } from './KitchenPdfActionModal';
 import { KitchenPdfService, type KitchenPdfStatus } from '../../services/kitchen-pdf.service';
@@ -66,6 +66,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
     booking.kitchenPdf
   );
   const [isPdfActionModalOpen, setIsPdfActionModalOpen] = useState(false);
+  const [isLocked, setIsLocked] = useState(true);
 
   // Admin users list for kitchen PDF modal
   const adminUsers = [
@@ -103,12 +104,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
     });
   };
 
-  const handleSendReminder = () => {
-    // TODO: Implement actual reminder sending logic
-    toast.success('Reminder sent successfully', {
-      description: `Reminder email sent to ${booking.customer.email}`,
-    });
-  };
+
 
   const handleSaveChanges = () => {
     // In a real app, this would persist to the server
@@ -215,14 +211,32 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
             Kitchen Sheet
           </button>
 
-          {/* Send Reminder Button */}
+          {/* Action Buttons */}
           <button
-            onClick={handleSendReminder}
-            className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
+            onClick={() => setIsLocked(!isLocked)}
+            className="px-4 py-2 bg-[#F59E0B] text-white rounded-lg hover:bg-[#D97706] transition-colors flex items-center gap-2 cursor-pointer"
+            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+          >
+            {isLocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+            {isLocked ? 'Unlock' : 'Lock'}
+          </button>
+          <button
+            className="px-4 py-2 bg-[#1F2937] text-white rounded-lg hover:bg-[#374151] transition-colors flex items-center gap-2 cursor-pointer"
+            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+          >
+            <History className="w-4 h-4" />
+            Show History
+          </button>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              toast.success('Link copied');
+            }}
+            className="px-4 py-2 bg-[#1F2937] text-white rounded-lg hover:bg-[#374151] transition-colors flex items-center gap-2 cursor-pointer"
             style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
           >
             <Send className="w-4 h-4" />
-            Send Reminder
+            Copy Edit Link
           </button>
         </div>
       </div>
@@ -236,6 +250,20 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
           View and manage booking information
         </p>
       </div>
+
+      {isLocked && (
+        <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-4 flex items-start gap-3 mb-6">
+          <Lock className="w-5 h-5 text-[#D97706] mt-0.5 flex-shrink-0" />
+          <div>
+            <h4 className="text-[#92400E]" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+              Booking is Locked
+            </h4>
+            <p className="text-[#B45309]" style={{ fontSize: 'var(--text-small)' }}>
+              Clients cannot edit this booking. You can still make changes as an admin.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-6">
         {/* Customer Information */}

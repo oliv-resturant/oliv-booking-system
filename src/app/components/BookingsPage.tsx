@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { Mail, MapPin, MessageSquare, Download, Search, X, User, CalendarDays, Edit, UtensilsCrossed, Send } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Mail, MapPin, MessageSquare, Download, Search, X, User, CalendarDays, Edit, UtensilsCrossed, Send, ArrowLeft, Lock, Unlock, History } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { Button } from './Button';
 import { GridView } from './GridView';
@@ -243,11 +243,12 @@ function BookingDetailModal({
     booking?.contactHistory || []
   );
   const [newComment, setNewComment] = useState('');
+  const [isLocked, setIsLocked] = useState(true);
 
   // Update local state if the booking prop changes
-  useState(() => {
+  useEffect(() => {
     if (booking) setLocalBooking(booking);
-  });
+  }, [booking]);
 
   if (!booking || !localBooking) return null;
 
@@ -296,13 +297,6 @@ function BookingDetailModal({
     });
   };
 
-  const handleSendReminder = () => {
-    // TODO: Implement actual reminder sending logic
-    toast.success('Reminder sent successfully', {
-      description: `Reminder email sent to ${booking.customer.email}`,
-    });
-  };
-
   return (
     <>
       {/* Overlay */}
@@ -314,28 +308,59 @@ function BookingDetailModal({
       {/* Modal */}
       <div className="fixed right-0 top-0 h-full w-full max-w-2xl bg-background z-50 shadow-2xl overflow-y-auto transform transition-transform">
         <div className="sticky top-0 bg-background border-b border-border z-10 px-8 py-5 flex items-center justify-between">
-          <h2 className="text-foreground" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
-            Booking Details
-          </h2>
+          <button
+            onClick={onClose}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back to Bookings
+          </button>
           <div className="flex items-center gap-3">
             <button
-              onClick={handleSendReminder}
-              className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
+              onClick={() => setIsLocked(!isLocked)}
+              className="px-4 py-2 bg-[#F59E0B] text-white rounded-lg hover:bg-[#D97706] transition-colors flex items-center gap-2 cursor-pointer"
+              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+            >
+              {isLocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              {isLocked ? 'Unlock' : 'Lock'}
+            </button>
+            <button
+              className="px-4 py-2 bg-[#1F2937] text-white rounded-lg hover:bg-[#374151] transition-colors flex items-center gap-2 cursor-pointer"
+              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+            >
+              <History className="w-4 h-4" />
+              Show History
+            </button>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                toast.success('Link copied');
+              }}
+              className="px-4 py-2 bg-[#1F2937] text-white rounded-lg hover:bg-[#374151] transition-colors flex items-center gap-2 cursor-pointer"
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
             >
               <Send className="w-4 h-4" />
-              Send Reminder
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5 text-muted-foreground" />
+              Copy Edit Link
             </button>
           </div>
         </div>
 
         <div className="px-6 py-6 space-y-6">
+          {isLocked && (
+            <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-4 flex items-start gap-3">
+              <Lock className="w-5 h-5 text-[#D97706] mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="text-[#92400E]" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                  Booking is Locked
+                </h4>
+                <p className="text-[#B45309]" style={{ fontSize: 'var(--text-small)' }}>
+                  Clients cannot edit this booking. You can still make changes as an admin.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Status Dropdown at the Top */}
           <div className="bg-card border border-border rounded-xl p-6">
             <h3 className="text-foreground mb-5 flex items-center gap-2" style={{ fontSize: 'var(--text-h3)', fontWeight: 'var(--font-weight-semibold)' }}>
