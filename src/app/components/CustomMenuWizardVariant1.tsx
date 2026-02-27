@@ -2524,14 +2524,6 @@ Hinzufügen
                                         /person
                                       </span>
                                     </p>
-                                    {getMainCoursePriceBreakdown() && (
-                                      <p
-                                        className="text-muted-foreground text-xs mt-1"
-                                        style={{ fontSize: "var(--text-small)" }}
-                                      >
-                                        {getMainCoursePriceBreakdown()}
-                                      </p>
-                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -2845,22 +2837,6 @@ Hinzufügen
                                           {getPerPersonSubtotal().toFixed(2)}
                                         </p>
                                       </div>
-                                      {getMainCoursePriceBreakdown() && (
-                                        <div className="flex items-center justify-between mb-2 ml-4">
-                                          <p
-                                            className="text-muted-foreground text-xs"
-                                            style={{ fontSize: "var(--text-small)" }}
-                                          >
-                                            Hauptgerichte Aufschlüsselung
-                                          </p>
-                                          <p
-                                            className="text-muted-foreground text-xs"
-                                            style={{ fontSize: "var(--text-small)" }}
-                                          >
-                                            {getMainCoursePriceBreakdown()}
-                                          </p>
-                                        </div>
-                                      )}
                                       <div className="flex items-center justify-between mb-2">
                                         <p
                                           className="text-muted-foreground"
