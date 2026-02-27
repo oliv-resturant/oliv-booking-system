@@ -664,8 +664,8 @@ export function MenuConfigPage() {
             <button
               onClick={() => setActiveTab('items')}
               className={`px-3 md:px-4 py-2 rounded-md flex items-center gap-2 transition-colors min-h-[44px] ${activeTab === 'items'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
             >
@@ -676,8 +676,8 @@ export function MenuConfigPage() {
             <button
               onClick={() => setActiveTab('addons')}
               className={`px-3 md:px-4 py-2 rounded-md flex items-center gap-2 transition-colors min-h-[44px] ${activeTab === 'addons'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
               style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
             >
@@ -953,17 +953,17 @@ export function MenuConfigPage() {
                                           <div className="flex items-center gap-2 mb-0.5">
                                             {/* Dietary Icon */}
                                             <div className={`w-4 h-4 flex-shrink-0 flex items-center justify-center border-2 rounded ${item.dietaryType === 'non-veg'
-                                                ? 'border-red-600'
-                                                : item.dietaryType === 'vegan'
-                                                  ? 'border-green-700'
-                                                  : 'border-green-600'
+                                              ? 'border-red-600'
+                                              : item.dietaryType === 'vegan'
+                                                ? 'border-green-700'
+                                                : 'border-green-600'
                                               }`}>
                                               <Circle
                                                 className={`w-2 h-2 ${item.dietaryType === 'non-veg'
-                                                    ? 'text-red-600 fill-red-600'
-                                                    : item.dietaryType === 'vegan'
-                                                      ? 'text-green-700 fill-green-700'
-                                                      : 'text-green-600 fill-green-600'
+                                                  ? 'text-red-600 fill-red-600'
+                                                  : item.dietaryType === 'vegan'
+                                                    ? 'text-green-700 fill-green-700'
+                                                    : 'text-green-600 fill-green-600'
                                                   }`}
                                               />
                                             </div>
@@ -1810,13 +1810,13 @@ export function MenuConfigPage() {
                 type="button"
                 onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'per-person' })}
                 className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${newMenuItem.pricingType === 'per-person'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border bg-background hover:border-border hover:bg-accent'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-background hover:border-border hover:bg-accent'
                   }`}
               >
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.pricingType === 'per-person'
-                    ? 'border-primary'
-                    : 'border-border'
+                  ? 'border-primary'
+                  : 'border-border'
                   }`}>
                   {newMenuItem.pricingType === 'per-person' && (
                     <div className="w-3 h-3 rounded-full bg-primary" />
@@ -1835,13 +1835,13 @@ export function MenuConfigPage() {
                 type="button"
                 onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'flat-rate' })}
                 className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${newMenuItem.pricingType === 'flat-rate'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border bg-background hover:border-border hover:bg-accent'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-background hover:border-border hover:bg-accent'
                   }`}
               >
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.pricingType === 'flat-rate'
-                    ? 'border-primary'
-                    : 'border-border'
+                  ? 'border-primary'
+                  : 'border-border'
                   }`}>
                   {newMenuItem.pricingType === 'flat-rate' && (
                     <div className="w-3 h-3 rounded-full bg-primary" />
@@ -2085,8 +2085,8 @@ export function MenuConfigPage() {
                       Optional
                     </span>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${newGroup.type === 'optional'
-                        ? 'border-primary bg-primary'
-                        : 'border-border bg-background'
+                      ? 'border-primary bg-primary'
+                      : 'border-border bg-background'
                       }`}>
                       {newGroup.type === 'optional' && (
                         <div className="w-2 h-2 rounded-full bg-primary-foreground" />
@@ -2109,8 +2109,8 @@ export function MenuConfigPage() {
                       Mandatory
                     </span>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${newGroup.type === 'mandatory'
-                        ? 'border-primary bg-primary'
-                        : 'border-border bg-background'
+                      ? 'border-primary bg-primary'
+                      : 'border-border bg-background'
                       }`}>
                       {newGroup.type === 'mandatory' && (
                         <div className="w-2 h-2 rounded-full bg-primary-foreground" />
@@ -2297,8 +2297,8 @@ export function MenuConfigPage() {
               <button
                 onClick={() => setNewAddonItem({ ...newAddonItem, dietaryType: 'veg' })}
                 className={`p-4 rounded-lg border-2 transition-all ${newAddonItem.dietaryType === 'veg'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-border/60 bg-background'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-border/60 bg-background'
                   }`}
               >
                 <div className="flex items-center gap-3">
@@ -2325,8 +2325,8 @@ export function MenuConfigPage() {
               <button
                 onClick={() => setNewAddonItem({ ...newAddonItem, dietaryType: 'non-veg' })}
                 className={`p-4 rounded-lg border-2 transition-all ${newAddonItem.dietaryType === 'non-veg'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-border/60 bg-background'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-border/60 bg-background'
                   }`}
               >
                 <div className="flex items-center gap-3">
@@ -2554,8 +2554,8 @@ export function MenuConfigPage() {
                     >
                       <div className="flex items-center gap-2">
                         <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${isSelected
-                            ? 'bg-primary border-primary'
-                            : 'bg-background border-border'
+                          ? 'bg-primary border-primary'
+                          : 'bg-background border-border'
                           }`}>
                           {isSelected && (
                             <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />

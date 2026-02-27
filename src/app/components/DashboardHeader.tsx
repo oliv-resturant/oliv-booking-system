@@ -66,20 +66,19 @@ export function DashboardHeader({ onMenuClick, userName = 'Admin User', isScroll
   const currentPageInfo = pageInfo[currentPage] || pageInfo['dashboard'];
 
   return (
-    <div 
-      className={`mx-4 md:mx-8 mt-3 md:mt-5 mb-3 md:mb-5 flex items-center justify-between bg-card rounded-2xl px-4 md:px-[32px] py-3 md:py-[10px] border border-border transition-shadow duration-300 ${
-        isScrolled ? 'shadow-lg' : 'shadow-sm'
-      }`}
+    <div
+      className={`mx-4 md:mx-8 mt-3 md:mt-5 mb-3 md:mb-5 flex items-center justify-between bg-card rounded-2xl px-4 md:px-[32px] py-3 md:py-[10px] border border-border transition-shadow duration-300 ${isScrolled ? 'shadow-lg' : 'shadow-sm'
+        }`}
     >
       <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
         {/* Menu Button for mobile */}
-        <button 
+        <button
           onClick={onMenuClick}
           className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer flex-shrink-0"
         >
           <Menu className="w-5 h-5 text-muted-foreground" />
         </button>
-        
+
         <div className="min-w-0 flex-1">
           <h1 className="truncate" style={{ fontSize: 'var(--text-h2)', fontWeight: 'var(--font-weight-semibold)' }}>
             {currentPageInfo.title}
@@ -93,7 +92,7 @@ export function DashboardHeader({ onMenuClick, userName = 'Admin User', isScroll
       <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
         {/* User Profile with Dropdown */}
         <div className="relative" ref={dropdownRef}>
-          <button 
+          <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-2 md:gap-3 p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
           >
@@ -101,10 +100,9 @@ export function DashboardHeader({ onMenuClick, userName = 'Admin User', isScroll
               <User className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="hidden md:inline" style={{ fontSize: 'var(--text-base)' }}>{userName}</span>
-            <ChevronDown 
-              className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
-                isDropdownOpen ? 'rotate-180' : ''
-              }`} 
+            <ChevronDown
+              className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''
+                }`}
             />
           </button>
 
