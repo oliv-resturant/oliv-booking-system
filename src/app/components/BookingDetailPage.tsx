@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { ArrowLeft, Send, User, CalendarDays, Edit, UtensilsCrossed, MessageSquare, Mail } from 'lucide-react';
+import { ArrowLeft, Send, User, CalendarDays, Edit, UtensilsCrossed, MessageSquare, Mail, FileText } from 'lucide-react';
+import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
+import { KitchenPdfActionModal } from './KitchenPdfActionModal';
+import { KitchenPdfService, type KitchenPdfStatus } from '../../services/kitchen-pdf.service';
+import { VenueService } from '../../services/venue.service';
+import { toast } from 'sonner';
 
 interface Booking {
   id: number;
@@ -17,6 +22,7 @@ interface Booking {
     date: string;
     time: string;
     occasion: string;
+    location?: string;
   };
   guests: number;
   amount: string;
@@ -40,6 +46,7 @@ interface Booking {
     date: string;
     action: string;
   }>;
+  kitchenPdf?: KitchenPdfStatus;
 }
 
 interface BookingDetailPageProps {
@@ -48,13 +55,34 @@ interface BookingDetailPageProps {
 }
 
 export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
+  const [currentBooking, setCurrentBooking] = useState(booking);
   const [comments, setComments] = useState<Array<{ by: string; time: string; date: string; action: string }>>(
     booking.contactHistory || []
   );
   const [newComment, setNewComment] = useState('');
 
+  // Kitchen PDF state
+  const [kitchenPdfStatus, setKitchenPdfStatus] = useState<KitchenPdfStatus | undefined>(
+    booking.kitchenPdf
+  );
+  const [isPdfActionModalOpen, setIsPdfActionModalOpen] = useState(false);
+
+  // Admin users list for kitchen PDF modal
+  const adminUsers = [
+    { id: '1', name: 'Chef Manager', email: 'chef@oliv.com', role: 'Kitchen Manager' },
+    { id: '2', name: 'Sous Chef', email: 'sous@oliv.com', role: 'Sous Chef' },
+    { id: '3', name: 'Kitchen Staff', email: 'kitchen@oliv.com', role: 'Kitchen Staff' },
+  ];
+
+  const VENUE_LOCATIONS = VenueService.getLocations();
+
   const handleAddComment = () => {
-    if (!newComment.trim()) return;
+    if (!newComment.trim()) {
+      toast.error('Comment cannot be empty', {
+        description: 'Please enter a comment before adding.',
+      });
+      return;
+    }
 
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -69,6 +97,89 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
 
     setComments([...comments, newCommentObj]);
     setNewComment('');
+
+    toast.success('Comment added successfully', {
+      description: 'Your comment has been recorded.',
+    });
+  };
+
+  const handleSendReminder = () => {
+    // TODO: Implement actual reminder sending logic
+    toast.success('Reminder sent successfully', {
+      description: `Reminder email sent to ${booking.customer.email}`,
+    });
+  };
+
+  const handleSaveChanges = () => {
+    // In a real app, this would persist to the server
+    toast.success('Changes saved successfully', {
+      description: 'Booking details have been updated.',
+    });
+  };
+
+  const handleLocationChange = (newLocation: string) => {
+    setCurrentBooking(prev => ({
+      ...prev,
+      event: {
+        ...prev.event,
+        location: newLocation
+      }
+    }));
+    toast.success('Location updated visually. Save changes to persist.');
+  };
+
+  const handlePdfActionComplete = (action: 'admin' | 'external' | 'download', data?: { emails?: string[]; notes?: string }) => {
+    const documentName = KitchenPdfService.getDocumentName(booking.id);
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    let actionText = '';
+    if (action === 'download') {
+      actionText = `Downloaded kitchen sheet PDF: ${documentName}`;
+    } else if (action === 'admin') {
+      const recipientCount = data?.emails?.length || 0;
+      const recipients = data?.emails?.join(', ') || '';
+      actionText = `Kitchen sheet PDF sent to ${recipientCount} admin user${recipientCount !== 1 ? 's' : ''}: ${documentName}`;
+      if (data?.notes) {
+        actionText += `\nNotes: ${data.notes}`;
+      }
+      if (recipients) {
+        actionText += `\nRecipients: ${recipients}`;
+      }
+      setKitchenPdfStatus({
+        documentName,
+        sentStatus: 'sent',
+        lastSentAt: now.toISOString(),
+        sentBy: 'Admin',
+        sendAttempts: (kitchenPdfStatus?.sendAttempts || 0) + 1,
+      });
+    } else if (action === 'external' && data?.emails) {
+      const email = data.emails[0];
+      actionText = `Kitchen sheet PDF sent to ${email}: ${documentName}`;
+      if (data?.notes) {
+        actionText += `\nNotes: ${data.notes}`;
+      }
+      setKitchenPdfStatus({
+        documentName,
+        sentStatus: 'sent',
+        lastSentAt: now.toISOString(),
+        sentBy: 'Admin',
+        sendAttempts: (kitchenPdfStatus?.sendAttempts || 0) + 1,
+      });
+    }
+
+    const newCommentObj = {
+      by: 'Admin',
+      time: timeStr,
+      date: dateStr,
+      action: actionText,
+    };
+    setComments([...comments, newCommentObj]);
+
+    toast.success('Action completed successfully', {
+      description: actionText.split('\n')[0],
+    });
   };
 
   return (
@@ -85,10 +196,35 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
             <span className="hidden sm:inline">Back to Bookings</span>
           </button>
         </div>
-        <button className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-          <Send className="w-4 h-4" />
-          Send Reminder
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Kitchen PDF Status Badge */}
+          {kitchenPdfStatus && (
+            <KitchenPdfStatusBadge
+              status={kitchenPdfStatus.sentStatus}
+              lastSentAt={kitchenPdfStatus.lastSentAt}
+            />
+          )}
+
+          {/* Kitchen Sheet Action Button */}
+          <button
+            onClick={() => setIsPdfActionModalOpen(true)}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 cursor-pointer"
+            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+          >
+            <FileText className="w-4 h-4" />
+            Kitchen Sheet
+          </button>
+
+          {/* Send Reminder Button */}
+          <button
+            onClick={handleSendReminder}
+            className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
+            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+          >
+            <Send className="w-4 h-4" />
+            Send Reminder
+          </button>
+        </div>
       </div>
 
       {/* Page Title */}
@@ -115,7 +251,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
               </label>
               <input
                 type="text"
-                value={booking.customer.firstName}
+                value={currentBooking.customer.firstName}
                 readOnly
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
                 style={{ fontSize: 'var(--text-base)' }}
@@ -127,7 +263,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
               </label>
               <input
                 type="text"
-                value={booking.customer.lastName}
+                value={currentBooking.customer.lastName}
                 readOnly
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
                 style={{ fontSize: 'var(--text-base)' }}
@@ -139,7 +275,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
               </label>
               <input
                 type="email"
-                value={booking.customer.email}
+                value={currentBooking.customer.email}
                 readOnly
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
                 style={{ fontSize: 'var(--text-base)' }}
@@ -151,7 +287,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
               </label>
               <input
                 type="tel"
-                value={booking.customer.phone}
+                value={currentBooking.customer.phone}
                 readOnly
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
                 style={{ fontSize: 'var(--text-base)' }}
@@ -163,7 +299,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
               </label>
               <input
                 type="text"
-                value={booking.customer.address}
+                value={currentBooking.customer.address}
                 readOnly
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
                 style={{ fontSize: 'var(--text-base)' }}
@@ -191,7 +327,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
               </label>
               <input
                 type="text"
-                value={booking.event.date}
+                value={currentBooking.event.date}
                 readOnly
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
                 style={{ fontSize: 'var(--text-base)' }}
@@ -203,7 +339,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
               </label>
               <input
                 type="text"
-                value={booking.event.time}
+                value={currentBooking.event.time}
                 readOnly
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
                 style={{ fontSize: 'var(--text-base)' }}
@@ -215,7 +351,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
               </label>
               <input
                 type="text"
-                value={booking.guests}
+                value={currentBooking.guests}
                 readOnly
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
                 style={{ fontSize: 'var(--text-base)' }}
@@ -227,7 +363,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
               </label>
               <input
                 type="text"
-                value={booking.event.occasion}
+                value={currentBooking.event.occasion}
                 readOnly
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
                 style={{ fontSize: 'var(--text-base)' }}
@@ -239,7 +375,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
               </label>
               <input
                 type="text"
-                value={booking.amount}
+                value={currentBooking.amount}
                 readOnly
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
                 style={{ fontSize: 'var(--text-base)' }}
@@ -247,11 +383,27 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
             </div>
             <div>
               <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                Venue Location
+              </label>
+              <select
+                value={currentBooking.event.location || ''}
+                onChange={(e) => handleLocationChange(e.target.value)}
+                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground cursor-pointer"
+                style={{ fontSize: 'var(--text-base)' }}
+              >
+                <option value="">Not Assigned</option>
+                {VENUE_LOCATIONS.map((loc: string) => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
                 Status
               </label>
               <input
                 type="text"
-                value={booking.status}
+                value={currentBooking.status}
                 readOnly
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
                 style={{ fontSize: 'var(--text-base)' }}
@@ -272,7 +424,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
                 Allergies
               </label>
               <textarea
-                value={booking.allergies}
+                value={currentBooking.allergies}
                 readOnly
                 rows={2}
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground resize-none"
@@ -284,7 +436,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
                 Notes
               </label>
               <textarea
-                value={booking.notes}
+                value={currentBooking.notes}
                 readOnly
                 rows={2}
                 className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground resize-none"
@@ -322,7 +474,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
                   ))}
                   <tr className="border-t-2 border-border bg-muted">
                     <td colSpan={3} className="px-4 py-3 text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>Total Amount</td>
-                    <td className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>{booking.amount}</td>
+                    <td className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>{currentBooking.amount}</td>
                   </tr>
                 </tbody>
               </table>
@@ -360,7 +512,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
                 </div>
               </div>
             ))}
-            
+
             {/* Add Comment Form */}
             <div className="space-y-3 pt-2">
               <textarea
@@ -385,7 +537,11 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
 
         {/* Save Button */}
         <div className="pb-4">
-          <button className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors cursor-pointer" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+          <button
+            onClick={handleSaveChanges}
+            className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
+            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
+          >
             Save Changes
           </button>
         </div>
@@ -397,6 +553,15 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
           </p>
         </div>
       </div>
+
+      {/* Kitchen PDF Action Modal */}
+      <KitchenPdfActionModal
+        isOpen={isPdfActionModalOpen}
+        onClose={() => setIsPdfActionModalOpen(false)}
+        onActionComplete={handlePdfActionComplete}
+        adminUsers={adminUsers}
+        booking={booking}
+      />
     </div>
   );
 }

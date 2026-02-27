@@ -12,6 +12,7 @@ import { ProfilePage } from '@/app/components/ProfilePage';
 import { Calendar, DollarSign, Package, BarChart3, PieChart, TrendingUp } from 'lucide-react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
+import { Toaster } from 'sonner';
 
 // Mock data
 const bookingsData = [
@@ -140,7 +141,7 @@ function ModernLayout() {
                     fontSize: '12px',
                     fontFamily: 'var(--font-sans)',
                   },
-                  formatter: function () {
+                  formatter: function (this: any): string {
                     return '<b>' + this.x + '</b><br/>' + 'Bookings: <b>' + this.y + '</b>';
                   },
                 },
@@ -295,7 +296,7 @@ function ModernLayout() {
                 text: '',
               },
               labels: {
-                formatter: function () {
+                formatter: function (this: any) {
                   return '$' + (this.value / 1000).toFixed(1) + 'k';
                 },
                 style: {
@@ -315,7 +316,7 @@ function ModernLayout() {
                 fontSize: '12px',
                 fontFamily: 'var(--font-sans)',
               },
-              formatter: function () {
+              formatter: function (this: any): string {
                 return '<b>' + this.x + '</b><br/>' + 'Revenue: <b>$' + this.y.toLocaleString() + '</b>';
               },
             },
@@ -394,22 +395,22 @@ export default function App() {
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <>
-          <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden" 
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
           <div className="fixed inset-y-0 left-0 z-50 lg:hidden">
-            <DashboardSidebar 
-              activeItem={currentPage} 
+            <DashboardSidebar
+              activeItem={currentPage}
               onNavigate={(page) => {
                 setCurrentPage(page);
                 setSidebarOpen(false);
-              }} 
+              }}
             />
           </div>
         </>
       )}
-      
+
       {/* Main Content Area - Centered */}
       <div className="flex-1 flex flex-col items-center overflow-x-hidden min-h-screen">
         <div className="w-full max-w-[1440px] flex flex-col flex-1">
@@ -417,12 +418,12 @@ export default function App() {
           <div className="sticky top-0 z-10 bg-background">
             <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} isScrolled={isScrolled} currentPage={currentPage} onNavigate={setCurrentPage} />
           </div>
-          
+
           {/* Main Content */}
           <main ref={mainRef} className="flex-1 flex flex-col">
             {currentPage === 'dashboard' && <ModernLayout />}
             {currentPage === 'bookings' && (
-              <BookingsPage 
+              <BookingsPage
                 onViewDetails={(booking) => {
                   setSelectedBooking(booking);
                   setCurrentPage('booking-detail');
@@ -430,7 +431,7 @@ export default function App() {
               />
             )}
             {currentPage === 'booking-detail' && selectedBooking && (
-              <BookingDetailPage 
+              <BookingDetailPage
                 booking={selectedBooking}
                 onBack={() => {
                   setCurrentPage('bookings');
@@ -446,6 +447,9 @@ export default function App() {
           </main>
         </div>
       </div>
+
+      {/* Toast Notifications */}
+      <Toaster position="top-right" richColors />
     </div>
   );
 }

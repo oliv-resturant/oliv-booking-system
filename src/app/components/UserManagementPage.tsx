@@ -64,7 +64,7 @@ export function UserManagementPage() {
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  
+
   // Form states
   const [formName, setFormName] = useState('');
   const [formEmail, setFormEmail] = useState('');
@@ -272,10 +272,10 @@ export function UserManagementPage() {
                         </span>
                       </td>
                       <td className="px-3 md:px-6 py-4 text-muted-foreground hidden sm:table-cell" style={{ fontSize: 'var(--text-base)' }}>
-                        {new Date(user.createdAt).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric' 
+                        {new Date(user.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
                         })}
                       </td>
                       <td className="px-3 md:px-6 py-4">
@@ -330,9 +330,9 @@ export function UserManagementPage() {
             }}>
               Cancel
             </Button>
-            <Button 
-              variant="primary" 
-              icon={Plus} 
+            <Button
+              variant="primary"
+              icon={Plus}
               onClick={handleAddUser}
               disabled={!formName.trim() || !formEmail.trim()}
             >
@@ -416,9 +416,9 @@ export function UserManagementPage() {
             }}>
               Cancel
             </Button>
-            <Button 
-              variant="primary" 
-              icon={Check} 
+            <Button
+              variant="primary"
+              icon={Check}
               onClick={handleSaveEdit}
               disabled={!formName.trim() || !formEmail.trim()}
             >
@@ -493,7 +493,7 @@ export function UserManagementPage() {
         title="Delete User"
         message={`Are you sure you want to delete "${selectedUser?.name}"? This action cannot be undone.`}
         confirmText="Delete User"
-        confirmIcon={Trash2}
+        confirmIcon="delete"
       />
     </div>
   );

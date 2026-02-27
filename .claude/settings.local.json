@@ -6,7 +6,9 @@
       "Bash(npm install @radix-ui/react-toggle-group)",
       "Bash(npm install clsx)",
       "Bash(npm install class-variance-authority)",
-      "Bash(npm install tailwind-merge)"
+      "Bash(npm install tailwind-merge)",
+      "Bash(npx tsc:*)",
+      "Bash(pkill:*)"
     ]
   }
 }

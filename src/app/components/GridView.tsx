@@ -1,4 +1,6 @@
 import { Mail, Calendar, Users, Phone, Clock } from 'lucide-react';
+import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
+import type { KitchenPdfStatus } from '@/services/kitchen-pdf.service';
 
 // Status color configuration (matching BookingsPage)
 const statusColors: Record<string, { bg: string; text: string; border: string; dotColor: string }> = {
@@ -22,6 +24,7 @@ interface GridViewProps {
     event: {
       date: string;
       occasion: string;
+      location?: string;
     };
     guests: number;
     amount: string;
@@ -30,6 +33,7 @@ interface GridViewProps {
       by: string;
       when: string;
     };
+    kitchenPdf?: KitchenPdfStatus;
   }>;
   onOpenModal: (booking: any) => void;
 }
@@ -52,7 +56,7 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
           className="bg-card border border-border rounded-xl p-4 md:p-5 hover:shadow-md transition-all"
         >
           {/* Header */}
-          <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0"
@@ -76,25 +80,30 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
                 </p>
               </div>
             </div>
-            <span
-              className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 ${
-                statusColors[booking.status]?.bg
-              } ${statusColors[booking.status]?.text} ${
-                statusColors[booking.status]?.border
-              }`}
-              style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
-            >
-              <div
-                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: statusColors[booking.status]?.dotColor }}
-              />
-              {booking.status}
-            </span>
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              {booking.kitchenPdf && (
+                <KitchenPdfStatusBadge
+                  status={booking.kitchenPdf.sentStatus}
+                  lastSentAt={booking.kitchenPdf.lastSentAt}
+                />
+              )}
+              <span
+                className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 ${statusColors[booking.status]?.bg
+                  } ${statusColors[booking.status]?.text} ${statusColors[booking.status]?.border
+                  }`}
+                style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
+              >
+                <div
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: statusColors[booking.status]?.dotColor }}
+                />
+                {booking.status}
+              </span>
+            </div>
           </div>
 
           {/* Refined Information Rows */}
           <div className="space-y-2 mb-4">
-            {/* Row 1: Email + Date */}
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Mail className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
@@ -131,6 +140,12 @@ export function GridView({ onOpenModal, bookings }: GridViewProps) {
               <div className="text-muted-foreground flex-1" style={{ fontSize: 'var(--text-small)' }}>
                 By {booking.contacted.by} • {booking.contacted.when}
               </div>
+              {booking.event.location && (
+                <div className="flex items-center gap-1.5 text-primary font-medium" style={{ fontSize: 'var(--text-small)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  {booking.event.location}
+                </div>
+              )}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                 <span

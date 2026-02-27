@@ -7,15 +7,15 @@ interface TooltipProps {
   delay?: number;
 }
 
-export function Tooltip({ 
-  children, 
-  title, 
+export function Tooltip({
+  children,
+  title,
   position = 'top',
-  delay = 200 
+  delay = 200
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
   const handleMouseEnter = () => {
@@ -59,20 +59,19 @@ export function Tooltip({
   };
 
   return (
-    <div 
+    <div
       className="relative inline-flex"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {children}
-      
+
       {isVisible && (
         <div
           ref={tooltipRef}
-          className={`absolute z-50 px-3 py-2 bg-secondary text-white rounded-lg shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-150 ${
-            positionClasses[position]
-          } ${showTooltip ? 'opacity-100' : 'opacity-0'}`}
-          style={{ 
+          className={`absolute z-50 px-3 py-2 bg-secondary text-white rounded-lg shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-150 ${positionClasses[position]
+            } ${showTooltip ? 'opacity-100' : 'opacity-0'}`}
+          style={{
             fontSize: 'var(--text-small)',
             fontWeight: 'var(--font-weight-medium)'
           }}

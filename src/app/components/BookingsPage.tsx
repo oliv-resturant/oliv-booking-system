@@ -3,9 +3,15 @@ import { Mail, MapPin, MessageSquare, Download, Search, X, User, CalendarDays, E
 import { StatusDropdown } from './StatusDropdown';
 import { Button } from './Button';
 import { GridView } from './GridView';
-import { ListView } from './ListView';
 import { CalendarView } from './CalendarView';
 import { ViewSwitcher, ViewMode } from './ViewSwitcher';
+import { toast } from 'sonner';
+
+import type { KitchenPdfStatus } from '@/services/kitchen-pdf.service';
+
+import { VenueService } from '../../services/venue.service';
+
+const VENUE_LOCATIONS = VenueService.getLocations();
 
 // Mock booking data with extended information
 const bookingsData = [
@@ -24,7 +30,8 @@ const bookingsData = [
     event: {
       date: 'Jun 15, 2026',
       time: '18:00',
-      occasion: 'Wedding'
+      occasion: 'Wedding',
+      location: 'Main Hall'
     },
     guests: 120,
     amount: 'CHF 8,500',
@@ -43,7 +50,12 @@ const bookingsData = [
     contactHistory: [
       { by: 'Florian', time: '02:30 PM', date: '28 Jan 2026', action: 'Sent menu options' },
       { by: 'Florian', time: '04:45 PM', date: '29 Jan 2026', action: 'Confirmed menu' },
-    ]
+    ],
+    kitchenPdf: {
+      documentName: 'Booking #1 – Kitchen Sheet',
+      sentStatus: 'not_sent' as const,
+      sendAttempts: 0,
+    }
   },
   {
     id: 2,
@@ -60,7 +72,8 @@ const bookingsData = [
     event: {
       date: 'Mar 20, 2026',
       time: '19:30',
-      occasion: 'Corporate Event'
+      occasion: 'Corporate Event',
+      location: 'Garden Terrace'
     },
     guests: 50,
     amount: 'CHF 3,200',
@@ -79,7 +92,14 @@ const bookingsData = [
     contactHistory: [
       { by: 'Stefan', time: '10:00 AM', date: '15 Jan 2026', action: 'Initial contact' },
       { by: 'Stefan', time: '03:30 PM', date: '18 Jan 2026', action: 'Confirmed booking' },
-    ]
+    ],
+    kitchenPdf: {
+      documentName: 'Booking #2 – Kitchen Sheet',
+      sentStatus: 'sent' as const,
+      lastSentAt: '2026-02-26T14:30:00Z',
+      sentBy: 'Admin',
+      sendAttempts: 1,
+    }
   },
   {
     id: 3,
@@ -96,7 +116,8 @@ const bookingsData = [
     event: {
       date: 'Apr 5, 2026',
       time: '17:00',
-      occasion: 'Birthday'
+      occasion: 'Birthday',
+      location: 'Private Dining Room'
     },
     guests: 30,
     amount: 'CHF 2,100',
@@ -114,7 +135,15 @@ const bookingsData = [
     ],
     contactHistory: [
       { by: 'Florian', time: '11:20 AM', date: '30 Jan 2026', action: 'Discussed menu options' },
-    ]
+    ],
+    kitchenPdf: {
+      documentName: 'Booking #3 – Kitchen Sheet',
+      sentStatus: 'failed' as const,
+      lastSentAt: '2026-02-26T15:00:00Z',
+      sentBy: 'Admin',
+      sendAttempts: 3,
+      errorMessage: 'Email server timeout',
+    }
   },
   {
     id: 4,
@@ -131,7 +160,8 @@ const bookingsData = [
     event: {
       date: 'Feb 10, 2026',
       time: '14:00',
-      occasion: 'Baptism'
+      occasion: 'Baptism',
+      location: 'Rooftop Bar'
     },
     guests: 40,
     amount: 'CHF 2,800',
@@ -164,7 +194,8 @@ const bookingsData = [
     event: {
       date: 'May 12, 2026',
       time: '19:00',
-      occasion: 'Anniversary'
+      occasion: 'Anniversary',
+      location: 'Main Hall'
     },
     guests: 25,
     amount: 'CHF 1,800',
@@ -198,16 +229,53 @@ const statusColors: Record<string, { bg: string; text: string; border: string; d
 const allStatuses = ['All Status', 'Confirmed', 'Touchbase', 'New', 'Declined', 'Completed'];
 
 // Booking Detail Modal
-function BookingDetailModal({ booking, onClose }: { booking: typeof bookingsData[0] | null; onClose: () => void }) {
+function BookingDetailModal({
+  booking,
+  onClose,
+  onUpdate
+}: {
+  booking: typeof bookingsData[0] | null;
+  onClose: () => void;
+  onUpdate: (updatedBooking: typeof bookingsData[0]) => void;
+}) {
+  const [localBooking, setLocalBooking] = useState(booking);
   const [comments, setComments] = useState<Array<{ by: string; time: string; date: string; action: string }>>(
     booking?.contactHistory || []
   );
   const [newComment, setNewComment] = useState('');
 
-  if (!booking) return null;
+  // Update local state if the booking prop changes
+  useState(() => {
+    if (booking) setLocalBooking(booking);
+  });
+
+  if (!booking || !localBooking) return null;
+
+  const handleLocationChange = (newLocation: string) => {
+    const updated = {
+      ...localBooking,
+      event: {
+        ...localBooking.event,
+        location: newLocation
+      }
+    };
+    setLocalBooking(updated);
+    toast.success('Location updated visually. Save changes to persist.');
+  };
+
+  const handleSave = () => {
+    onUpdate(localBooking);
+    toast.success('Changes saved successfully');
+    onClose();
+  };
 
   const handleAddComment = () => {
-    if (!newComment.trim()) return;
+    if (!newComment.trim()) {
+      toast.error('Comment cannot be empty', {
+        description: 'Please enter a comment before adding.',
+      });
+      return;
+    }
 
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -222,12 +290,23 @@ function BookingDetailModal({ booking, onClose }: { booking: typeof bookingsData
 
     setComments([...comments, newCommentObj]);
     setNewComment('');
+
+    toast.success('Comment added successfully', {
+      description: 'Your comment has been recorded.',
+    });
+  };
+
+  const handleSendReminder = () => {
+    // TODO: Implement actual reminder sending logic
+    toast.success('Reminder sent successfully', {
+      description: `Reminder email sent to ${booking.customer.email}`,
+    });
   };
 
   return (
     <>
       {/* Overlay */}
-      <div 
+      <div
         className="fixed inset-0 bg-black/30 z-40 transition-opacity"
         onClick={onClose}
       />
@@ -239,11 +318,15 @@ function BookingDetailModal({ booking, onClose }: { booking: typeof bookingsData
             Booking Details
           </h2>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+            <button
+              onClick={handleSendReminder}
+              className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2 cursor-pointer"
+              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+            >
               <Send className="w-4 h-4" />
               Send Reminder
             </button>
-            <button 
+            <button
               onClick={onClose}
               className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer"
             >
@@ -398,6 +481,22 @@ function BookingDetailModal({ booking, onClose }: { booking: typeof bookingsData
               </div>
               <div>
                 <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
+                  Venue Location
+                </label>
+                <select
+                  value={localBooking.event.location || ''}
+                  onChange={(e) => handleLocationChange(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground cursor-pointer"
+                  style={{ fontSize: 'var(--text-base)' }}
+                >
+                  <option value="">Not Assigned</option>
+                  {VenueService.getLocations().map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
                   Status
                 </label>
                 <input
@@ -511,7 +610,7 @@ function BookingDetailModal({ booking, onClose }: { booking: typeof bookingsData
                   </div>
                 </div>
               ))}
-              
+
               {/* Add Comment Form */}
               <div className="space-y-3 pt-2">
                 <textarea
@@ -540,7 +639,11 @@ function BookingDetailModal({ booking, onClose }: { booking: typeof bookingsData
 
         {/* Fixed Save Button Footer */}
         <div className="fixed bottom-0 right-0 w-full max-w-2xl bg-background border-t border-border px-6 py-4 z-10">
-          <button className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors cursor-pointer" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
+          <button
+            onClick={handleSave}
+            className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
+            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}
+          >
             Save Changes
           </button>
         </div>
@@ -550,15 +653,33 @@ function BookingDetailModal({ booking, onClose }: { booking: typeof bookingsData
 }
 
 export function BookingsPage({ onViewDetails }: { onViewDetails?: (booking: typeof bookingsData[0]) => void }) {
+  const [bookings, setBookings] = useState(bookingsData);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [currentView, setCurrentView] = useState<ViewMode>('grid');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<typeof bookingsData[0] | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleOpenModal = (booking: typeof bookingsData[0]) => {
-    if (onViewDetails) {
-      onViewDetails(booking);
-    }
+    setSelectedBooking(booking);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedBooking(null);
+  };
+
+  const handleUpdateBooking = (updatedBooking: typeof bookingsData[0]) => {
+    setBookings(prev => prev.map(b => b.id === updatedBooking.id ? updatedBooking : b));
+  };
+
+  const handleExport = () => {
+    // TODO: Implement actual export logic
+    toast.success('Bookings exported successfully', {
+      description: `Exported ${filteredBookings.length} booking(s) to CSV`,
+    });
   };
 
   // Status options for the dropdown
@@ -570,7 +691,7 @@ export function BookingsPage({ onViewDetails }: { onViewDetails?: (booking: type
   ];
 
   // Filter bookings based on search query and selected status
-  const filteredBookings = bookingsData.filter((booking) => {
+  const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
       booking.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       booking.customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -600,7 +721,7 @@ export function BookingsPage({ onViewDetails }: { onViewDetails?: (booking: type
               ref={searchInputRef}
             />
           </div>
-          
+
           {/* Status Dropdown, View Switcher & Export Button - Right Side */}
           <div className="flex items-center gap-3 sm:ml-auto flex-wrap">
             {/* Status Dropdown */}
@@ -616,7 +737,7 @@ export function BookingsPage({ onViewDetails }: { onViewDetails?: (booking: type
             <ViewSwitcher currentView={currentView} onViewChange={setCurrentView} />
 
             {/* Export Button */}
-            <Button variant="primary" icon={Download} className="min-h-[44px]">
+            <Button variant="primary" icon={Download} className="min-h-[44px]" onClick={handleExport}>
               Export
             </Button>
           </div>
@@ -626,12 +747,16 @@ export function BookingsPage({ onViewDetails }: { onViewDetails?: (booking: type
         {currentView === 'grid' && (
           <GridView onOpenModal={handleOpenModal} bookings={filteredBookings} />
         )}
-        {currentView === 'list' && (
-          <ListView onOpenModal={handleOpenModal} bookings={filteredBookings} />
-        )}
         {currentView === 'calendar' && (
           <CalendarView onOpenModal={handleOpenModal} bookings={filteredBookings} />
         )}
+
+        {/* Modal */}
+        <BookingDetailModal
+          booking={selectedBooking}
+          onClose={handleCloseModal}
+          onUpdate={handleUpdateBooking}
+        />
 
         {/* Copyright Footer */}
         <div className="text-center pt-4 pb-1 mt-auto">

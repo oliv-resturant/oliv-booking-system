@@ -1,5 +1,7 @@
 import { Mail, Calendar, Users, Phone, Clock } from 'lucide-react';
 import { Button } from './Button';
+import { KitchenPdfStatusBadge } from './KitchenPdfStatusBadge';
+import type { KitchenPdfStatus } from '@/services/kitchen-pdf.service';
 
 // Status color configuration (matching BookingsPage)
 const statusColors: Record<string, { bg: string; text: string; border: string; dotColor: string }> = {
@@ -24,6 +26,7 @@ interface ListViewProps {
       date: string;
       time: string;
       occasion: string;
+      location?: string;
     };
     guests: number;
     amount: string;
@@ -32,6 +35,7 @@ interface ListViewProps {
       by: string;
       when: string;
     };
+    kitchenPdf?: KitchenPdfStatus;
   }>;
   onOpenModal: (booking: any) => void;
 }
@@ -63,6 +67,9 @@ export function ListView({ bookings, onOpenModal }: ListViewProps) {
               </th>
               <th className="px-4 py-3 text-left text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                 Status
+              </th>
+              <th className="px-4 py-3 text-left text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
+                Kitchen PDF
               </th>
               <th className="px-4 py-3 text-right text-foreground" style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-semibold)' }}>
                 Amount
@@ -134,17 +141,21 @@ export function ListView({ bookings, onOpenModal }: ListViewProps) {
                     <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
                       By {booking.contacted.by} • {booking.contacted.when}
                     </div>
+                    {booking.event.location && (
+                      <div className="flex items-center gap-1.5 mt-1 text-primary font-medium" style={{ fontSize: 'var(--text-small)' }}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        {booking.event.location}
+                      </div>
+                    )}
                   </div>
                 </td>
 
                 {/* Status Column */}
                 <td className="px-4 py-3">
                   <span
-                    className={`px-2.5 py-1 rounded-lg border inline-flex items-center gap-1.5 ${
-                      statusColors[booking.status]?.bg || ''
-                    } ${statusColors[booking.status]?.text || ''} ${
-                      statusColors[booking.status]?.border || ''
-                    }`}
+                    className={`px-2.5 py-1 rounded-lg border inline-flex items-center gap-1.5 ${statusColors[booking.status]?.bg || ''
+                      } ${statusColors[booking.status]?.text || ''} ${statusColors[booking.status]?.border || ''
+                      }`}
                     style={{ fontSize: 'var(--text-small)', fontWeight: 'var(--font-weight-medium)' }}
                   >
                     <div
@@ -153,6 +164,20 @@ export function ListView({ bookings, onOpenModal }: ListViewProps) {
                     />
                     {booking.status}
                   </span>
+                </td>
+
+                {/* Kitchen PDF Column */}
+                <td className="px-4 py-3">
+                  {booking.kitchenPdf ? (
+                    <KitchenPdfStatusBadge
+                      status={booking.kitchenPdf.sentStatus}
+                      lastSentAt={booking.kitchenPdf.lastSentAt}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                      -
+                    </span>
+                  )}
                 </td>
 
                 {/* Amount Column */}
@@ -172,12 +197,11 @@ export function ListView({ bookings, onOpenModal }: ListViewProps) {
                 <td className="px-4 py-3 text-center">
                   <Button
                     variant="outline"
-                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       onOpenModal(booking);
                     }}
-                    className="min-h-[32px]"
+                    className="min-h-[32px] h-8 text-xs px-3"
                   >
                     View Details
                   </Button>
