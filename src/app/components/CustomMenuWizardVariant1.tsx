@@ -745,46 +745,78 @@ export function CustomMenuWizard() {
     return (basePrice + addOnsPrice) * quantity;
   };
 
-  // Get the highest main course price (meat) for per-person display
+  // Get main course prices breakdown for per-person display
   const getMainCourseDisplayPrice = () => {
+    // Get Meat/Fish items and find highest price
     const meatFishItems = selectedItems
       .map((id) => menuItems.find((item) => item.id === id))
       .filter(
         (item) => item && item.category === "Main Courses Meat/Fish",
       ) as MenuItem[];
 
-    if (meatFishItems.length === 0) return 0;
+    // Get Veggie items and find highest price
+    const veggieItems = selectedItems
+      .map((id) => menuItems.find((item) => item.id === id))
+      .filter(
+        (item) => item && item.category === "Main Courses Veggie",
+      ) as MenuItem[];
 
-    // Find the highest priced meat/fish item
-    const highestPrice = Math.max(
-      ...meatFishItems.map((item) => {
-        const addOns = itemAddOns[item.id] || [];
-        const addOnsPrice = addOns.reduce((total, addOnId) => {
-          const addOn = item.addOns?.find((ao) => ao.id === addOnId);
-          return total + (addOn?.price || 0);
-        }, 0);
+    let meatPrice = 0;
+    if (meatFishItems.length > 0) {
+      meatPrice = Math.max(
+        ...meatFishItems.map((item) => {
+          const addOns = itemAddOns[item.id] || [];
+          const addOnsPrice = addOns.reduce((total, addOnId) => {
+            const addOn = item.addOns?.find((ao) => ao.id === addOnId);
+            return total + (addOn?.price || 0);
+          }, 0);
 
-        let basePrice = item.price;
-        const variantId = itemVariants[item.id];
-        if (variantId && item.variants) {
-          const variant = item.variants.find((v) => v.id === variantId);
-          if (variant) {
-            basePrice = variant.price;
+          let basePrice = item.price;
+          const variantId = itemVariants[item.id];
+          if (variantId && item.variants) {
+            const variant = item.variants.find((v) => v.id === variantId);
+            if (variant) {
+              basePrice = variant.price;
+            }
           }
-        }
 
-        return basePrice + addOnsPrice;
-      })
-    );
+          return basePrice + addOnsPrice;
+        })
+      );
+    }
 
-    return highestPrice;
+    let veggiePrice = 0;
+    if (veggieItems.length > 0) {
+      veggiePrice = Math.max(
+        ...veggieItems.map((item) => {
+          const addOns = itemAddOns[item.id] || [];
+          const addOnsPrice = addOns.reduce((total, addOnId) => {
+            const addOn = item.addOns?.find((ao) => ao.id === addOnId);
+            return total + (addOn?.price || 0);
+          }, 0);
+
+          let basePrice = item.price;
+          const variantId = itemVariants[item.id];
+          if (variantId && item.variants) {
+            const variant = item.variants.find((v) => v.id === variantId);
+            if (variant) {
+              basePrice = variant.price;
+            }
+          }
+
+          return basePrice + addOnsPrice;
+        })
+      );
+    }
+
+    return { meatPrice, veggiePrice };
   };
 
   // Get per-person subtotal for all per-person items (excluding beverages which are pay-by-consumption)
   const getPerPersonSubtotal = () => {
     let subtotal = 0;
 
-    // For main courses, use the display price (highest meat price)
+    // For main courses, sum up meat and veggie prices
     const hasMainCourses = selectedItems.some((itemId) => {
       const item = menuItems.find((i) => i.id === itemId);
       return item && [
@@ -794,8 +826,8 @@ export function CustomMenuWizard() {
     });
 
     if (hasMainCourses) {
-      // Use the highest meat/fish price for display
-      subtotal += getMainCourseDisplayPrice();
+      const { meatPrice, veggiePrice } = getMainCourseDisplayPrice();
+      subtotal += meatPrice + veggiePrice;
     }
 
     // For other per-person items (not main courses, not beverages), add their per-person price
@@ -816,6 +848,25 @@ export function CustomMenuWizard() {
     });
 
     return subtotal;
+  };
+
+  // Format main course price breakdown for display
+  const getMainCoursePriceBreakdown = () => {
+    const { meatPrice, veggiePrice } = getMainCourseDisplayPrice();
+    const meatGuests = mainCourseGuests["Main Courses Meat/Fish"] || 0;
+    const veggieGuests = mainCourseGuests["Main Courses Veggie"] || 0;
+
+    const parts = [];
+
+    if (meatPrice > 0 && meatGuests > 0) {
+      parts.push(`CHF ${meatPrice.toFixed(2)} (${meatGuests} Meat/Fish)`);
+    }
+
+    if (veggiePrice > 0 && veggieGuests > 0) {
+      parts.push(`CHF ${veggiePrice.toFixed(2)} (${veggieGuests} Veggie)`);
+    }
+
+    return parts.join(" + ");
   };
 
   // Get flat-rate subtotal for all flat-rate items (excluding beverages which are pay-by-consumption)
@@ -2473,6 +2524,14 @@ Hinzufügen
                                         /person
                                       </span>
                                     </p>
+                                    {getMainCoursePriceBreakdown() && (
+                                      <p
+                                        className="text-muted-foreground text-xs mt-1"
+                                        style={{ fontSize: "var(--text-small)" }}
+                                      >
+                                        {getMainCoursePriceBreakdown()}
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -2786,6 +2845,22 @@ Hinzufügen
                                           {getPerPersonSubtotal().toFixed(2)}
                                         </p>
                                       </div>
+                                      {getMainCoursePriceBreakdown() && (
+                                        <div className="flex items-center justify-between mb-2 ml-4">
+                                          <p
+                                            className="text-muted-foreground text-xs"
+                                            style={{ fontSize: "var(--text-small)" }}
+                                          >
+                                            Hauptgerichte Aufschlüsselung
+                                          </p>
+                                          <p
+                                            className="text-muted-foreground text-xs"
+                                            style={{ fontSize: "var(--text-small)" }}
+                                          >
+                                            {getMainCoursePriceBreakdown()}
+                                          </p>
+                                        </div>
+                                      )}
                                       <div className="flex items-center justify-between mb-2">
                                         <p
                                           className="text-muted-foreground"
