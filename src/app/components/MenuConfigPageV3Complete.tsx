@@ -123,7 +123,6 @@ const mockCategories: Category[] = [
         image: 'https://images.unsplash.com/photo-1624726175512-19b9baf9fbd1?w=400&h=400&fit=crop',
         price: 14.00,
         isActive: true,
-        pricingType: 'per-person' as const,
         itemType: 'regular' as const,
         variants: [],
       },
@@ -157,6 +156,29 @@ const mockCategories: Category[] = [
   },
   {
     id: '3',
+    name: 'Main Courses',
+    description: 'Our signature main courses and specials.',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop',
+    isActive: true,
+    isExpanded: false,
+    type: 'main-course',
+    items: [
+      {
+        id: '1-3',
+        name: 'Bom Wraps Combo Deal',
+        description: 'Choose any wrap and get a drink',
+        image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=400&fit=crop',
+        price: 18.00,
+        isActive: true,
+        pricingType: 'per-person' as const,
+        itemType: 'combo' as const,
+        comboItemIds: ['combo-3', 'combo-4'],
+        variants: [],
+      },
+    ],
+  },
+  {
+    id: '4',
     name: 'Starters',
     description: 'Perfect to begin your meal',
     image: 'https://images.unsplash.com/photo-1758384077555-36242d3f2b4d?w=400&h=400&fit=crop',
@@ -166,7 +188,7 @@ const mockCategories: Category[] = [
     items: [],
   },
   {
-    id: '4',
+    id: '5',
     name: 'Desserts',
     description: 'Sweet endings',
     image: 'https://images.unsplash.com/photo-1705948731485-6e4c6c180d0d?w=400&h=400&fit=crop',
@@ -186,16 +208,7 @@ const mockCategories: Category[] = [
       },
     ],
   },
-  {
-    id: '5',
-    name: 'Main Courses',
-    description: 'Our signature main courses and specials.',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop',
-    isActive: true,
-    isExpanded: false,
-    type: 'main-course',
-    items: [],
-  },
+
 ];
 
 const mockAddonGroups: AddonGroup[] = [
