@@ -22,6 +22,7 @@ import {
   X,
   Plus,
   Minus,
+  AlertCircle,
   AlertTriangle,
   Lock,
   CreditCard,
@@ -113,6 +114,11 @@ export function CustomMenuWizard() {
     "per-person" | "total"
   >("total"); // Step 3 summary view mode - default to "total+extra"
   const [includeBeveragePrices, setIncludeBeveragePrices] = useState(false); // Toggle to include/exclude beverage prices from total
+  const [guestDistributionAlert, setGuestDistributionAlert] = useState<{
+    show: boolean;
+    message: string;
+    type: "warning" | "error";
+  }>({ show: false, message: "", type: "warning" }); // Guest distribution validation alert
 
   // Track active tab for main courses (combo pack vs single items)
   const [mainCourseTab, setMainCourseTab] = useState<"combo" | "single">("combo");
@@ -305,7 +311,6 @@ export function CustomMenuWizard() {
       return item && [
         "Main Courses Meat/Fish",
         "Main Courses Veggie",
-        "Main Courses Vegan",
       ].includes(item.category);
     });
 
@@ -379,6 +384,53 @@ export function CustomMenuWizard() {
   };
 
   const handleStep2Navigation = () => {
+    // Define main course categories
+    const mainCourseCategories = [
+      "Main Courses Meat/Fish",
+      "Main Courses Veggie",
+    ];
+
+    // Check if any main course items are selected
+    const hasMainCourses = selectedItems.some((itemId) => {
+      const item = menuItems.find((i) => i.id === itemId);
+      return item && mainCourseCategories.includes(item.category);
+    });
+
+    // Only validate if main courses are selected AND all main course categories have been visited
+    if (hasMainCourses) {
+      const allMainCourseCategoriesVisited = mainCourseCategories.every((cat) =>
+        visitedCategories.includes(cat)
+      );
+
+      // If all main course categories have been visited, validate the distribution
+      if (allMainCourseCategoriesVisited) {
+        const totalGuests = parseInt(eventDetails.guestCount) || 0;
+        const assignedGuests = Object.values(mainCourseGuests).reduce(
+          (sum, count) => sum + count,
+          0,
+        );
+
+        // Show alert popup if distribution doesn't match
+        if (assignedGuests < totalGuests) {
+          setGuestDistributionAlert({
+            show: true,
+            message: `Sie haben erst ${assignedGuests} von ${totalGuests} Gästen für Hauptgerichte zugewiesen. Bitte weisen Sie alle Gäste zu, bevor Sie fortfahren.`,
+            type: "warning",
+          });
+          return;
+        }
+
+        if (assignedGuests > totalGuests) {
+          setGuestDistributionAlert({
+            show: true,
+            message: `Sie haben ${assignedGuests} Gäste zugewiesen, aber die Gesamtzahl der Gäste ist ${totalGuests}. Bitte korrigieren Sie die Verteilung.`,
+            type: "error",
+          });
+          return;
+        }
+      }
+    }
+
     if (!isLastCategory()) {
       // Move to next category
       const nextCategory = getNextCategory();
@@ -574,7 +626,6 @@ export function CustomMenuWizard() {
     if ([
       "Main Courses Meat/Fish",
       "Main Courses Veggie",
-      "Main Courses Vegan",
     ].includes(detailsModalItem.category)) {
       const guestCount = parseInt(tempGuestCount) || 0;
       setMainCourseGuests((prev) => ({
@@ -739,7 +790,6 @@ export function CustomMenuWizard() {
       return item && [
         "Main Courses Meat/Fish",
         "Main Courses Veggie",
-        "Main Courses Vegan",
       ].includes(item.category);
     });
 
@@ -758,7 +808,6 @@ export function CustomMenuWizard() {
         [
           "Main Courses Meat/Fish",
           "Main Courses Veggie",
-          "Main Courses Vegan",
         ].includes(item.category)
       ) {
         return;
@@ -2029,9 +2078,8 @@ export function CustomMenuWizard() {
                           </div>
                         </div>
 
-                        {/* Linked Logic Info Banner for Veggie/Vegan Main Courses */}
-                        {(selectedCategory === "Main Courses Veggie" ||
-                          selectedCategory === "Main Courses Vegan") && (
+                        {/* Linked Logic Info Banner for Veggie Main Courses */}
+                        {selectedCategory === "Main Courses Veggie" && (
                           <div
                             className="mb-5 bg-primary/5 border border-primary/20 rounded-lg px-4 py-3"
                             style={{ borderRadius: "var(--radius)" }}
@@ -2054,12 +2102,8 @@ export function CustomMenuWizard() {
                                   className="text-muted-foreground mt-1"
                                   style={{ fontSize: "var(--text-small)" }}
                                 >
-                                  Die Auswahl von{" "}
-                                  {selectedCategory === "Main Courses Veggie"
-                                    ? "vegetarischen"
-                                    : "veganen"}{" "}
-                                  Hauptgerichten reduziert automatisch Ihre Fleisch/Fisch-
-                                  Auswahlen, um die korrekte Gäste-
+                                  Die Auswahl von vegetarischen Hauptgerichten reduziert
+                                  automatisch Ihre Fleisch/Fisch-Auswahlen, um die korrekte Gäste-
                                   anzahl zu erhalten.
                                 </p>
                               </div>
@@ -2697,7 +2741,6 @@ Hinzufügen
                                                   "per-person" && ![
                                                     "Main Courses Meat/Fish",
                                                     "Main Courses Veggie",
-                                                    "Main Courses Vegan",
                                                   ].includes(item.category) ? (
                                                     <span className="text-muted-foreground text-sm">
                                                       /person
@@ -2705,7 +2748,6 @@ Hinzufügen
                                                   ) : [
                                                     "Main Courses Meat/Fish",
                                                     "Main Courses Veggie",
-                                                    "Main Courses Vegan",
                                                   ].includes(item.category) ? (
                                                     <span className="text-muted-foreground text-sm">
                                                       /Gast
@@ -3186,7 +3228,6 @@ Hinzufügen
                                                 "per-person" && [
                                                   "Main Courses Meat/Fish",
                                                   "Main Courses Veggie",
-                                                  "Main Courses Vegan",
                                                 ].includes(item.category) ? (
                                                 <span
                                                   className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs"
@@ -3251,7 +3292,6 @@ Hinzufügen
                                               "per-person" && ![
                                                 "Main Courses Meat/Fish",
                                                 "Main Courses Veggie",
-                                                "Main Courses Vegan",
                                               ].includes(item.category) ? (
                                                 <span className="text-muted-foreground text-sm">
                                                   /person
@@ -3259,7 +3299,6 @@ Hinzufügen
                                               ) : [
                                                 "Main Courses Meat/Fish",
                                                 "Main Courses Veggie",
-                                                "Main Courses Vegan",
                                               ].includes(item.category) ? (
                                                 <span className="text-muted-foreground text-sm">
                                                   /guest
@@ -3886,7 +3925,6 @@ Hinzufügen
                                 "Intermediate Course",
                                 "Main Courses Meat/Fish",
                                 "Main Courses Veggie",
-                                "Main Courses Vegan",
                                 "Desserts",
                                 "Beverages",
                                 "Technology",
@@ -4094,7 +4132,6 @@ Hinzufügen
                                                       ? [
                                                           "Main Courses Meat/Fish",
                                                           "Main Courses Veggie",
-                                                          "Main Courses Vegan",
                                                         ].includes(item.category)
                                                         ? `${mainCourseGuests[item.category] || 0}×`
                                                         : `${parseInt(eventDetails.guestCount) || 0}×`
@@ -4369,7 +4406,6 @@ Hinzufügen
                                     "Intermediate Course",
                                     "Main Courses Meat/Fish",
                                     "Main Courses Veggie",
-                                    "Main Courses Vegan",
                                     "Desserts",
                                   ];
                                   const breakdown = foodCategories
@@ -4501,7 +4537,6 @@ Hinzufügen
                                       "Intermediate Course",
                                       "Main Courses Meat/Fish",
                                       "Main Courses Veggie",
-                                      "Main Courses Vegan",
                                       "Desserts",
                                     ];
                                     const breakdown = foodCategories
@@ -4572,7 +4607,6 @@ Hinzufügen
                                                 "Intermediate Course",
                                                 "Main Courses Meat/Fish",
                                                 "Main Courses Veggie",
-                                                "Main Courses Vegan",
                                                 "Desserts",
                                               ];
                                               return selectedItems
@@ -5480,30 +5514,17 @@ Hinzufügen
                             onChange={(e) => {
                               const newValue = e.target.value;
                               setTempGuestCount(newValue);
-                              // Validate immediately
+                              // Update guest count state without validation popup
                               const newCount = parseInt(newValue) || 0;
-                              const totalGuests = parseInt(eventDetails.guestCount) || 0;
-                              const otherCategoriesGuests = Object.entries(mainCourseGuests)
-                                .filter(([cat]) => cat !== detailsModalItem.category)
-                                .reduce((sum, [, count]) => sum + count, 0);
-                              const maxAllowed = totalGuests - otherCategoriesGuests;
-
-                              if (newCount > maxAllowed) {
-                                setGuestCountErrors((prev) => ({
-                                  ...prev,
-                                  [detailsModalItem.category]: `Kann ${maxAllowed} Gäste nicht überschreiten`,
-                                }));
-                              } else {
-                                setGuestCountErrors((prev) => ({
-                                  ...prev,
-                                  [detailsModalItem.category]: "",
-                                }));
-                                // Commit change immediately so navigation/validation sees updated counts
-                                setMainCourseGuests((prev) => ({
-                                  ...prev,
-                                  [detailsModalItem.category]: newCount,
-                                }));
-                              }
+                              setMainCourseGuests((prev) => ({
+                                ...prev,
+                                [detailsModalItem.category]: newCount,
+                              }));
+                              // Clear any existing error
+                              setGuestCountErrors((prev) => ({
+                                ...prev,
+                                [detailsModalItem.category]: "",
+                              }));
                             }}
                             className={`w-14 h-9 sm:w-16 sm:h-11 px-2 bg-input-background border rounded-lg transition-colors text-center text-sm sm:text-base ${
                               guestCountErrors[detailsModalItem.category]
@@ -5526,7 +5547,18 @@ Hinzufügen
                   {/* Right: Add to Cart Button with Total */}
                   <button
                     onClick={addToCartFromModal}
-                    className="flex items-center justify-center gap-1.5 sm:gap-3 px-3 sm:px-5 py-2.5 h-9 sm:h-11 min-h-[36px] sm:min-h-[44px] bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors active:scale-[0.98] touch-manipulation flex-1 sm:flex-auto"
+                    disabled={[
+                      "Main Courses Meat/Fish",
+                      "Main Courses Veggie",
+                    ].includes(detailsModalItem.category) && (parseInt(tempGuestCount) || 0) === 0}
+                    className={`flex items-center justify-center gap-1.5 sm:gap-3 px-3 sm:px-5 py-2.5 h-9 sm:h-11 min-h-[36px] sm:min-h-[44px] rounded-lg transition-colors active:scale-[0.98] touch-manipulation flex-1 sm:flex-auto ${
+                      [
+                        "Main Courses Meat/Fish",
+                        "Main Courses Veggie",
+                      ].includes(detailsModalItem.category) && (parseInt(tempGuestCount) || 0) === 0
+                        ? "bg-muted text-muted-foreground cursor-not-allowed"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90"
+                    }`}
                     style={{
                       borderRadius: "var(--radius)",
                       fontSize: "var(--text-small)",
@@ -5563,6 +5595,67 @@ Hinzufügen
                       })()}
                     </span>
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Guest Distribution Alert Popup */}
+        {guestDistributionAlert.show && (
+          <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div
+              className={`bg-card rounded-lg max-w-md w-full p-6 shadow-2xl ${
+                guestDistributionAlert.type === "error"
+                  ? "border-l-4 border-destructive"
+                  : "border-l-4 border-amber-500"
+              }`}
+              style={{ borderRadius: "var(--radius-card)" }}
+            >
+              <div className="flex items-start gap-4">
+                <div
+                  className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                    guestDistributionAlert.type === "error"
+                      ? "bg-destructive/10"
+                      : "bg-amber-500/10"
+                  }`}
+                >
+                  {guestDistributionAlert.type === "error" ? (
+                    <AlertCircle className="w-5 h-5 text-destructive" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h4
+                    className={`font-semibold mb-2 ${
+                      guestDistributionAlert.type === "error"
+                        ? "text-destructive"
+                        : "text-amber-600 dark:text-amber-400"
+                    }`}
+                    style={{ fontSize: "var(--text-base)" }}
+                  >
+                    {guestDistributionAlert.type === "error"
+                      ? "Ungültige Gästeverteilung"
+                      : "Unvollständige Gästeverteilung"}
+                  </h4>
+                  <p
+                    className="text-muted-foreground mb-4"
+                    style={{ fontSize: "var(--text-small)" }}
+                  >
+                    {guestDistributionAlert.message}
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      onClick={() =>
+                        setGuestDistributionAlert({ show: false, message: "", type: "warning" })
+                      }
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm"
+                      style={{ borderRadius: "var(--radius)" }}
+                    >
+                      Verstanden
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
