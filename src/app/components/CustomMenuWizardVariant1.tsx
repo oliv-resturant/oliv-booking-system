@@ -499,10 +499,34 @@ export function CustomMenuWizard() {
   };
 
   const removeFromCart = (itemId: string) => {
+    // Get the item details before removal to check if it's a main course
+    const item = menuItems.find((i) => i.id === itemId);
+    const itemCategory = item?.category;
+
     setSelectedItems((prev) => prev.filter((id) => id !== itemId));
     const newQuantities = { ...itemQuantities };
     delete newQuantities[itemId];
     setItemQuantities(newQuantities);
+
+    // If this was a main course item, check if there are any remaining items in that category
+    if (itemCategory && [
+      "Main Courses Meat/Fish",
+      "Main Courses Veggie",
+    ].includes(itemCategory)) {
+      const remainingItemsInCategory = selectedItems.filter((id) => {
+        if (id === itemId) return false; // Exclude the item being removed
+        const selectedItem = menuItems.find((i) => i.id === id);
+        return selectedItem?.category === itemCategory;
+      });
+
+      // If no items remain in this category, reset guest count to 0
+      if (remainingItemsInCategory.length === 0) {
+        setMainCourseGuests((prev) => ({
+          ...prev,
+          [itemCategory]: 0,
+        }));
+      }
+    }
   };
 
   // Handle guest count change for main course categories
