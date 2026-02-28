@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Globe, DollarSign, Check, MapPin, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
-import { VenueService } from '../../services/venue.service';
+import { VenueService, VenueLocation } from '../../services/venue.service';
 import { toast } from 'sonner';
+import { Modal } from './Modal';
+import { Button } from './Button';
 
 export function SettingsPage() {
   const [language, setLanguage] = useState('English');
@@ -12,44 +14,52 @@ export function SettingsPage() {
   const [showCurrencySymbol, setShowCurrencySymbol] = useState(true);
 
   // Venue Locations State
-  const [locations, setLocations] = useState<string[]>(VenueService.getLocations());
-  const [newLocationName, setNewLocationName] = useState('');
-  const [editingLocation, setEditingLocation] = useState<string | null>(null);
-  const [editingValue, setEditingValue] = useState('');
+  const [locations, setLocations] = useState<VenueLocation[]>(VenueService.getLocations());
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<VenueLocation | null>(null);
+  const [locationTitle, setLocationTitle] = useState('');
+  const [locationDetails, setLocationDetails] = useState('');
 
-  const handleAddLocation = () => {
-    if (!newLocationName.trim()) return;
-    if (locations.includes(newLocationName.trim())) {
-      toast.error('Location already exists');
-      return;
-    }
-    VenueService.addLocation(newLocationName.trim());
-    setLocations(VenueService.getLocations());
-    setNewLocationName('');
-    toast.success('Location added successfully');
+  const handleOpenAddModal = () => {
+    setEditingLocation(null);
+    setLocationTitle('');
+    setLocationDetails('');
+    setIsLocationModalOpen(true);
   };
 
-  const handleDeleteLocation = (name: string) => {
-    VenueService.deleteLocation(name);
+  const handleOpenEditModal = (location: VenueLocation) => {
+    setEditingLocation(location);
+    setLocationTitle(location.title);
+    setLocationDetails(location.details);
+    setIsLocationModalOpen(true);
+  };
+
+  const handleSaveLocation = () => {
+    if (!locationTitle.trim()) {
+      toast.error('Location title is required');
+      return;
+    }
+
+    if (editingLocation) {
+      // Update existing location
+      VenueService.updateLocation(editingLocation.id, locationTitle.trim(), locationDetails.trim());
+      toast.success('Location updated successfully');
+    } else {
+      // Add new location
+      VenueService.addLocation(locationTitle.trim(), locationDetails.trim());
+      toast.success('Location added successfully');
+    }
+
+    setLocations(VenueService.getLocations());
+    setIsLocationModalOpen(false);
+    setLocationTitle('');
+    setLocationDetails('');
+  };
+
+  const handleDeleteLocation = (id: string) => {
+    VenueService.deleteLocation(id);
     setLocations(VenueService.getLocations());
     toast.success('Location deleted');
-  };
-
-  const handleStartEdit = (name: string) => {
-    setEditingLocation(name);
-    setEditingValue(name);
-  };
-
-  const handleSaveEdit = () => {
-    if (!editingLocation || !editingValue.trim()) return;
-    if (locations.includes(editingValue.trim()) && editingValue.trim() !== editingLocation) {
-      toast.error('Location already exists');
-      return;
-    }
-    VenueService.updateLocation(editingLocation, editingValue.trim());
-    setLocations(VenueService.getLocations());
-    setEditingLocation(null);
-    toast.success('Location updated');
   };
 
   // Language options
@@ -211,75 +221,47 @@ export function SettingsPage() {
                 Venue Management
               </h3>
             </div>
+            <Button
+              variant="primary"
+              icon={Plus}
+              onClick={handleOpenAddModal}
+              className="cursor-pointer"
+            >
+              Add Location
+            </Button>
           </div>
 
           <div className="space-y-6">
-            {/* Add New Location */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  placeholder="Enter new location name (e.g., Wine Cellar)"
-                  className="w-full pl-4 pr-4 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                  style={{ fontSize: 'var(--text-base)' }}
-                  value={newLocationName}
-                  onChange={(e) => setNewLocationName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddLocation()}
-                />
-              </div>
-              <button
-                onClick={handleAddLocation}
-                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer font-medium shadow-sm active:scale-[0.98]"
-              >
-                <Plus className="w-4 h-4" />
-                Add Location
-              </button>
-            </div>
-
             {/* Locations List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {locations.map((loc) => (
-                <div key={loc} className="group bg-background border border-border rounded-xl p-4 flex items-center justify-between hover:border-primary/50 hover:shadow-md transition-all duration-300">
-                  <div className="flex-1 min-w-0 mr-3">
-                    {editingLocation === loc ? (
-                      <input
-                        type="text"
-                        value={editingValue}
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        className="w-full bg-input-background border border-primary/30 rounded-lg px-3 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                        autoFocus
-                        onKeyDown={(e) => e.key === 'Enter' ? handleSaveEdit() : e.key === 'Escape' && setEditingLocation(null)}
-                      />
-                    ) : (
-                      <div className="flex flex-col">
-                        <span className="text-foreground font-semibold truncate block" style={{ fontSize: 'var(--text-base)' }}>
-                          {loc}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-0.5 opacity-60">Venue Location</span>
-                      </div>
-                    )}
-                  </div>
+                <div key={loc.id} className="group bg-background border border-border rounded-xl p-3 hover:border-primary/50 hover:shadow-md transition-all duration-300">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-foreground font-semibold truncate block mb-1" style={{ fontSize: 'var(--text-base)' }}>
+                        {loc.title}
+                      </h4>
+                      <p className="text-muted-foreground text-sm line-clamp-2" style={{ fontSize: 'var(--text-small)' }}>
+                        {loc.details}
+                      </p>
+                    </div>
 
-                  <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                    {editingLocation === loc ? (
-                      <>
-                        <button onClick={handleSaveEdit} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer" title="Save Changes">
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => setEditingLocation(null)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Cancel">
-                          <X className="w-4 h-4" />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={() => handleStartEdit(loc)} className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors cursor-pointer" title="Edit Location">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDeleteLocation(loc)} className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Delete Location">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
+                    <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button
+                        onClick={() => handleOpenEditModal(loc)}
+                        className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors cursor-pointer"
+                        title="Edit Location"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLocation(loc.id)}
+                        className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        title="Delete Location"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -291,11 +273,71 @@ export function SettingsPage() {
                   <MapPin className="w-6 h-6 text-primary/40" />
                 </div>
                 <p className="text-muted-foreground font-medium">No locations defined yet.</p>
-                <p className="text-sm text-muted-foreground/60 mt-1">Add your first venue area using the field above.</p>
+                <p className="text-sm text-muted-foreground/60 mt-1">Add your first venue area by clicking "Add Location" button.</p>
               </div>
             )}
           </div>
         </div>
+
+        {/* Location Modal */}
+        <Modal
+          isOpen={isLocationModalOpen}
+          onClose={() => setIsLocationModalOpen(false)}
+          icon={MapPin}
+          title={editingLocation ? 'Edit Location' : 'Add New Location'}
+          maxWidth="md"
+          footer={
+            <>
+              <Button
+                variant="secondary"
+                icon={X}
+                onClick={() => setIsLocationModalOpen(false)}
+                className="cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                icon={Check}
+                onClick={handleSaveLocation}
+                className="cursor-pointer"
+                disabled={!locationTitle.trim()}
+              >
+                {editingLocation ? 'Save Changes' : 'Add Location'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                Location Title *
+              </label>
+              <input
+                type="text"
+                value={locationTitle}
+                onChange={(e) => setLocationTitle(e.target.value)}
+                placeholder="e.g., Wine Cellar"
+                className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                style={{ fontSize: 'var(--text-base)' }}
+              />
+            </div>
+
+            <div>
+              <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                Location Details
+              </label>
+              <textarea
+                value={locationDetails}
+                onChange={(e) => setLocationDetails(e.target.value)}
+                placeholder="Describe this location (e.g., capacity, features, ambiance)"
+                rows={3}
+                className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                style={{ fontSize: 'var(--text-base)' }}
+              />
+            </div>
+          </div>
+        </Modal>
       </div>
 
       <div className="text-center pt-8 pb-1 mt-auto">

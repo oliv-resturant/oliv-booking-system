@@ -535,7 +535,7 @@ function BookingDetailModal({
                 >
                   <option value="">Not Assigned</option>
                   {VenueService.getLocations().map(loc => (
-                    <option key={loc} value={loc}>{loc}</option>
+                    <option key={loc.id} value={loc.title}>{loc.title}</option>
                   ))}
                 </select>
               </div>

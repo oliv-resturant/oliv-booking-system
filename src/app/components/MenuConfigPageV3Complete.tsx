@@ -28,7 +28,7 @@ interface MenuItemData {
   id: string;
   name: string;
   description: string;
-  image: string;
+  image?: string;
   price: number;
   isActive: boolean;
   variants: VariantOption[];
@@ -94,13 +94,13 @@ interface AddonGroup {
 
 const mockCategories: Category[] = [
   {
-    id: '1',
+    id: '6',
     name: 'Bom Wraps',
     description: '32cm All dishes are served with homemade wheat tortillas.',
     image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
-    type: 'main-course',
+    type: 'regular',
     items: [
       {
         id: '1-1',
@@ -135,7 +135,7 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
-    type: 'main-course',
+    type: 'regular',
     items: [
       {
         id: '2-1',
@@ -155,8 +155,8 @@ const mockCategories: Category[] = [
     ],
   },
   {
-    id: '3',
-    name: 'Main Courses',
+    id: '4',
+    name: 'Main Courses Veggie',
     description: 'Our signature main courses and specials.',
     image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop',
     isActive: true,
@@ -178,7 +178,7 @@ const mockCategories: Category[] = [
     ],
   },
   {
-    id: '4',
+    id: '1',
     name: 'Starters',
     description: 'Perfect to begin your meal',
     image: 'https://images.unsplash.com/photo-1758384077555-36242d3f2b4d?w=400&h=400&fit=crop',
@@ -204,6 +204,29 @@ const mockCategories: Category[] = [
         price: 6.50,
         isActive: true,
         itemType: 'regular' as const,
+        variants: [],
+      },
+    ],
+  },
+  {
+    id: '3',
+    name: 'Main Courses Meat/Fish',
+    description: 'Our signature main courses and specials.',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop',
+    isActive: true,
+    isExpanded: false,
+    type: 'main-course',
+    items: [
+      {
+        id: '1-3',
+        name: 'Bom Wraps Combo Deal',
+        description: 'Choose any wrap and get a drink',
+        image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=400&fit=crop',
+        price: 18.00,
+        isActive: true,
+        pricingType: 'per-person' as const,
+        itemType: 'combo' as const,
+        comboItemIds: ['combo-3', 'combo-4'],
         variants: [],
       },
     ],
@@ -269,40 +292,100 @@ const mockComboItems: MenuItemData[] = [
     id: 'combo-1',
     name: 'Burger & Fries Combo',
     description: 'Juicy burger served with crispy french fries and a drink.',
-    image: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400&h=400&fit=crop',
     price: 18.50,
     isActive: true,
     itemType: 'combo' as const,
+    dietaryType: 'veg' as const,
     variants: [],
   },
   {
     id: 'combo-2',
     name: 'Pasta & Wine Delight',
     description: 'Choice of pasta served with a glass of house wine and garlic bread.',
-    image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&h=400&fit=crop',
     price: 24.90,
     isActive: true,
     itemType: 'combo' as const,
+    dietaryType: 'veg' as const,
     variants: [],
   },
   {
     id: 'combo-3',
     name: 'Sushi Platter Duo',
     description: '12 pieces of assorted sushi and sashimi with miso soup.',
-    image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=400&fit=crop',
     price: 32.00,
     isActive: true,
     itemType: 'combo' as const,
+    dietaryType: 'veg' as const,
     variants: [],
   },
   {
     id: 'combo-4',
     name: 'Taco Family Pack',
     description: '10 assorted tacos with large nachos and salsa.',
-    image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=400&fit=crop',
     price: 45.00,
     isActive: true,
     itemType: 'combo' as const,
+    dietaryType: 'veg' as const,
+    variants: [],
+  },
+  {
+    id: 'combo-5',
+    name: 'Grilled Salmon Feast',
+    description: 'Fresh Atlantic salmon with roasted vegetables and lemon butter sauce.',
+    price: 38.00,
+    isActive: true,
+    itemType: 'combo' as const,
+    dietaryType: 'non-veg' as const,
+    variants: [],
+  },
+  {
+    id: 'combo-6',
+    name: 'Ribeye Steak Dinner',
+    description: 'Prime 12oz ribeye steak with mashed potatoes and grilled asparagus.',
+    price: 52.00,
+    isActive: true,
+    itemType: 'combo' as const,
+    dietaryType: 'non-veg' as const,
+    variants: [],
+  },
+  {
+    id: 'combo-7',
+    name: 'Chicken Parmigiano',
+    description: 'Breaded chicken breast with marinara, mozzarella, and spaghetti.',
+    price: 28.50,
+    isActive: true,
+    itemType: 'combo' as const,
+    dietaryType: 'non-veg' as const,
+    variants: [],
+  },
+  {
+    id: 'combo-8',
+    name: 'Lamb Chops Special',
+    description: 'Tender lamb chops with mint sauce, roasted potatoes, and seasonal greens.',
+    price: 48.00,
+    isActive: true,
+    itemType: 'combo' as const,
+    dietaryType: 'non-veg' as const,
+    variants: [],
+  },
+  {
+    id: 'combo-9',
+    name: 'Fish & Chips Classic',
+    description: 'Beer-battered cod with thick-cut chips and tartar sauce.',
+    price: 22.00,
+    isActive: true,
+    itemType: 'combo' as const,
+    dietaryType: 'non-veg' as const,
+    variants: [],
+  },
+  {
+    id: 'combo-10',
+    name: 'BBQ Pulled Pork Platter',
+    description: 'Slow-cooked pulled pork with coleslaw, corn bread, and BBQ beans.',
+    price: 32.50,
+    isActive: true,
+    itemType: 'combo' as const,
+    dietaryType: 'non-veg' as const,
     variants: [],
   },
 ];
@@ -904,9 +987,11 @@ export function MenuConfigPage() {
                                   {category.items.length} {category.items.length === 1 ? 'item' : 'items'}
                                 </span>
                               )}
-                              <span className="px-2 py-0.5 bg-secondary/50 text-secondary-foreground rounded-full text-xs">
-                                {category.type === 'main-course' ? 'Main Course' : 'Regular Category'}
-                              </span>
+                              {category.type === 'main-course' && (
+                                <span className="px-2 py-0.5 bg-secondary/50 text-secondary-foreground rounded-full text-xs">
+                                  Main Course
+                                </span>
+                              )}
                             </div>
                             <p className="text-muted-foreground line-clamp-1 hidden sm:block" style={{ fontSize: 'var(--text-small)' }}>
                               {category.description}
@@ -1731,19 +1816,21 @@ export function MenuConfigPage() {
                                   <GripVertical className="w-4 h-4" />
                                 </button>
 
-                                {/* Image */}
-                                <div className="w-12 h-10 sm:w-16 sm:h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
-                                  <ImageWithFallback
-                                    src={item.image}
-                                    alt={item.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                  {!item.isActive && (
-                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                      <EyeOff className="w-4 h-4 text-white" />
-                                    </div>
-                                  )}
-                                </div>
+                                {/* Image - only for non-combo items */}
+                                {item.image && (
+                                  <div className="w-12 h-10 sm:w-16 sm:h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative">
+                                    <ImageWithFallback
+                                      src={item.image}
+                                      alt={item.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    {!item.isActive && (
+                                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                        <EyeOff className="w-4 h-4 text-white" />
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
 
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
@@ -1784,7 +1871,7 @@ export function MenuConfigPage() {
                                           description: item.description,
                                           price: item.price.toString(),
                                           image: null,
-                                          imageUrl: item.image,
+                                          imageUrl: '',
                                           isActive: item.isActive,
                                           pricingType: item.pricingType || 'per-person',
                                           itemType: item.itemType || 'combo',
@@ -2034,7 +2121,9 @@ export function MenuConfigPage() {
         isOpen={isAddMenuItemModalOpen}
         onClose={() => setIsAddMenuItemModalOpen(false)}
         icon={UtensilsCrossed}
-        title={editingMenuItemId ? 'Edit Menu Item' : 'Add New Menu Item'}
+        title={activeTab === 'combos'
+          ? (editingMenuItemId ? 'Edit Combo Item' : 'Add New Combo Item')
+          : (editingMenuItemId ? 'Edit Menu Item' : 'Add New Menu Item')}
         footer={
           <>
             <Button
@@ -2060,7 +2149,6 @@ export function MenuConfigPage() {
                           name: newMenuItem.name,
                           description: newMenuItem.description,
                           price: parseFloat(newMenuItem.price),
-                          image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
                           isActive: newMenuItem.isActive,
                           pricingType: newMenuItem.pricingType,
                           itemType: newMenuItem.itemType,
@@ -2074,7 +2162,6 @@ export function MenuConfigPage() {
                       name: newMenuItem.name,
                       description: newMenuItem.description,
                       price: parseFloat(newMenuItem.price),
-                      image: newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl,
                       isActive: newMenuItem.isActive,
                       pricingType: newMenuItem.pricingType,
                       itemType: newMenuItem.itemType,
@@ -2237,103 +2324,148 @@ export function MenuConfigPage() {
             <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
               Pricing Type
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'per-person' })}
-                className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${newMenuItem.pricingType === 'per-person'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-background hover:border-border hover:bg-accent'
-                  }`}
-              >
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.pricingType === 'per-person'
-                  ? 'border-primary'
-                  : 'border-border'
-                  }`}>
-                  {newMenuItem.pricingType === 'per-person' && (
-                    <div className="w-3 h-3 rounded-full bg-primary" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Per Person
-                  </div>
-                  <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                    Price multiplies by guest count
+            <div className={activeTab === 'combos' ? '' : 'grid grid-cols-1 sm:grid-cols-3 gap-3'}>
+              {activeTab === 'combos' ? (
+                <div className="p-4 rounded-lg border-2 border-primary bg-primary/5">
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-3 h-3 rounded-full bg-primary" />
+                    </div>
+                    <div>
+                      <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Per Person
+                      </div>
+                      <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                        Price multiplies by guest count
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'flat-rate' })}
-                className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${newMenuItem.pricingType === 'flat-rate'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-background hover:border-border hover:bg-accent'
-                  }`}
-              >
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.pricingType === 'flat-rate'
-                  ? 'border-primary'
-                  : 'border-border'
-                  }`}>
-                  {newMenuItem.pricingType === 'flat-rate' && (
-                    <div className="w-3 h-3 rounded-full bg-primary" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Flat Rate
-                  </div>
-                  <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                    Fixed price regardless of guests
-                  </div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'consumption' })}
-                className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${newMenuItem.pricingType === 'consumption'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-background hover:border-border hover:bg-accent'
-                  }`}
-              >
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.pricingType === 'consumption'
-                  ? 'border-primary'
-                  : 'border-border'
-                  }`}>
-                  {newMenuItem.pricingType === 'consumption' && (
-                    <div className="w-3 h-3 rounded-full bg-primary" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Billed by Consumption
-                  </div>
-                  <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                    Based on actual usage
-                  </div>
-                </div>
-              </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'per-person' })}
+                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${newMenuItem.pricingType === 'per-person'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-background hover:border-border hover:bg-accent'
+                      }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.pricingType === 'per-person'
+                      ? 'border-primary'
+                      : 'border-border'
+                      }`}>
+                      {newMenuItem.pricingType === 'per-person' && (
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Per Person
+                      </div>
+                      <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                        Price multiplies by guest count
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'flat-rate' })}
+                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${newMenuItem.pricingType === 'flat-rate'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-background hover:border-border hover:bg-accent'
+                      }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.pricingType === 'flat-rate'
+                      ? 'border-primary'
+                      : 'border-border'
+                      }`}>
+                      {newMenuItem.pricingType === 'flat-rate' && (
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Flat Rate
+                      </div>
+                      <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                        Fixed price regardless of guests
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewMenuItem({ ...newMenuItem, pricingType: 'consumption' })}
+                    className={`relative flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${newMenuItem.pricingType === 'consumption'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-background hover:border-border hover:bg-accent'
+                      }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${newMenuItem.pricingType === 'consumption'
+                      ? 'border-primary'
+                      : 'border-border'
+                      }`}>
+                      {newMenuItem.pricingType === 'consumption' && (
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-foreground mb-0.5" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Billed by Consumption
+                      </div>
+                      <div className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                        Based on actual usage
+                      </div>
+                    </div>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
-          <div>
-            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-              Item Image
-            </label>
-            <div className="border-2 border-dashed border-border rounded-lg p-4 bg-muted/20">
-              {(newMenuItem.imageUrl || newMenuItem.image) ? (
-                <div className="space-y-3">
-                  <div className="w-full h-48 rounded-lg overflow-hidden bg-muted">
-                    <ImageWithFallback
-                      src={newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
+          {activeTab !== 'combos' && (
+            <div>
+              <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                Item Image
+              </label>
+              <div className="border-2 border-dashed border-border rounded-lg p-4 bg-muted/20">
+                {(newMenuItem.imageUrl || newMenuItem.image) ? (
+                  <div className="space-y-3">
+                    <div className="w-full h-48 rounded-lg overflow-hidden bg-muted">
+                      <ImageWithFallback
+                        src={newMenuItem.image ? URL.createObjectURL(newMenuItem.image) : newMenuItem.imageUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <label className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2">
+                      <Upload className="w-4 h-4" />
+                      <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                        Change Image
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setNewMenuItem({ ...newMenuItem, image: file, imageUrl: '' });
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
-                  <label className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2">
-                    <Upload className="w-4 h-4" />
-                    <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                      Change Image
+                ) : (
+                  <label className="flex flex-col items-center justify-center py-8 cursor-pointer group">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
+                      <Upload className="w-8 h-8 text-primary" />
+                    </div>
+                    <span className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                      Upload Image
+                    </span>
+                    <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
+                      Click to browse or drag and drop
                     </span>
                     <input
                       type="file"
@@ -2347,33 +2479,10 @@ export function MenuConfigPage() {
                       className="hidden"
                     />
                   </label>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center py-8 cursor-pointer group">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
-                    <Upload className="w-8 h-8 text-primary" />
-                  </div>
-                  <span className="text-foreground mb-1" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Upload Image
-                  </span>
-                  <span className="text-muted-foreground" style={{ fontSize: 'var(--text-small)' }}>
-                    Click to browse or drag and drop
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setNewMenuItem({ ...newMenuItem, image: file, imageUrl: '' });
-                      }
-                    }}
-                    className="hidden"
-                  />
-                </label>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Variants Section */}
           <div>

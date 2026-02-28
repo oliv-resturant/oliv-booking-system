@@ -5,6 +5,7 @@ import { KitchenPdfActionModal } from './KitchenPdfActionModal';
 import { KitchenPdfService, type KitchenPdfStatus } from '../../services/kitchen-pdf.service';
 import { VenueService } from '../../services/venue.service';
 import { toast } from 'sonner';
+import { StatusDropdown } from './StatusDropdown';
 
 interface Booking {
   id: number;
@@ -76,6 +77,22 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
   ];
 
   const VENUE_LOCATIONS = VenueService.getLocations();
+
+  // Booking status options
+  const bookingStatusOptions = [
+    { value: 'Confirmed', label: 'Confirmed', dotColor: '#10b981' },
+    { value: 'Touchbase', label: 'Touchbase', dotColor: '#9DAE91' },
+    { value: 'New', label: 'New', dotColor: '#8b5cf6' },
+    { value: 'Declined', label: 'Declined', dotColor: '#ef4444' },
+    { value: 'Completed', label: 'Completed', dotColor: '#3b82f6' },
+  ];
+
+  const handleStatusChange = (newStatus: string) => {
+    setCurrentBooking({ ...currentBooking, status: newStatus });
+    toast.success('Booking status updated', {
+      description: `Status changed to ${newStatus}`,
+    });
+  };
 
   const handleAddComment = () => {
     if (!newComment.trim()) {
@@ -243,12 +260,26 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
 
       {/* Page Title */}
       <div className="mb-6">
-        <h1 className="text-foreground" style={{ fontSize: 'var(--text-h1)', fontWeight: 'var(--font-weight-semibold)' }}>
-          Booking Details
-        </h1>
-        <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-base)' }}>
-          View and manage booking information
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-foreground" style={{ fontSize: 'var(--text-h1)', fontWeight: 'var(--font-weight-semibold)' }}>
+              Booking Details
+            </h1>
+            <p className="text-muted-foreground mt-1" style={{ fontSize: 'var(--text-base)' }}>
+              View and manage booking information
+            </p>
+          </div>
+
+          {/* Status Dropdown */}
+          <div className="flex-shrink-0 w-full sm:w-64">
+            <StatusDropdown
+              options={bookingStatusOptions}
+              value={currentBooking.status}
+              onChange={handleStatusChange}
+              placeholder="Select status"
+            />
+          </div>
+        </div>
       </div>
 
       {isLocked && (
@@ -420,22 +451,10 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
                 style={{ fontSize: 'var(--text-base)' }}
               >
                 <option value="">Not Assigned</option>
-                {VENUE_LOCATIONS.map((loc: string) => (
-                  <option key={loc} value={loc}>{loc}</option>
+                {VENUE_LOCATIONS.map((loc) => (
+                  <option key={loc.id} value={loc.title}>{loc.title}</option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label className="text-muted-foreground mb-2 block" style={{ fontSize: 'var(--text-small)' }}>
-                Status
-              </label>
-              <input
-                type="text"
-                value={currentBooking.status}
-                readOnly
-                className="w-full px-4 py-2.5 bg-input-background border border-border rounded-lg text-foreground"
-                style={{ fontSize: 'var(--text-base)' }}
-              />
             </div>
           </div>
         </div>
