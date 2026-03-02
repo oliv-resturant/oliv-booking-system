@@ -129,6 +129,7 @@ export function CustomMenuWizard() {
   >({
     "Main Courses Meat/Fish": 0,
     "Main Courses Veggie": 0,
+    "Combo Packs": 0,
   });
   const [guestCountErrors, setGuestCountErrors] = useState<
     Record<string, string>
@@ -217,6 +218,7 @@ export function CustomMenuWizard() {
       "Main Courses Meat/Fish": 0,
       "Main Courses Veggie": 0,
       "Main Courses Vegan": 0,
+      "Combo Packs": 0,
     });
 
     if (totalGuests > 0) {
@@ -311,6 +313,7 @@ export function CustomMenuWizard() {
       return item && [
         "Main Courses Meat/Fish",
         "Main Courses Veggie",
+        "Combo Packs",
       ].includes(item.category);
     });
 
@@ -388,6 +391,7 @@ export function CustomMenuWizard() {
     const mainCourseCategories = [
       "Main Courses Meat/Fish",
       "Main Courses Veggie",
+      "Combo Packs",
     ];
 
     // Check if any main course items are selected
@@ -512,6 +516,7 @@ export function CustomMenuWizard() {
     if (itemCategory && [
       "Main Courses Meat/Fish",
       "Main Courses Veggie",
+      "Combo Packs",
     ].includes(itemCategory)) {
       const remainingItemsInCategory = selectedItems.filter((id) => {
         if (id === itemId) return false; // Exclude the item being removed
@@ -607,6 +612,7 @@ export function CustomMenuWizard() {
     if ([
       "Main Courses Meat/Fish",
       "Main Courses Veggie",
+      "Combo Packs",
     ].includes(item.category)) {
       setTempGuestCount(String(mainCourseGuests[item.category] || 0));
     } else {
@@ -650,6 +656,7 @@ export function CustomMenuWizard() {
     if ([
       "Main Courses Meat/Fish",
       "Main Courses Veggie",
+      "Combo Packs",
     ].includes(detailsModalItem.category)) {
       const guestCount = parseInt(tempGuestCount) || 0;
       setMainCourseGuests((prev) => ({
@@ -720,6 +727,7 @@ export function CustomMenuWizard() {
     if ([
       "Main Courses Meat/Fish",
       "Main Courses Veggie",
+      "Combo Packs",
     ].includes(item.category)) {
       const categoryGuestCount = mainCourseGuests[item.category] || 0;
       return itemTotal * categoryGuestCount;
@@ -785,6 +793,13 @@ export function CustomMenuWizard() {
         (item) => item && item.category === "Main Courses Veggie",
       ) as MenuItem[];
 
+    // Get Combo Pack items and find highest price
+    const comboItems = selectedItems
+      .map((id) => menuItems.find((item) => item.id === id))
+      .filter(
+        (item) => item && item.category === "Combo Packs",
+      ) as MenuItem[];
+
     let meatPrice = 0;
     if (meatFishItems.length > 0) {
       meatPrice = Math.max(
@@ -833,25 +848,50 @@ export function CustomMenuWizard() {
       );
     }
 
-    return { meatPrice, veggiePrice };
+    let comboPrice = 0;
+    if (comboItems.length > 0) {
+      comboPrice = Math.max(
+        ...comboItems.map((item) => {
+          const addOns = itemAddOns[item.id] || [];
+          const addOnsPrice = addOns.reduce((total, addOnId) => {
+            const addOn = item.addOns?.find((ao) => ao.id === addOnId);
+            return total + (addOn?.price || 0);
+          }, 0);
+
+          let basePrice = item.price;
+          const variantId = itemVariants[item.id];
+          if (variantId && item.variants) {
+            const variant = item.variants.find((v) => v.id === variantId);
+            if (variant) {
+              basePrice = variant.price;
+            }
+          }
+
+          return basePrice + addOnsPrice;
+        })
+      );
+    }
+
+    return { meatPrice, veggiePrice, comboPrice };
   };
 
   // Get per-person subtotal for all per-person items (excluding beverages which are pay-by-consumption)
   const getPerPersonSubtotal = () => {
     let subtotal = 0;
 
-    // For main courses, sum up meat and veggie prices
+    // For main courses, sum up meat, veggie, and combo prices
     const hasMainCourses = selectedItems.some((itemId) => {
       const item = menuItems.find((i) => i.id === itemId);
       return item && [
         "Main Courses Meat/Fish",
         "Main Courses Veggie",
+        "Combo Packs",
       ].includes(item.category);
     });
 
     if (hasMainCourses) {
-      const { meatPrice, veggiePrice } = getMainCourseDisplayPrice();
-      subtotal += meatPrice + veggiePrice;
+      const { meatPrice, veggiePrice, comboPrice } = getMainCourseDisplayPrice();
+      subtotal += meatPrice + veggiePrice + comboPrice;
     }
 
     // For other per-person items (not main courses, not beverages), add their per-person price
@@ -864,6 +904,7 @@ export function CustomMenuWizard() {
         [
           "Main Courses Meat/Fish",
           "Main Courses Veggie",
+          "Combo Packs",
         ].includes(item.category)
       ) {
         return;
@@ -876,9 +917,10 @@ export function CustomMenuWizard() {
 
   // Format main course price breakdown for display
   const getMainCoursePriceBreakdown = () => {
-    const { meatPrice, veggiePrice } = getMainCourseDisplayPrice();
+    const { meatPrice, veggiePrice, comboPrice } = getMainCourseDisplayPrice();
     const meatGuests = mainCourseGuests["Main Courses Meat/Fish"] || 0;
     const veggieGuests = mainCourseGuests["Main Courses Veggie"] || 0;
+    const comboGuests = mainCourseGuests["Combo Packs"] || 0;
 
     const parts = [];
 
@@ -888,6 +930,17 @@ export function CustomMenuWizard() {
 
     if (veggiePrice > 0 && veggieGuests > 0) {
       parts.push(`CHF ${veggiePrice.toFixed(2)} (${veggieGuests} Veggie)`);
+    }
+
+    if (comboGuests > 0) {
+      // Calculate combo pack price
+      const comboItems = selectedItems
+        .map((id) => menuItems.find((item) => item.id === id))
+        .filter((item) => item && item.category === "Combo Packs") as MenuItem[];
+      if (comboItems.length > 0) {
+        const comboPrice = comboItems.reduce((sum, item) => sum + getItemPerPersonPrice(item), 0);
+        parts.push(`CHF ${comboPrice.toFixed(2)} (${comboGuests} Combo Packs)`);
+      }
     }
 
     return parts.join(" + ");
@@ -2190,6 +2243,7 @@ export function CustomMenuWizard() {
                         {[
                           "Main Courses Meat/Fish",
                           "Main Courses Veggie",
+                          "Combo Packs",
                         ].includes(selectedCategory) && (
                           <div className="mb-3 bg-secondary border-l-4 border-primary rounded-lg px-3 py-2">
                             <div className="flex items-center justify-between gap-2">
@@ -2234,6 +2288,20 @@ export function CustomMenuWizard() {
                                     {mainCourseGuests["Main Courses Veggie"] || 0}
                                   </span>
                                 </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-secondary-foreground/70 text-xs">🍽️</span>
+                                  <span
+                                    className="text-secondary-foreground text-xs"
+                                  >
+                                    Combo:
+                                  </span>
+                                  <span
+                                    className="text-primary font-semibold"
+                                    style={{ fontSize: "var(--text-base)" }}
+                                  >
+                                    {mainCourseGuests["Combo Packs"] || 0}
+                                  </span>
+                                </div>
                                 <div className="flex items-center gap-1 text-xs">
                                   <span className="text-secondary-foreground/70">
                                     {Object.values(mainCourseGuests).reduce((a, b) => a + b, 0)}/{eventDetails.guestCount || 0}
@@ -2254,7 +2322,7 @@ export function CustomMenuWizard() {
                         {[
                           "Main Courses Meat/Fish",
                           "Main Courses Veggie",
-                        ].includes(selectedCategory) && (
+                        ].includes(selectedCategory) && selectedCategory !== "Combo Packs" && (
                           <div className="mb-4">
                             <div className="flex items-center gap-2 bg-card rounded-lg p-1 border border-border">
                               <button
@@ -2288,11 +2356,11 @@ export function CustomMenuWizard() {
                               // Filter by category
                               if (item.category !== selectedCategory) return false;
 
-                              // Filter by tab for main courses
+                              // Filter by tab for main courses (but not for Combo Packs category)
                               if ([
                                 "Main Courses Meat/Fish",
                                 "Main Courses Veggie",
-                              ].includes(selectedCategory)) {
+                              ].includes(selectedCategory) && selectedCategory !== "Combo Packs") {
                                 if (mainCourseTab === "combo") {
                                   // Combo packs: items priced above 30 CHF
                                   return item.price > 30;
@@ -2751,6 +2819,7 @@ Hinzufügen
                                                     "per-person" && [
                                                       "Main Courses Meat/Fish",
                                                       "Main Courses Veggie",
+                                                      "Combo Packs",
                                                     ].includes(item.category) ? (
                                                     <span
                                                       className="px-1 py-0.5 bg-green-100 text-green-700 rounded text-xs"
@@ -2816,6 +2885,7 @@ Hinzufügen
                                                   "per-person" && ![
                                                     "Main Courses Meat/Fish",
                                                     "Main Courses Veggie",
+                                                    "Combo Packs",
                                                   ].includes(item.category) ? (
                                                     <span className="text-muted-foreground text-sm">
                                                       /person
@@ -2823,6 +2893,7 @@ Hinzufügen
                                                   ) : [
                                                     "Main Courses Meat/Fish",
                                                     "Main Courses Veggie",
+                                                    "Combo Packs",
                                                   ].includes(item.category) ? (
                                                     <span className="text-muted-foreground text-sm">
                                                       /Gast
@@ -3303,6 +3374,7 @@ Hinzufügen
                                                 "per-person" && [
                                                   "Main Courses Meat/Fish",
                                                   "Main Courses Veggie",
+                                                  "Combo Packs",
                                                 ].includes(item.category) ? (
                                                 <span
                                                   className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs"
@@ -3367,6 +3439,7 @@ Hinzufügen
                                               "per-person" && ![
                                                 "Main Courses Meat/Fish",
                                                 "Main Courses Veggie",
+                                                "Combo Packs",
                                               ].includes(item.category) ? (
                                                 <span className="text-muted-foreground text-sm">
                                                   /person
@@ -3374,6 +3447,7 @@ Hinzufügen
                                               ) : [
                                                 "Main Courses Meat/Fish",
                                                 "Main Courses Veggie",
+                                                "Combo Packs",
                                               ].includes(item.category) ? (
                                                 <span className="text-muted-foreground text-sm">
                                                   /guest
@@ -4001,6 +4075,7 @@ Hinzufügen
                                 "Main Courses Meat/Fish",
                                 "Main Courses Veggie",
                                 "Desserts",
+                                "Combo Packs",
                                 "Beverages",
                                 "Technology",
                                 "Decoration",
@@ -4207,6 +4282,7 @@ Hinzufügen
                                                       ? [
                                                           "Main Courses Meat/Fish",
                                                           "Main Courses Veggie",
+                                                          "Combo Packs",
                                                         ].includes(item.category)
                                                         ? `${mainCourseGuests[item.category] || 0}×`
                                                         : `${parseInt(eventDetails.guestCount) || 0}×`
@@ -4482,6 +4558,7 @@ Hinzufügen
                                     "Main Courses Meat/Fish",
                                     "Main Courses Veggie",
                                     "Desserts",
+                                    "Combo Packs",
                                   ];
                                   const breakdown = foodCategories
                                     .map((cat) => {
@@ -4613,6 +4690,7 @@ Hinzufügen
                                       "Main Courses Meat/Fish",
                                       "Main Courses Veggie",
                                       "Desserts",
+                                      "Combo Packs",
                                     ];
                                     const breakdown = foodCategories
                                       .map((cat) => {
@@ -4683,6 +4761,7 @@ Hinzufügen
                                                 "Main Courses Meat/Fish",
                                                 "Main Courses Veggie",
                                                 "Desserts",
+                                                "Combo Packs",
                                               ];
                                               return selectedItems
                                                 .filter((itemId) => {
@@ -5577,6 +5656,7 @@ Hinzufügen
                     {[
                       "Main Courses Meat/Fish",
                       "Main Courses Veggie",
+                      "Combo Packs",
                     ].includes(detailsModalItem.category) && (
                       <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                         <span className="text-muted-foreground text-xs sm:text-sm whitespace-nowrap">Gäste:</span>
@@ -5625,11 +5705,13 @@ Hinzufügen
                     disabled={[
                       "Main Courses Meat/Fish",
                       "Main Courses Veggie",
+                      "Combo Packs",
                     ].includes(detailsModalItem.category) && (parseInt(tempGuestCount) || 0) === 0}
                     className={`flex items-center justify-center gap-1.5 sm:gap-3 px-3 sm:px-5 py-2.5 h-9 sm:h-11 min-h-[36px] sm:min-h-[44px] rounded-lg transition-colors active:scale-[0.98] touch-manipulation flex-1 sm:flex-auto ${
                       [
                         "Main Courses Meat/Fish",
                         "Main Courses Veggie",
+                        "Combo Packs",
                       ].includes(detailsModalItem.category) && (parseInt(tempGuestCount) || 0) === 0
                         ? "bg-muted text-muted-foreground cursor-not-allowed"
                         : "bg-primary text-primary-foreground hover:bg-primary/90"

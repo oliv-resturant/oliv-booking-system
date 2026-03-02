@@ -719,6 +719,143 @@ export const menuItems: MenuItem[] = [
     pricingType: 'flat-rate'
   },
   
+  // Combo Packs
+  {
+    id: 'combo1',
+    name: 'Executive Business Lunch',
+    description: 'Complete 3-course business lunch with starter, main course, and dessert. Perfect for corporate events.',
+    category: 'Combo Packs',
+    price: 42,
+    image: 'https://images.unsplash.com/photo-1555244162-803834f70033?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+    allergens: ['Dairy', 'Gluten'],
+    variants: [
+      { id: 'combo1-veg', name: 'Vegetarian Option', price: 38, description: 'Caprese Skewers + Vegetable Risotto + Tiramisu' },
+      { id: 'combo1-meat', name: 'Meat Option', price: 42, description: 'Caesar Salad + Beef Tenderloin + Chocolate Lava Cake' },
+      { id: 'combo1-fish', name: 'Fish Option', price: 45, description: 'Salmon Crostini + Grilled Salmon + Panna Cotta' }
+    ],
+    addOns: [
+      { id: 'combo1-ao1', name: 'Upgrade to Premium Wine', price: 12 },
+      { id: 'combo1-ao2', name: 'Add Cheese Platter', price: 8 }
+    ],
+    dietaryType: 'non-vegetarian',
+    pricingType: 'per-person'
+  },
+  {
+    id: 'combo2',
+    name: 'Celebration Feast',
+    description: 'Grand celebration package with appetizers, main courses, sides, and dessert. Ideal for parties and special occasions.',
+    category: 'Combo Packs',
+    price: 68,
+    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+    allergens: ['Dairy', 'Gluten', 'Eggs', 'Fish'],
+    variants: [
+      { id: 'combo2-standard', name: 'Standard Package', price: 68, description: '2 Starters + 2 Mains + 2 Sides + 1 Dessert' },
+      { id: 'combo2-deluxe', name: 'Deluxe Package', price: 88, description: '3 Starters + 3 Mains + 3 Sides + 2 Desserts' },
+      { id: 'combo2-premium', name: 'Premium Package', price: 115, description: '4 Starters + 4 Mains + 4 Sides + 3 Desserts + Champagne' }
+    ],
+    addOns: [
+      { id: 'combo2-ao1', name: 'Extra Appetizers', price: 15 },
+      { id: 'combo2-ao2', name: 'Birthday Cake', price: 25 },
+      { id: 'combo2-ao3', name: 'Photography Service', price: 150 }
+    ],
+    dietaryType: 'non-vegetarian',
+    pricingType: 'per-person'
+  },
+  {
+    id: 'combo3',
+    name: 'Romantic Dinner Package',
+    description: 'Intimate dining experience for couples with carefully curated courses and wine pairing.',
+    category: 'Combo Packs',
+    price: 95,
+    image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+    allergens: ['Dairy', 'Gluten', 'Fish', 'Sulfites'],
+    variants: [
+      { id: 'combo3-classic', name: 'Classic Romance', price: 95, description: 'Champagne + 3 Courses + Wine Pairing' },
+      { id: 'combo3-luxury', name: 'Luxury Experience', price: 145, description: 'Premium Champagne + 5 Courses + Premium Wine + Chocolate Fondue' }
+    ],
+    addOns: [
+      { id: 'combo3-ao1', name: 'Rose Petal Decoration', price: 35 },
+      { id: 'combo3-ao2', name: 'Live Music', price: 200 }
+    ],
+    dietaryType: 'non-vegetarian',
+    pricingType: 'flat-rate'
+  },
+  {
+    id: 'combo4',
+    name: 'Family Style Sharing',
+    description: 'Generous platters designed for sharing family-style. Perfect for casual gatherings.',
+    category: 'Combo Packs',
+    price: 55,
+    image: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+    allergens: ['Dairy', 'Gluten'],
+    variants: [
+      { id: 'combo4-4people', name: '4 People', price: 55, description: 'Per person - serves 4' },
+      { id: 'combo4-6people', name: '6 People', price: 50, description: 'Per person - serves 6' },
+      { id: 'combo4-8people', name: '8 People', price: 45, description: 'Per person - serves 8' }
+    ],
+    includes: [
+      { name: 'Mixed Appetizer Platter', portion: 'Shared', price: 12 },
+      { name: '2 Main Course Options', portion: 'Large platters', price: 20 },
+      { name: '3 Side Dishes', portion: 'Family bowls', price: 10 },
+      { name: 'Salad Selection', portion: 'Large bowl', price: 8 },
+      { name: 'Dessert Platter', portion: 'Assorted', price: 5 }
+    ],
+    addOns: [
+      { id: 'combo4-ao1', name: 'Extra Main Course', price: 15 },
+      { id: 'combo4-ao2', name: 'Additional Sides', price: 8 }
+    ],
+    dietaryType: 'non-vegetarian',
+    pricingType: 'per-person'
+  },
+  {
+    id: 'combo5',
+    name: 'Vegan Delight Combo',
+    description: 'Plant-based feast featuring our best vegan dishes across all courses.',
+    category: 'Combo Packs',
+    price: 42,
+    image: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+    allergens: ['Sesame', 'Gluten'],
+    variants: [
+      { id: 'combo5-light', name: 'Light Vegan', price: 35, description: '2 Courses + 1 Drink' },
+      { id: 'combo5-full', name: 'Full Vegan Experience', price: 42, description: '3 Courses + Vegan Wine Pairing' },
+      { id: 'combo5-luxury', name: 'Vegan Luxury', price: 58, description: '4 Courses + Premium Vegan Wine + Vegan Cheese Board' }
+    ],
+    addOns: [
+      { id: 'combo5-ao1', name: 'Vegan Cheese Platter', price: 10 },
+      { id: 'combo5-ao2', name: 'Fresh Juice Selection', price: 8 }
+    ],
+    dietaryType: 'vegan',
+    pricingType: 'per-person'
+  },
+  {
+    id: 'combo6',
+    name: 'Kids Party Package',
+    description: 'Fun and delicious menu designed specially for children\'s parties.',
+    category: 'Combo Packs',
+    price: 22,
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+    allergens: ['Dairy', 'Gluten', 'Eggs'],
+    variants: [
+      { id: 'combo6-mini', name: 'Mini Party (ages 3-6)', price: 18, description: '3 Child-friendly items + Juice + Dessert' },
+      { id: 'combo6-junior', name: 'Junior Party (ages 7-12)', price: 22, description: '4 Items + Juice + Dessert + Treat Bag' }
+    ],
+    includes: [
+      { name: 'Mini Pizza Slices', portion: '2 pieces', price: 4 },
+      { name: 'Chicken Nuggets', portion: '4 pieces', price: 5 },
+      { name: 'French Fries', portion: 'Medium', price: 3 },
+      { name: 'Fruit Skewers', portion: '2 pieces', price: 2 },
+      { name: 'Ice Cream', portion: '1 scoop', price: 3 },
+      { name: 'Juice Box', portion: '1 box', price: 2 }
+    ],
+    addOns: [
+      { id: 'combo6-ao1', name: 'Birthday Cake', price: 8 },
+      { id: 'combo6-ao2', name: 'Party Bags', price: 5 },
+      { id: 'combo6-ao3', name: 'Face Painting', price: 80 }
+    ],
+    dietaryType: 'non-vegetarian',
+    pricingType: 'per-person'
+  },
+
   // Beverages - Wines and some drinks changed to flat-rate pricing (charged by bottle/quantity, not per person)
   {
     id: 'bev1',
@@ -847,6 +984,7 @@ export const categories = [
   'Main Courses Meat/Fish',
   'Main Courses Veggie',
   'Desserts',
+  'Combo Packs',
   'Beverages',
   'Technology',
   'Decoration',
