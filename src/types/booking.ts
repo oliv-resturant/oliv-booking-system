@@ -73,6 +73,7 @@ export interface Booking {
   menuItems: BookingMenuItem[];
   contactHistory: BookingContactHistory[];
   kitchenPdf?: KitchenPdfStatus;
+  assignedTo?: string;
 }
 
 /**

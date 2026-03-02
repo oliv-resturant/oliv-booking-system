@@ -6,6 +6,7 @@ import { KitchenPdfService, type KitchenPdfStatus } from '../../services/kitchen
 import { VenueService } from '../../services/venue.service';
 import { toast } from 'sonner';
 import { StatusDropdown } from './StatusDropdown';
+import { AssignUserDropdown } from './AssignUserDropdown';
 
 interface Booking {
   id: number;
@@ -48,6 +49,7 @@ interface Booking {
     action: string;
   }>;
   kitchenPdf?: KitchenPdfStatus;
+  assignedTo?: string;
 }
 
 interface BookingDetailPageProps {
@@ -139,6 +141,25 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
       }
     }));
     toast.success('Location updated visually. Save changes to persist.');
+  };
+
+  const handleAssignUser = (userName: string) => {
+    toast.success(`Booking assigned to ${userName}`, {
+      description: `Booking #${booking.id} has been successfully assigned.`,
+    });
+    // Add to comments/history
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const newCommentObj = {
+      by: 'Admin',
+      time: timeStr,
+      date: dateStr,
+      action: `Assigned to ${userName}`
+    };
+
+    setComments([...comments, newCommentObj]);
   };
 
   const handlePdfActionComplete = (action: 'admin' | 'external' | 'download', data?: { emails?: string[]; notes?: string }) => {
@@ -255,11 +276,30 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
             <Send className="w-4 h-4" />
             Copy Edit Link
           </button>
+          {/* Assign User Dropdown */}
+          <AssignUserDropdown
+            bookingId={booking.id}
+            currentAssignedTo={booking.assignedTo}
+            onAssign={handleAssignUser}
+          />
         </div>
       </div>
 
       {/* Page Title */}
       <div className="mb-6">
+        {isLocked && (
+        <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-4 flex items-start gap-3 mb-6">
+          <Lock className="w-5 h-5 text-[#D97706] mt-0.5 flex-shrink-0" />
+          <div>
+            <h4 className="text-[#92400E]" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+              Booking is Locked
+            </h4>
+            <p className="text-[#B45309]" style={{ fontSize: 'var(--text-small)' }}>
+              Clients cannot edit this booking. You can still make changes as an admin.
+            </p>
+          </div>
+        </div>
+      )}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-foreground" style={{ fontSize: 'var(--text-h1)', fontWeight: 'var(--font-weight-semibold)' }}>
@@ -282,19 +322,7 @@ export function BookingDetailPage({ booking, onBack }: BookingDetailPageProps) {
         </div>
       </div>
 
-      {isLocked && (
-        <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-4 flex items-start gap-3 mb-6">
-          <Lock className="w-5 h-5 text-[#D97706] mt-0.5 flex-shrink-0" />
-          <div>
-            <h4 className="text-[#92400E]" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-              Booking is Locked
-            </h4>
-            <p className="text-[#B45309]" style={{ fontSize: 'var(--text-small)' }}>
-              Clients cannot edit this booking. You can still make changes as an admin.
-            </p>
-          </div>
-        </div>
-      )}
+      
 
       <div className="space-y-6">
         {/* Customer Information */}
