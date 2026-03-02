@@ -66,7 +66,6 @@ interface Category {
   isActive: boolean;
   isExpanded: boolean;
   items: MenuItemData[];
-  type: 'regular' | 'main-course';
   assignedAddonGroups?: string[]; // IDs of assigned addon groups
 }
 
@@ -98,7 +97,6 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
-    type: 'regular',
     items: [
       {
         id: '1-1',
@@ -131,7 +129,6 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
-    type: 'regular',
     items: [
       {
         id: '2-1',
@@ -156,7 +153,6 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
-    type: 'main-course',
     items: [],
   },
   {
@@ -166,7 +162,6 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1758384077555-36242d3f2b4d?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
-    type: 'regular',
     items: [],
   },
   {
@@ -176,7 +171,6 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1705948731485-6e4c6c180d0d?w=400&h=400&fit=crop',
     isActive: false,
     isExpanded: false,
-    type: 'regular',
     items: [
       {
         id: '4-1',
@@ -185,7 +179,6 @@ const mockCategories: Category[] = [
         image: 'https://images.unsplash.com/photo-1705948731485-6e4c6c180d0d?w=400&h=400&fit=crop',
         price: 6.50,
         isActive: true,
-        itemType: 'regular' as const,
         variants: [],
       },
     ],
@@ -197,7 +190,6 @@ const mockCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop',
     isActive: true,
     isExpanded: false,
-    type: 'main-course',
     items: [],
   },
 
@@ -434,7 +426,6 @@ export function MenuConfigPage() {
     description: '',
     image: null as File | null,
     imageUrl: '' as string,
-    type: 'regular' as 'regular' | 'main-course',
   });
   const [newMenuItem, setNewMenuItem] = useState({
     name: '',
@@ -739,7 +730,7 @@ export function MenuConfigPage() {
                   icon={Plus}
                   onClick={() => {
                     setEditingCategoryId(null);
-                    setNewCategory({ name: '', description: '', image: null, imageUrl: '', type: 'regular' });
+                    setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
                     setIsAddCategoryModalOpen(true);
                   }}
                   className="w-full sm:w-auto min-h-[44px]"
@@ -809,11 +800,6 @@ export function MenuConfigPage() {
                                   {category.items.length} {category.items.length === 1 ? 'item' : 'items'}
                                 </span>
                               )}
-                              {category.type === 'main-course' && (
-                                <span className="px-2 py-0.5 bg-secondary/50 text-secondary-foreground rounded-full text-xs">
-                                  Main Course
-                                </span>
-                              )}
                             </div>
                             <p className="text-muted-foreground line-clamp-1 hidden sm:block" style={{ fontSize: 'var(--text-small)' }}>
                               {category.description}
@@ -831,7 +817,6 @@ export function MenuConfigPage() {
                                     description: category.description,
                                     image: null,
                                     imageUrl: category.image,
-                                    type: category.type || 'regular',
                                   });
                                   setIsAddCategoryModalOpen(true);
                                 }}
@@ -854,7 +839,6 @@ export function MenuConfigPage() {
                                     imageUrl: '',
                                     isActive: true,
                                     pricingType: 'per-person',
-                                    itemType: 'regular',
                                     variants: [],
                                   });
                                   setIsAddMenuItemModalOpen(true);
@@ -1053,7 +1037,6 @@ export function MenuConfigPage() {
                                                   imageUrl: item.image,
                                                   isActive: item.isActive,
                                                   pricingType: item.pricingType || 'per-person',
-                                                  itemType: item.itemType || 'regular',
                                                   variants: item.variants,
                                                 });
                                                 setIsAddMenuItemModalOpen(true);
@@ -1156,7 +1139,6 @@ export function MenuConfigPage() {
                                   imageUrl: '',
                                   isActive: true,
                                   pricingType: 'per-person',
-                                  itemType: 'regular',
                                   variants: [],
                                 });
                                 setIsAddMenuItemModalOpen(true);
@@ -1547,7 +1529,7 @@ export function MenuConfigPage() {
         isOpen={isAddCategoryModalOpen}
         onClose={() => {
           setIsAddCategoryModalOpen(false);
-          setNewCategory({ name: '', description: '', image: null, imageUrl: '', type: 'regular' });
+          setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
           setEditingCategoryId(null);
         }}
         icon={UtensilsCrossed}
@@ -1559,7 +1541,7 @@ export function MenuConfigPage() {
               icon={X}
               onClick={() => {
                 setIsAddCategoryModalOpen(false);
-                setNewCategory({ name: '', description: '', image: null, imageUrl: '', type: 'regular' });
+                setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
                 setEditingCategoryId(null);
               }}
             >
@@ -1572,7 +1554,7 @@ export function MenuConfigPage() {
                 if (editingCategoryId) {
                   setCategories(categories.map(cat =>
                     cat.id === editingCategoryId
-                      ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl, type: newCategory.type }
+                      ? { ...cat, name: newCategory.name, description: newCategory.description, image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl }
                       : cat
                   ));
                 } else {
@@ -1583,13 +1565,12 @@ export function MenuConfigPage() {
                     image: newCategory.image ? URL.createObjectURL(newCategory.image) : newCategory.imageUrl,
                     isActive: true,
                     isExpanded: false,
-                    type: newCategory.type,
                     items: [],
                   };
                   setCategories([...categories, newCat]);
                 }
                 setIsAddCategoryModalOpen(false);
-                setNewCategory({ name: '', description: '', image: null, imageUrl: '', type: 'regular' });
+                setNewCategory({ name: '', description: '', image: null, imageUrl: '' });
                 setEditingCategoryId(null);
               }}
               disabled={!newCategory.name}
@@ -1612,22 +1593,6 @@ export function MenuConfigPage() {
               className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               style={{ fontSize: 'var(--text-base)' }}
             />
-          </div>
-
-          {/* Category Type Dropdown */}
-          <div>
-            <label className="block text-foreground mb-2" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-              Category Type *
-            </label>
-            <select
-              value={newCategory.type}
-              onChange={(e) => setNewCategory({ ...newCategory, type: e.target.value as 'regular' | 'main-course' })}
-              className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-              style={{ fontSize: 'var(--text-base)' }}
-            >
-              <option value="regular">Regular</option>
-              <option value="main-course">Main course</option>
-            </select>
           </div>
 
           <div>
