@@ -39,6 +39,7 @@ interface MenuItemData {
   allergens?: string[];
   additives?: string[];
   assignedAddonGroups?: string[];
+  isCombo?: boolean;
   nutritionalInfo?: {
     servingSize?: string;
     calories?: string;
@@ -436,6 +437,7 @@ export function MenuConfigPage() {
     isActive: true,
     pricingType: 'per-person' as 'per-person' | 'flat-rate' | 'consumption',
     variants: [] as VariantOption[],
+    isCombo: false,
   });
   const [newGroup, setNewGroup] = useState({
     name: '',
@@ -840,6 +842,7 @@ export function MenuConfigPage() {
                                     isActive: true,
                                     pricingType: 'per-person',
                                     variants: [],
+                                    isCombo: false,
                                   });
                                   setIsAddMenuItemModalOpen(true);
                                 }}
@@ -1038,6 +1041,7 @@ export function MenuConfigPage() {
                                                   isActive: item.isActive,
                                                   pricingType: item.pricingType || 'per-person',
                                                   variants: item.variants,
+                                                  isCombo: item.isCombo || false,
                                                 });
                                                 setIsAddMenuItemModalOpen(true);
                                               }}
@@ -1709,6 +1713,7 @@ export function MenuConfigPage() {
                               isActive: newMenuItem.isActive,
                               pricingType: newMenuItem.pricingType,
                               variants: newMenuItem.variants,
+                              isCombo: newMenuItem.isCombo,
                             }
                             : item
                         ),
@@ -1726,6 +1731,7 @@ export function MenuConfigPage() {
                     isActive: newMenuItem.isActive,
                     pricingType: newMenuItem.pricingType,
                     variants: newMenuItem.variants,
+                    isCombo: newMenuItem.isCombo,
                   };
 
                   setCategories(categories.map(cat =>
@@ -1745,6 +1751,7 @@ export function MenuConfigPage() {
                   isActive: true,
                   pricingType: 'per-person',
                   variants: [],
+                  isCombo: false,
                 });
                 setActiveCategoryId(null);
                 setEditingMenuItemId(null);
@@ -1904,6 +1911,30 @@ export function MenuConfigPage() {
                     </div>
                   </button>
             </div>
+          </div>
+
+          {/* Is Combo Item Checkbox */}
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setNewMenuItem({ ...newMenuItem, isCombo: !newMenuItem.isCombo })}
+              className={`relative w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                newMenuItem.isCombo
+                  ? 'border-primary bg-primary'
+                  : 'border-border bg-background hover:border-primary/50'
+              }`}
+            >
+              {newMenuItem.isCombo && (
+                <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />
+              )}
+            </button>
+            <label
+              htmlFor="isCombo"
+              className="text-foreground cursor-pointer select-none"
+              style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
+            >
+              This is a combo item
+            </label>
           </div>
 
           <div>
@@ -2114,8 +2145,8 @@ export function MenuConfigPage() {
               Type
             </label>
             <p className="text-muted-foreground mb-3" style={{ fontSize: 'var(--text-small)' }}>
-              Optional: customers can choose but aren't required.<br />
-              Mandatory: customers must select.
+              Addons: optional to select.<br />
+              Choices: mandatory to select any one.
             </p>
             <div className="flex gap-3">
               <label className="flex-1 cursor-pointer">
@@ -2129,7 +2160,7 @@ export function MenuConfigPage() {
                 <div className="px-4 py-3 border-2 border-border rounded-lg transition-all peer-checked:border-primary peer-checked:bg-primary/10 hover:border-primary/50">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-foreground peer-checked:text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                      Optional
+                      Addons
                     </span>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${newGroup.type === 'optional'
                       ? 'border-primary bg-primary'
@@ -2153,7 +2184,7 @@ export function MenuConfigPage() {
                 <div className="px-4 py-3 border-2 border-border rounded-lg transition-all peer-checked:border-primary peer-checked:bg-primary/10 hover:border-primary/50">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-foreground peer-checked:text-primary" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                      Mandatory
+                      Choices
                     </span>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${newGroup.type === 'mandatory'
                       ? 'border-primary bg-primary'
@@ -2169,7 +2200,7 @@ export function MenuConfigPage() {
             </div>
           </div>
 
-          {/* Selection Requirements - Only show when Mandatory */}
+          {/* Selection Requirements - Only show when Choices */}
           {newGroup.type === 'mandatory' && (
             <div className="p-4 bg-muted/30 border border-border rounded-lg space-y-4">
               <h4 className="text-foreground" style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-semibold)' }}>
